@@ -1,0 +1,22 @@
+{
+  "name": "Fortuna Center Broadcast",
+  "short_name": "Fortuna Broadcast",
+  "description": "Fortuna English & HRD Training Centre - Broadcast System for YouTube Live Streaming",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#D32F2F",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/",
+  "orientation": "portrait"
+}
