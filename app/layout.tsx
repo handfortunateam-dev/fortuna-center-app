@@ -17,9 +17,55 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fortuna Center Kupang",
+  metadataBase: new URL("https://www.fortunacenter.com"),
+  title: {
+    default: "Fortuna Center Kupang - English & HRD Training",
+    template: "%s | Fortuna Center Kupang",
+  },
   description:
     "Fortuna English & Human Resources Development (HRD) Training Centre is a distinguished institution in Kupang. We are dedicated to bridging the gap between potential and professional success through comprehensive training programs.",
+  keywords: [
+    "Fortuna Center",
+    "Kupang",
+    "English Course",
+    "HRD Training",
+    "English Training Centre",
+    "Fortuna Kupang",
+    "Kursus Bahasa Inggris Kupang",
+    "Pelatihan HRD",
+  ],
+  authors: [{ name: "Fortuna Center Team" }],
+  creator: "Fortuna Center",
+  publisher: "Fortuna Center",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://www.fortunacenter.com",
+    title: "Fortuna Center Kupang - English & HRD Training",
+    description:
+      "Fortuna English & Human Resources Development (HRD) Training Centre is a distinguished institution in Kupang. We are dedicated to bridging the gap between potential and professional success through comprehensive training programs.",
+    siteName: "Fortuna Center Kupang",
+    images: [
+      {
+        url: "/images/og-image.jpg", // We need to ensure this image exists or use a placeholder
+        width: 1200,
+        height: 630,
+        alt: "Fortuna Center Kupang",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Fortuna Center Kupang - English & HRD Training",
+    description:
+      "Bridging the gap between potential and professional success through comprehensive training programs in Kupang.",
+    images: ["/images/twitter-image.jpg"], // Ensure this exists
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -41,6 +87,17 @@ export const metadata: Metadata = {
     ],
   },
   manifest: "/site.webmanifest",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({
