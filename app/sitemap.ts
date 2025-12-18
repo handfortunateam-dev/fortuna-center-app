@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 import { getPodcasts } from "@/services/azurecast/azuracastService";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = "https://www.fortunacenter.com";
