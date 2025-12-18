@@ -156,7 +156,7 @@ export async function getVideoDetails(videoId: string): Promise<YouTubeVideo | n
         const response = await youtube.videos.list({
             key: GOOGLE_API_KEY,
             part: ["snippet"],
-            id: [videoId],
+            id: videoId,
         });
 
         const items = response.data.items;
@@ -258,6 +258,8 @@ export const getChannelVideos = unstable_cache(
                 maxResults: 9,
             });
 
+            console.log("getChannelVideos response items length:", response.data.items?.length);
+            // console.log("getChannelVideos response items:", JSON.stringify(response.data.items, null, 2));
             return (response.data.items as YouTubeVideo[]) || [];
         } catch (error) {
             console.error("Error fetching channel videos:", error);
@@ -340,6 +342,8 @@ export const getChannelPlaylists = unstable_cache(
                 maxResults: 10,
             });
 
+            console.log("getChannelPlaylists response items length:", response.data.items?.length);
+            // console.log("getChannelPlaylists response items:", JSON.stringify(response.data.items, null, 2));
             return (response.data.items as YouTubePlaylist[]) || [];
         } catch (error) {
             console.error("Error fetching playlists:", error);
@@ -366,6 +370,8 @@ export async function getPlaylistItems(playlistId: string): Promise<YouTubePlayl
             maxResults: 50,
         });
 
+        console.log("getPlaylistItems response items length:", response.data.items?.length);
+        // console.log("getPlaylistItems response items:", JSON.stringify(response.data.items, null, 2));
         return (response.data.items as YouTubePlaylistItem[]) || [];
     } catch (error) {
         console.error("Error fetching playlist items:", error);
