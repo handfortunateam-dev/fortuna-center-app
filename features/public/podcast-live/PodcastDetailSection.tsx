@@ -1,7 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
-import { ShareButton } from "@/components/ui/ShareButton";
+import { ShareButton } from "@/components/share-button/ShareButton";
 import { useAudioPlayer } from "@/providers/AudioPlayerContext";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -13,7 +13,7 @@ import {
   Button,
   Chip,
   Avatar,
-  Breadcrumbs,
+Breadcrumbs,
   BreadcrumbItem,
 } from "@heroui/react";
 import PodcastPagination from "@/features/public/podcast-live/PodcastPagination";

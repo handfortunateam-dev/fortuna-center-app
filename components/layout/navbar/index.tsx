@@ -20,7 +20,7 @@ import {
   systemMenuItems,
 } from "@/config/navigationItem";
 import { useSearchContext } from "@/providers/SearchProvider";
-import { Text } from "@/components/ui/Text";
+import { Text } from "@/components/text";
 import AuthButtons from "./AuthButtons";
 import { Icon } from "@iconify/react";
 import HeaderDateTimeWidget from "@/components/HeaderDateTimeWidget";
@@ -30,9 +30,7 @@ const mobileIndentClasses = ["", "pl-5", "pl-9", "pl-12", "pl-16"];
 
 const getMobileIndent = (depth: number) => {
   const idx =
-    depth < mobileIndentClasses.length
-      ? depth
-      : mobileIndentClasses.length - 1;
+    depth < mobileIndentClasses.length ? depth : mobileIndentClasses.length - 1;
   return mobileIndentClasses[idx];
 };
 
@@ -73,7 +71,7 @@ export default function Navbar({
   const [openMenuKey, setOpenMenuKey] = React.useState<string | null>(null);
   const [activeSubmenu, setActiveSubmenu] = React.useState<string | null>(null);
   const menuCloseTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null
+    null,
   );
 
   const clearMenuCloseTimeout = () => {
@@ -115,7 +113,7 @@ export default function Navbar({
 
   const renderMobileMenuItems = (
     items: NavigationItem[],
-    depth = 0
+    depth = 0,
   ): React.ReactNode[] => {
     return items.flatMap((item) => {
       const indentClass = getMobileIndent(depth);
@@ -190,7 +188,10 @@ export default function Navbar({
                 className="text-gray-500 dark:text-gray-400 hover:text-secondary dark:hover:text-secondary hover:bg-secondary/10 dark:hover:bg-secondary/20 rounded-full w-10 h-10"
               >
                 {theme === "dark" ? (
-                  <Icon icon="solar:sun-bold" className="w-5 h-5 text-yellow-500" />
+                  <Icon
+                    icon="solar:sun-bold"
+                    className="w-5 h-5 text-yellow-500"
+                  />
                 ) : (
                   <Icon icon="solar:moon-bold" className="w-5 h-5" />
                 )}
@@ -284,7 +285,6 @@ export default function Navbar({
                             }`}
                           />
                         }
-                        onPress={() => handleNavigate(item.href)}
                       >
                         <div className="flex items-center gap-2">
                           {item.icon}
@@ -301,8 +301,7 @@ export default function Navbar({
                           {item.children.map((child) => {
                             const hasGrandchildren = !!child.children?.length;
                             const showSubmenu =
-                              hasGrandchildren &&
-                              activeSubmenu === child.key;
+                              hasGrandchildren && activeSubmenu === child.key;
 
                             return (
                               <div
@@ -318,8 +317,16 @@ export default function Navbar({
                               >
                                 <button
                                   type="button"
-                                  onClick={() => handleNavigate(child.href)}
-                                  className="w-full flex items-start gap-3 px-3 py-2 rounded-xl text-left hover:bg-secondary/10 dark:hover:bg-secondary/20 transition-colors"
+                                  onClick={() => {
+                                    if (!hasGrandchildren) {
+                                      handleNavigate(child.href);
+                                    }
+                                  }}
+                                  className={`w-full flex items-start gap-3 px-3 py-2 rounded-xl text-left hover:bg-secondary/10 dark:hover:bg-secondary/20 transition-colors ${
+                                    hasGrandchildren
+                                      ? "cursor-default"
+                                      : "cursor-pointer"
+                                  }`}
                                 >
                                   {child.icon}
                                   <div className="flex-1">

@@ -101,7 +101,7 @@ export default function HeroSection() {
               </div>
 
               {/* Floating Card */}
-              <div className="absolute -bottom-6 -left-6 bg-card p-6 rounded-xl shadow-xl border border-border max-w-xs hidden md:block">
+              {/* <div className="absolute -bottom-6 -left-6 bg-card p-6 rounded-xl shadow-xl border border-border max-w-xs hidden md:block">
                 <div className="flex items-center gap-4 mb-3">
                   <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-primary">
                     <Icon
@@ -122,7 +122,7 @@ export default function HeroSection() {
                 <p className="text-xs text-muted-foreground text-right">
                   Streaming Quality 4K
                 </p>
-              </div>
+              </div> */}
             </div>
           </motion.div>
         </div>

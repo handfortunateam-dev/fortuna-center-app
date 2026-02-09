@@ -3,6 +3,7 @@
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import React from "react";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { SearchProvider } from "./SearchProvider";
 import { NotificationProvider } from "./NotificationProvider";
 import { ThemeProvider } from "./ThemeProvider";
@@ -20,9 +21,11 @@ const queryClient = new QueryClient({
 });
 
 export default function Providers({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <HeroUIProvider>
+      <HeroUIProvider navigate={router.push}>
         <ToastProvider />
         <QueryClientProvider client={queryClient}>
           <NotificationProvider>

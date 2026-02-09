@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, pgEnum, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, pgEnum, integer, jsonb } from 'drizzle-orm/pg-core';
 import { users } from './users.schema';
 import { classes } from './class.schema';
 import { id, timestamps, publishable } from './columns.helper';
@@ -29,6 +29,7 @@ export const assignments = pgTable('assignments', {
   status: assignmentStatusEnum('status').default('draft').notNull(),
   maxScore: integer('max_score').default(100),
   dueDate: timestamp('due_date'),
+  attachments: jsonb('attachments').$type<{ url: string; type: 'image' | 'video' | 'document' | 'audio'; name: string }[]>(),
   ...publishable,
   ...timestamps,
 });

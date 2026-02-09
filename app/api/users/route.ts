@@ -1,10 +1,12 @@
+import { type User } from './../../../db/schema/users.schema';
 // import { users } from '@/db/schema/users.schema';
 import { NextRequest, NextResponse } from "next/server";
 import { getClerkUserList } from "@/lib/clerk";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
-// import { users } from "@/db";
+import { and, eq, ilike } from "drizzle-orm";
+
 // GET - Fetch all users from Clerk
 export async function GET(request: NextRequest) {
     try {
@@ -26,14 +28,105 @@ export async function GET(request: NextRequest) {
         const offset = searchParams.get("offset");
         const query = searchParams.get("query");
         const orderBy = searchParams.get("orderBy");
+        const role = searchParams.get("role");
+        const source = searchParams.get("source");
+        const id = searchParams.get("id"); // Database user ID
 
-        const usersDataFromNeonDB = await db.select().from(users);
+        // If id is specified, fetch single user by database ID
+        if (id) {
+            const user = await db
+                .select()
+                .from(users)
+                .where(eq(users.id, id))
+                .limit(1);
 
-        console.log(usersDataFromNeonDB, 'usersDataFromNeonDB')
+            if (!user || user.length === 0) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: "User not found",
+                    },
+                    { status: 404 }
+                );
+            }
 
+            const userData = user[0];
+            return NextResponse.json(
+                {
+                    success: true,
+                    data: [{
+                        id: userData.id,
+                        email: userData.email,
+                        name: userData.name,
+                        role: userData.role,
+                        clerkId: userData.clerkId,
+                        image: userData.image,
+                        createdAt: userData.createdAt,
+                        updatedAt: userData.updatedAt,
+                    }],
+                    message: "User fetched successfully",
+                },
+                { status: 200 }
+            );
+        }
+
+        // If role is specified or source is db, fetch from local DB
+        if (role || source === "db") {
+            // Build where clause
+            const whereConditions = [];
+            if (role) {
+                whereConditions.push(eq(users.role, role.toUpperCase() as User['role']));
+            }
+
+            if (query) {
+                whereConditions.push(ilike(users.name, `%${query}%`));
+            }
+
+            const where = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+            const usersDB = await db
+                .select()
+                .from(users)
+                .where(where)
+                .limit(limit ? Number(limit) : 10)
+                .offset(offset ? Number(offset) : 0);
+
+            const usersDataDB = usersDB.map((user) => ({
+                id: user.id, // UUID
+                email: user.email,
+                username: null, // DB doesn't store username separate usually, or uses email
+                firstName: user.name.split(" ")[0] || "",
+                lastName: user.name.split(" ").slice(1).join(" ") || "",
+                fullName: user.name,
+                imageUrl: user.image || "",
+                createdAt: user.createdAt?.getTime() || Date.now(),
+                updatedAt: user.updatedAt?.getTime() || Date.now(),
+                lastSignInAt: null,
+                emailVerified: true, // Assuming DB users are verified or we don't track it same way
+            }));
+
+            // Get count if needed, but for now just return data
+            return NextResponse.json(
+                {
+                    success: true,
+                    data: usersDataDB,
+                    totalCount: usersDataDB.length, // Placeholder, usually requires separate count query
+                    message: "Users fetched successfully from DB",
+                },
+                { status: 200 }
+            );
+        }
+
+        // Default: Fetch from Clerk
         // Valid orderBy values for Clerk
-        const validOrderBy = ["-created_at", "created_at", "-updated_at", "updated_at"];
-        const finalOrderBy = orderBy && validOrderBy.includes(orderBy) ? (orderBy as never) : undefined;
+        const validOrderBy = [
+            "-created_at",
+            "created_at",
+            "-updated_at",
+            "updated_at",
+        ];
+        const finalOrderBy =
+            orderBy && validOrderBy.includes(orderBy) ? (orderBy as never) : undefined;
 
         const response = await getClerkUserList({
             limit: limit ? Number(limit) : 10,
@@ -56,9 +149,6 @@ export async function GET(request: NextRequest) {
             lastSignInAt: user.lastSignInAt,
             emailVerified: user.emailAddresses[0]?.verification?.status === "verified",
         }));
-
-
-        console.log(usersDataClerk, 'usersDataClerk')
 
         return NextResponse.json(
             {

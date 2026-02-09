@@ -4,16 +4,15 @@ import LiveStreamPlayer from "@/features/public/live/LiveStreamPlayer";
 import { Metadata } from "next";
 
 interface LiveStreamPageProps {
-  params: Promise<{
+  params: {
     videoId: string;
-  }>;
+  };
 }
 
 export async function generateMetadata({
   params,
 }: LiveStreamPageProps): Promise<Metadata> {
-  const { videoId } = await params;
-  const video = await getVideoDetails(videoId);
+  const video = await getVideoDetails(params.videoId);
   return {
     title: video
       ? `${video.snippet.title} | Live Stream`
@@ -24,7 +23,7 @@ export async function generateMetadata({
 }
 
 export default async function LiveStreamPage({ params }: LiveStreamPageProps) {
-  const { videoId } = await params;
+  const { videoId } = params;
   const video = await getVideoDetails(videoId);
 
   return (

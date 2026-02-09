@@ -3,6 +3,8 @@
 import React from "react";
 import { Card, CardBody, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 
 export default function TeacherDashboard() {
   const stats = [
@@ -60,10 +62,12 @@ export default function TeacherDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Welcome back! Here's what's happening with your classes.
-        </p>
+        <Heading as="h1" size="3xl" weight="bold">
+          Teacher Dashboard
+        </Heading>
+        <Text color="muted">
+          Welcome back! Here&apos;s what&apos;s happening with your classes.
+        </Text>
       </div>
 
       {/* Stats Grid */}
@@ -76,10 +80,12 @@ export default function TeacherDashboard() {
                   <Icon icon={stat.icon} className="text-2xl text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <Text size="sm" color="muted">
                     {stat.title}
-                  </p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  </Text>
+                  <Text className="text-2xl" weight="bold">
+                    {stat.value}
+                  </Text>
                 </div>
               </div>
             </CardBody>
@@ -92,7 +98,9 @@ export default function TeacherDashboard() {
         <Card>
           <CardBody className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">My Classes</h2>
+              <Heading as="h2" size="xl" weight="semibold">
+                My Classes
+              </Heading>
               <Chip size="sm" variant="flat">
                 {recentClasses.length} Active
               </Chip>
@@ -104,10 +112,12 @@ export default function TeacherDashboard() {
                   className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 >
                   <div>
-                    <div className="font-semibold">{classItem.name}</div>
-                    <div className="text-sm text-gray-500">
+                    <Text weight="semibold" as="div">
+                      {classItem.name}
+                    </Text>
+                    <Text size="sm" color="muted" as="div">
                       {classItem.code}
-                    </div>
+                    </Text>
                   </div>
                   <Chip size="sm" variant="flat" color="primary">
                     {classItem.students} Students
@@ -122,7 +132,9 @@ export default function TeacherDashboard() {
         <Card>
           <CardBody className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Pending Assignments</h2>
+              <Heading as="h2" size="xl" weight="semibold">
+                Pending Assignments
+              </Heading>
               <Chip size="sm" variant="flat" color="warning">
                 {pendingAssignments.length} Pending
               </Chip>
@@ -135,10 +147,12 @@ export default function TeacherDashboard() {
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <div className="font-semibold">{assignment.title}</div>
-                      <div className="text-sm text-gray-500">
+                      <Text weight="semibold" as="div">
+                        {assignment.title}
+                      </Text>
+                      <Text size="sm" color="muted" as="div">
                         {assignment.class}
-                      </div>
+                      </Text>
                     </div>
                     <Chip size="sm" variant="flat">
                       Due {new Date(assignment.dueDate).toLocaleDateString()}

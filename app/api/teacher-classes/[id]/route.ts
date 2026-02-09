@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { teacherClasses } from "@/db/schema";
+import { teacherClasses, users, classes } from "@/db/schema";
 
 const notFoundResponse = () =>
   NextResponse.json({ success: false, message: "Assignment not found" }, { status: 404 });
@@ -14,22 +14,46 @@ type UpdateTeacherClassPayload = {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
-    const [record] = await db
-      .select()
+    const [result] = await db
+      .select({
+        id: teacherClasses.id,
+        teacherId: teacherClasses.teacherId,
+        teacherName: users.name,
+        classId: teacherClasses.classId,
+        className: classes.name,
+        assignedAt: teacherClasses.assignedAt,
+        assignedBy: teacherClasses.assignedBy,
+      })
       .from(teacherClasses)
+      .leftJoin(users, eq(teacherClasses.teacherId, users.id))
+      .leftJoin(classes, eq(teacherClasses.classId, classes.id))
       .where(eq(teacherClasses.id, id))
       .limit(1);
 
-    if (!record) {
+    if (!result) {
       return notFoundResponse();
     }
 
-    return NextResponse.json({ success: true, data: record });
+    // Fetch assignedBy name separately
+    let assignedByName = null;
+    if (result.assignedBy) {
+      const [assignedUser] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, result.assignedBy))
+        .limit(1);
+      assignedByName = assignedUser?.name || null;
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { ...result, assignedByName }
+    });
   } catch (error) {
     console.error("Error fetching teacher assignment:", error);
     return NextResponse.json(

@@ -1,5 +1,7 @@
 "use client";
 
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -49,7 +51,10 @@ export default function BlogCard({
       className="group bg-background rounded-2xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-xl transition-all duration-300"
     >
       {/* Cover Image */}
-      <Link href={`/read/${slug}`} className="block relative aspect-[16/9] overflow-hidden bg-muted">
+      <Link
+        href={`/blog/read/${slug}`}
+        className="block relative aspect-[16/9] overflow-hidden bg-muted"
+      >
         {coverImage ? (
           <Image
             src={coverImage}
@@ -59,7 +64,10 @@ export default function BlogCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
-            <Icon icon="solar:document-text-bold" className="text-6xl text-muted-foreground" />
+            <Icon
+              icon="solar:document-text-bold"
+              className="text-6xl text-muted-foreground"
+            />
           </div>
         )}
 
@@ -89,16 +97,16 @@ export default function BlogCard({
         </div>
 
         {/* Title */}
-        <Link href={`/read/${slug}`}>
-          <h3 className="text-xl font-bold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+        <Link href={`/blog/read/${slug}`}>
+          <Heading className="text-xl font-bold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
             {title}
-          </h3>
+          </Heading>
         </Link>
 
         {/* Excerpt */}
-        <p className="text-muted-foreground text-sm mb-4 line-clamp-3">
+        <Text className="text-muted-foreground text-sm mb-4 line-clamp-3">
           {excerpt}
-        </p>
+        </Text>
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-border">
@@ -117,7 +125,9 @@ export default function BlogCard({
                 author.name.charAt(0).toUpperCase()
               )}
             </div>
-            <span className="text-sm text-foreground font-medium">{author.name}</span>
+            <span className="text-sm text-foreground font-medium">
+              {author.name}
+            </span>
           </div>
 
           {/* Engagement */}

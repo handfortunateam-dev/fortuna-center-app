@@ -2,12 +2,14 @@
   "name": "broadcast-fortuna-center-app",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "fix-db": "bun scripts/fix-attachments-column.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.35.5",
@@ -22,16 +24,15 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.7",
+    "firebase": "^12.8.0",
     "framer-motion": "^12.23.24",
     "googleapis": "^166.0.0",
-    "livekit-client": "^2.16.0",
     "next": "16.0.7",
     "next-themes": "^0.4.6",
     "postgres": "^3.4.7",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-hook-form": "^7.66.1",
-    "react-quill": "^2.0.0",
     "recharts": "^2.15.0",
     "uuid": "^13.0.0"
   },
@@ -40,6 +41,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "baseline-browser-mapping": "^2.9.19",
     "drizzle-kit": "^0.31.7",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",

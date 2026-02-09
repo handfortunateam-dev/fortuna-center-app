@@ -1,4 +1,4 @@
-import ClassEnroll from "@/features/classes/enroll";
+import ClassEnroll from "@/features/lms/classes/enroll";
 import React from "react";
 
 export default function EnrollPage({ params }: { params: { id: string } }) {

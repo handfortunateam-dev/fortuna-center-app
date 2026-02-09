@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { Heading } from "@/components/heading";
 
 interface FeaturedBlogProps {
   id: string;
@@ -20,7 +21,7 @@ interface FeaturedBlogProps {
   categories?: { name: string; slug: string }[];
 }
 
-export default function FeaturedBlog({
+export default function HeroBlog({
   title,
   slug,
   excerpt,
@@ -48,11 +49,6 @@ export default function FeaturedBlog({
         <div className="grid md:grid-cols-2 gap-8 p-8 md:p-12">
           {/* Content */}
           <div className="flex flex-col justify-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary text-white text-xs font-semibold mb-4 w-fit">
-              <Icon icon="solar:star-bold" />
-              <span>Featured Article</span>
-            </div>
-
             {categories.length > 0 && (
               <div className="flex items-center gap-2 mb-4">
                 <span className="px-3 py-1 rounded-full bg-background text-primary text-xs font-semibold border border-primary/20">
@@ -61,10 +57,15 @@ export default function FeaturedBlog({
               </div>
             )}
 
-            <Link href={`/read/${slug}`}>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4 hover:text-primary transition-colors line-clamp-3">
+            <Link href={`/blog/read/${slug}`}>
+              <Heading
+                as="h2"
+                size="3xl"
+                weight="bold"
+                className="text-foreground mb-4 hover:text-primary transition-colors line-clamp-3"
+              >
                 {title}
-              </h2>
+              </Heading>
             </Link>
 
             <p className="text-muted-foreground text-lg mb-6 line-clamp-3">
@@ -87,7 +88,9 @@ export default function FeaturedBlog({
                     author.name.charAt(0).toUpperCase()
                   )}
                 </div>
-                <span className="font-medium text-foreground">{author.name}</span>
+                <span className="font-medium text-foreground">
+                  {author.name}
+                </span>
               </div>
               <span>•</span>
               <div className="flex items-center gap-1">
@@ -103,7 +106,7 @@ export default function FeaturedBlog({
 
             {/* CTA */}
             <Link
-              href={`/read/${slug}`}
+              href={`/blog/read/${slug}`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white font-semibold hover:bg-red-700 transition-colors w-fit group"
             >
               Read Full Article
@@ -115,7 +118,10 @@ export default function FeaturedBlog({
           </div>
 
           {/* Image */}
-          <Link href={`/read/${slug}`} className="relative aspect-[4/3] md:aspect-auto rounded-2xl overflow-hidden bg-muted group">
+          <Link
+            href={`/blog/read/${slug}`}
+            className="relative aspect-[4/3] md:aspect-auto rounded-2xl overflow-hidden bg-muted group"
+          >
             {coverImage ? (
               <Image
                 src={coverImage}
@@ -125,7 +131,10 @@ export default function FeaturedBlog({
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                <Icon icon="solar:gallery-bold" className="text-8xl text-muted-foreground" />
+                <Icon
+                  icon="solar:gallery-bold"
+                  className="text-8xl text-muted-foreground"
+                />
               </div>
             )}
           </Link>

@@ -1,3 +1,4 @@
+import { ShareButton } from "@/components/share-button/ShareButton";
 import {
   getHlsInfo,
   getNowPlaying,
@@ -8,15 +9,8 @@ import {
 } from "@/services/azurecast/azuracastService";
 import type { Podcast, PodcastEpisode } from "@/services/azurecast/interfaces";
 import { Icon } from "@iconify/react";
-import { ShareButton } from "@/components/ui/ShareButton";
+// import { ShareButton } from "@/components/ui/ShareButton";
 import { formatDistanceToNow } from "date-fns";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Live Broadcast",
-  description:
-    "Tune in to Fortuna Center's live broadcast. Listen to English programs, music, and student shows.",
-};
 
 export const revalidate = 30;
 
@@ -90,21 +84,8 @@ export default async function BroadcastLivePage() {
         })
       : "moments ago";
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "RadioStation",
-    name: station?.name || "Fortuna Broadcast",
-    url: "https://www.fortunacenter.com/broadcast-live",
-    image: "https://www.fortunacenter.com/logo.png",
-    broadcastFrequency: "Internet",
-  };
-
   return (
     <main className="min-h-screen bg-white text-gray-900 dark:bg-gray-950 dark:text-white transition-colors">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
       <section className="bg-gradient-to-b from-red-900 via-red-800 to-yellow-900 dark:from-red-950 dark:via-red-900 dark:to-yellow-950 text-white px-6 py-16">
         <div className="max-w-5xl mx-auto space-y-8">
           <div className="space-y-2">

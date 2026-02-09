@@ -9,7 +9,6 @@ import type {
 } from "@/services/azurecast/interfaces";
 import { notFound } from "next/navigation";
 import { PodcastDetailSection } from "@/features/public/podcast-live/PodcastDetailSection";
-import { Metadata } from "next";
 
 interface PodcastDetailPageProps {
   params: Promise<{
@@ -19,29 +18,6 @@ interface PodcastDetailPageProps {
     page?: string;
     query?: string;
   }>;
-}
-
-export async function generateMetadata({
-  params,
-}: PodcastDetailPageProps): Promise<Metadata> {
-  const { podcastId } = await params;
-
-  try {
-    const podcast = await getPodcast(podcastId);
-    return {
-      title: podcast.title,
-      description: podcast.description_short || podcast.description,
-      openGraph: {
-        title: podcast.title,
-        description: podcast.description_short || podcast.description,
-        images: podcast.art ? [podcast.art] : [],
-      },
-    };
-  } catch (error) {
-    return {
-      title: "Podcast Detail",
-    };
-  }
 }
 
 export default async function PodcastDetailPage({

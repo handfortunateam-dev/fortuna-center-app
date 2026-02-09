@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Card, Button, Input, Avatar, Tabs, Tab } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShareButton } from "@/components/ui/ShareButton";
+import { ShareButton } from "@/components/share-button/ShareButton";
 import { formatDistanceToNow } from "date-fns";
 
 interface ChatMessage {

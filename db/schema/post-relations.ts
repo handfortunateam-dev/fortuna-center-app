@@ -73,8 +73,4 @@ export const postLikesRelations = relations(postLikes, ({ one }) => ({
     fields: [postLikes.postId],
     references: [posts.id],
   }),
-  user: one(users, {
-    fields: [postLikes.userId],
-    references: [users.id],
-  }),
 }));

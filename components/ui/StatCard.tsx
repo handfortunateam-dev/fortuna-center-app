@@ -2,6 +2,8 @@
 
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 
 interface StatCardProps {
   title: string;
@@ -37,12 +39,17 @@ export default function StatCard({
           {change}
         </span>
       </div>
-      <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-1">
+      <Text size="sm" color="muted" weight="medium" className="mb-1">
         {title}
-      </h3>
-      <p className="text-3xl font-bold text-gray-900 dark:text-white">
+      </Text>
+      <Heading
+        as="h3"
+        size="3xl"
+        weight="bold"
+        className="text-gray-900 dark:text-white"
+      >
         {value}
-      </p>
+      </Heading>
     </motion.div>
   );
 }

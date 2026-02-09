@@ -7,8 +7,8 @@ import { id } from './columns.helper';
 // Any teacher can teach any class - no permanent assignment
 export const teacherClasses = pgTable('teacher_classes', {
   ...id,
-  teacherId: uuid('teacher_id').references(() => users.id).notNull(),
-  classId: uuid('class_id').references(() => classes.id).notNull(),
+  teacherId: uuid('teacher_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  classId: uuid('class_id').references(() => classes.id, { onDelete: 'cascade' }).notNull(),
   assignedAt: timestamp('assigned_at').defaultNow().notNull(),
   assignedBy: uuid('assigned_by').references(() => users.id), // Admin who assigned
 });

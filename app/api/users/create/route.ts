@@ -1,6 +1,7 @@
+
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
-import { getAuthUser, isAdmin } from "@/lib/auth/getAuthUser";
+import { isAdmin } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
 import { UserRole } from "@/enums/common";
@@ -10,7 +11,7 @@ interface CreateUserRequest {
   firstName: string;
   lastName: string;
   password: string;
-  role: "ADMIN" | "TEACHER" | "STUDENT" | "ADMINISTRATIVE_EMPLOYEE";
+  role: "ADMIN" | "VISITOR";
 }
 
 export async function POST(request: NextRequest) {

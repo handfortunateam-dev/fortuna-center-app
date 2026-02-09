@@ -1,0 +1,1 @@
+ALTER TABLE "assignment_submissions" RENAME COLUMN "attachment_url" TO "attachments";
