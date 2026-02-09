@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Card, CardBody, Button, Chip } from "@heroui/react";
-import { ShareButton } from "@/components/ui/ShareButton";
+// import { ShareButton } from "@/components/ui/ShareButton";
 import type { Podcast } from "@/services/azurecast/interfaces";
+import { ShareButton } from "@/components/share-button/ShareButton";
 
 type PodcastListSectionProps = {
   podcasts: Podcast[];

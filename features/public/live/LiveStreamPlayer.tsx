@@ -20,12 +20,10 @@ export default function LiveStreamPlayer({
   publishedAt,
 }: LiveStreamPlayerProps) {
   const [domain, setDomain] = useState<string>("");
-  const [origin, setOrigin] = useState<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setDomain(window.location.hostname);
-      setOrigin(window.location.origin);
     }
   }, []);
 
@@ -36,12 +34,11 @@ export default function LiveStreamPlayer({
         <Card className="flex-grow w-full bg-black border-none">
           <CardBody className="p-0 overflow-hidden relative">
             <iframe
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&origin=${origin}`}
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
               className="absolute inset-0 w-full h-full"
               title="YouTube Video Player"
               frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
           </CardBody>

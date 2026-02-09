@@ -13,10 +13,10 @@ import {
   TeacherClassFilters,
   TeacherClassItem,
   TeacherClassFormValues,
-} from "@/features/classes/interfaces";
+} from "@/features/lms/classes/interfaces";
 
 export const classKeys = {
-  all: ["classes"] as const,
+  all: ["/classes"] as const,
   lists: () => [...classKeys.all, "list"] as const,
   list: (params?: ClassListParams) => [...classKeys.lists(), params] as const,
   detail: (id: string) => [...classKeys.all, "detail", id] as const,

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, integer, jsonb } from 'drizzle-orm/pg-core';
 import { users } from './users.schema';
 import { assignments, submissionStatusEnum } from './assignment.schema';
 import { id, timestamps } from './columns.helper';
@@ -9,7 +9,8 @@ export const assignmentSubmissions = pgTable('assignment_submissions', {
   assignmentId: uuid('assignment_id').references(() => assignments.id).notNull(),
   studentId: uuid('student_id').references(() => users.id).notNull(),
   content: text('content'), // Submission text/content
-  attachmentUrl: text('attachment_url'), // Optional file attachment
+  // attachmentUrl: text('attachment_url'), // DEPRECATED: Use attachments instead
+  attachments: jsonb('attachments').$type<{ url: string; type: 'image' | 'video' | 'document' | 'audio'; name: string }[]>(),
   status: submissionStatusEnum('status').default('pending').notNull(),
   score: integer('score'),
   feedback: text('feedback'), // Teacher's feedback

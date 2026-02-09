@@ -6,8 +6,8 @@ import { id } from './columns.helper';
 // Student-Class enrollment (many-to-many)
 export const classEnrollments = pgTable('class_enrollments', {
   ...id,
-  studentId: uuid('student_id').references(() => users.id).notNull(),
-  classId: uuid('class_id').references(() => classes.id).notNull(),
+  studentId: uuid('student_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  classId: uuid('class_id').references(() => classes.id, { onDelete: 'cascade' }).notNull(),
   enrolledAt: timestamp('enrolled_at').defaultNow().notNull(),
   enrolledBy: uuid('enrolled_by').references(() => users.id), // Admin who enrolled
 });

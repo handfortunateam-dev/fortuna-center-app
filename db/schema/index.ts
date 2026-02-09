@@ -14,3 +14,17 @@ export * from './post-to-tag.schema';
 export * from './post-comment.schema';
 export * from './post-like.schema';
 export * from './post-relations';
+export * from './students.schema';
+export * from './users-relations';
+export * from './class-schedule.schema';
+export * from './class-session.schema';
+export * from './class-attendance.schema';
+export * from './schedule-teacher.schema';
+export * from './class-schedule-relations';
+export * from './schedule-teacher-relations';
+export * from './teacher-class-relations';
+export * from './class-enrollment-relations';
+export * from './lesson.schema';
+export * from './lesson-material.schema';
+export * from './lesson-relations';
+

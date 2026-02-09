@@ -28,6 +28,8 @@ export interface UsersListParams {
   offset?: number;
   query?: string;
   orderBy?: string;
+  role?: string;
+  source?: string;
 }
 
 export interface UsersListResponse {

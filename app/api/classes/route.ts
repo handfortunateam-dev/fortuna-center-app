@@ -1,64 +1,15 @@
-/**
- * @swagger
- * /api/classes:
- *   get:
- *     tags: [Classes]
- *     summary: List classes
- *     parameters:
- *       - in: query
- *         name: isActive
- *         schema:
- *           type: string
- *           enum: ["true", "false", "1", "0"]
- *       - in: query
- *         name: createdBy
- *         schema:
- *           type: string
- *           format: uuid
- *       - in: query
- *         name: q
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Classes list
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Class'
- *   post:
- *     tags: [Classes]
- *     summary: Create class
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ClassInput'
- *     responses:
- *       201:
- *         description: Created
- *       400:
- *         description: Validation error
- */
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { and, desc, eq, ilike } from "drizzle-orm";
 import { db } from "@/db";
-import { classes } from "@/db/schema";
+import { classes, users } from "@/db/schema";
 
 type CreateClassPayload = {
   name?: string;
   description?: string | null;
   code?: string;
   isActive?: boolean;
-  createdBy?: string;
+  // createdBy is no longer expected in payload
 };
 
 export async function GET(request: NextRequest) {
@@ -104,14 +55,36 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as CreateClassPayload;
-    const { name, description = null, code, isActive = true, createdBy } = body;
+    const { userId: clerkUserId } = await auth();
+    if (!clerkUserId) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-    if (!name || !code || !createdBy) {
+    // Lookup database user ID from Clerk ID
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "User not found in database" },
+        { status: 404 }
+      );
+    }
+
+    const body = (await request.json()) as CreateClassPayload;
+    const { name, description = null, code, isActive = true } = body;
+
+    if (!name || !code) {
       return NextResponse.json(
         {
           success: false,
-          message: "Missing required fields: name, code, createdBy",
+          message: "Missing required fields: name, code",
         },
         { status: 400 }
       );
@@ -124,7 +97,7 @@ export async function POST(request: NextRequest) {
         description,
         code,
         isActive,
-        createdBy,
+        createdBy: user.id, // Use database user ID (UUID)
       })
       .returning();
 

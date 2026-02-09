@@ -1,8 +1,8 @@
 "use client";
 
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useState } from "react";
 import { Navbar, Sidebar } from "@/components/layout";
-import { teacherSidebarNavigation } from "@/config/navigationItem";
+import { BreadcrumbsNav } from "@/components/breadcrumb";
 
 interface TeacherLayoutProps {
   children: ReactNode;
@@ -11,45 +11,24 @@ interface TeacherLayoutProps {
 export default function TeacherLayout({ children }: TeacherLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof document === "undefined") return false;
-    return document.documentElement.classList.contains("dark");
-  });
-
-  useEffect(() => {
-    const htmlElement = document.documentElement;
-
-    const observer = new MutationObserver(() => {
-      const isDarkMode = htmlElement.classList.contains("dark");
-      setIsDark(isDarkMode);
-    });
-
-    observer.observe(htmlElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Sidebar */}
       <Sidebar
-        sidebarOpen={sidebarOpen}
-        sidebarCollapsed={sidebarCollapsed}
-        setSidebarOpen={setSidebarOpen}
-        isDark={isDark}
-        navigationItems={teacherSidebarNavigation}
-        title="Teacher Panel"
-        homeHref="/teacher/dashboard"
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isCollapsed={sidebarCollapsed}
       />
 
+      {/* Main Content */}
       <div
         className={`
           flex flex-col min-h-screen transition-all duration-300
-          ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-64"}
+          ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-80"}
         `}
       >
+        {/* Navbar */}
         <Navbar
           mode="dashboard"
           onMenuClick={() => setSidebarOpen(true)}
@@ -57,6 +36,12 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           sidebarCollapsed={sidebarCollapsed}
         />
 
+        {/* Breadcrumb */}
+        <div className="px-4 sm:px-6 lg:px-8 py-4 border-b border-gray-200 dark:border-gray-800">
+          <BreadcrumbsNav autoFromPath={true} />
+        </div>
+
+        {/* Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-900">
           {children}
         </main>

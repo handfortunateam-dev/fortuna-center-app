@@ -11,10 +11,10 @@ import {
   Spinner,
   Switch,
 } from "@heroui/react";
-import { ListGrid } from "@/components/ui/ListGrid";
+import { ListGrid } from "@/components/table";
 import { AzuraLogFile } from "@/services/azurecast/interfaces";
 import { Icon } from "@iconify/react";
-import { Toast } from "@/components/ui/Toast";
+import { Toast } from "@/components/toast";
 
 const STATION_ID = process.env.NEXT_PUBLIC_AZURACAST_STATION_ID || "1";
 
@@ -28,7 +28,7 @@ function formatBytes(size: number): string {
   const units = ["B", "KB", "MB", "GB"];
   const exponent = Math.min(
     Math.floor(Math.log(size) / Math.log(1024)),
-    units.length - 1
+    units.length - 1,
   );
   const value = size / Math.pow(1024, exponent);
   return `${value.toFixed(value >= 10 || exponent === 0 ? 0 : 1)} ${
@@ -109,7 +109,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
         sizeFormatted: formatBytes(log.size),
         updatedAtFormatted: formatTimestamp(log.timestamp),
       })),
-    [logs]
+    [logs],
   );
 
   const fetchLogContent = useCallback(async (log: LogRow) => {
@@ -126,7 +126,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
 
     try {
       const url = `/api/azuracast/log-content?path=${encodeURIComponent(
-        endpoint
+        endpoint,
       )}`;
       const res = await fetch(url, { cache: "no-store" });
       const text = await res.text();
@@ -147,7 +147,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
       }
     } catch (err) {
       setContentError(
-        err instanceof Error ? err.message : "Gagal mengambil konten log."
+        err instanceof Error ? err.message : "Gagal mengambil konten log.",
       );
     } finally {
       setIsLoadingContent(false);
@@ -160,7 +160,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
       setIsModalOpen(true);
       fetchLogContent(log);
     },
-    [fetchLogContent]
+    [fetchLogContent],
   );
 
   const copyToClipboard = () => {
@@ -231,7 +231,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
         ),
       },
     ],
-    [handleOpenLog]
+    [handleOpenLog],
   );
 
   const renderLogContent = () => {
@@ -254,7 +254,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
       >
         {lines.map((line, idx) => {
           const match = line.match(
-            /^(\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2})\s+(.*)$/
+            /^(\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2})\s+(.*)$/,
           );
           const timestamp = match?.[1];
           const message = match?.[2] ?? line;

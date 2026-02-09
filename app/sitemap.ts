@@ -1,41 +1,56 @@
 import { MetadataRoute } from "next";
-import { getPodcasts } from "@/services/azurecast/azuracastService";
 
-export const dynamic = "force-dynamic";
-
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = "https://www.fortunacenter.com";
 
-    // Static routes
-    const routes = [
-        "",
-        "/about",
-        "/blog",
-        "/broadcast-live",
-        "/demo",
-        "/podcast-list",
-        "/programs",
-        "/video-gallery",
-        "/watch",
-    ].map((route) => ({
-        url: `${baseUrl}${route}`,
-        lastModified: new Date(),
-        changeFrequency: "daily" as const,
-        priority: route === "" ? 1.0 : 0.8,
-    }));
-
-    let podcastRoutes: MetadataRoute.Sitemap = [];
-    try {
-        const podcasts = await getPodcasts();
-        podcastRoutes = podcasts.map((podcast) => ({
-            url: `${baseUrl}/podcast-list/${podcast.id}`,
+    return [
+        {
+            url: baseUrl,
             lastModified: new Date(),
-            changeFrequency: "weekly" as const,
+            changeFrequency: "yearly",
+            priority: 1,
+        },
+        {
+            url: `${baseUrl}/about`,
+            lastModified: new Date(),
+            changeFrequency: "monthly",
+            priority: 0.8,
+        },
+        {
+            url: `${baseUrl}/blog`,
+            lastModified: new Date(),
+            changeFrequency: "daily",
+            priority: 0.8,
+        },
+        {
+            url: `${baseUrl}/broadcast-live`,
+            lastModified: new Date(),
+            changeFrequency: "daily",
+            priority: 0.9,
+        },
+        {
+            url: `${baseUrl}/podcast-list`,
+            lastModified: new Date(),
+            changeFrequency: "weekly",
             priority: 0.7,
-        }));
-    } catch (error) {
-        console.error("Failed to fetch podcasts for sitemap", error);
-    }
-
-    return [...routes, ...podcastRoutes];
+        },
+        {
+            url: `${baseUrl}/programs/broadcast`,
+            lastModified: new Date(),
+            changeFrequency: "monthly",
+            priority: 0.8,
+        },
+        {
+            url: `${baseUrl}/programs/lms`,
+            lastModified: new Date(),
+            changeFrequency: "monthly",
+            priority: 0.8,
+        },
+        {
+            url: `${baseUrl}/video-gallery/videos`,
+            lastModified: new Date(),
+            changeFrequency: "weekly",
+            priority: 0.7,
+        },
+    ];
 }

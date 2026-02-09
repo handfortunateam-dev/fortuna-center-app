@@ -16,7 +16,7 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   name: text('name').notNull(),
   role: userRoleEnum('role').notNull(),
-  clerkId: varchar('clerk_id', {length: 255}).notNull().unique(),
+  clerkId: varchar('clerk_id', { length: 255 }).notNull().unique(),
   image: varchar("image", { length: 500 }),
   password: text('password'), // hashed password
   ...timestamps,

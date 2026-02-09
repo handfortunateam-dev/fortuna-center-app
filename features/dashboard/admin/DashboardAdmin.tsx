@@ -7,8 +7,8 @@ import { Tabs, Tab } from "@heroui/react";
 import QuickActions from "./QuickActions";
 import RecentSessions from "./RecentSessions";
 import StatisticGeneral from "./StatisticGeneral";
-import { Heading } from "@/components/ui/Heading";
-import { Text } from "@/components/ui/Text";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 
 interface DashboardAdminProps {
   user: AuthUser | null;
@@ -22,7 +22,7 @@ export default function DashboardAdmin({ user }: DashboardAdminProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <Heading level={1} className="text-3xl font-bold text-default-900">
+          <Heading as="h1" size="3xl" className="font-bold text-default-900">
             Dashboard
           </Heading>
           <Text className="text-default-500 mt-1">

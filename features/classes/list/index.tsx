@@ -4,21 +4,13 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import { ListGrid } from "@/components/ui/ListGrid";
 import { Chip } from "@heroui/react";
-import {
-  ACTION_BUTTONS,
-  ADD_BUTTON,
-} from "@/components/ui/Button/ActionButtons";
+import { ACTION_BUTTONS, ADD_BUTTON } from "@/components/button/ActionButtons";
 import { useClasses } from "@/services/classesService";
 import { ClassItem } from "@/features/classes/interfaces";
 
 export default function ClassList() {
   const router = useRouter();
-  const {
-    data: dataClasses,
-    isLoading,
-    isError,
-    error,
-  } = useClasses();
+  const { data: dataClasses, isLoading, isError, error } = useClasses();
   const queryError = error instanceof Error ? error : undefined;
 
   const columns = [

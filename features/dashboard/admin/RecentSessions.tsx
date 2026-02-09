@@ -2,107 +2,252 @@
 
 import CardMotion from "@/components/motion/CardMotion";
 import ListItemMotion from "@/components/motion/ListItemMotion";
-import { Heading } from "@/components/ui/Heading";
-import { Text } from "@/components/ui/Text";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 import { Icon } from "@iconify/react";
 import { useClasses } from "@/services/classesService";
 import { formatDistanceToNow } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getPastBroadcasts,
+  getCurrentBroadcasts,
+} from "@/services/youtubeService";
+import { Spinner, Tabs, Tab, Badge } from "@heroui/react";
+import { useState, useMemo } from "react";
+import Image from "next/image";
 
 interface RecentSessionsProps {
   limit?: number;
 }
 
+const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
+const CACHE_GC_TIME = 1000 * 60 * 10; // 10 minutes
+
 export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
-  // Fetch classes - assuming "Sessions" roughly translates to Classes in the new system
-  // We can filter by isActive to show "Live" ones if 'isActive' implies live status,
-  // or just show latest.
-  const { data: classesResponse, isLoading } = useClasses({
-    page: 1,
-    limit: limit,
-    sort: "createdAt", // Assuming API supports sorting
-    // isActive: true, // Optional: uncomment if we only want active/live sessions
+  const [activeType, setActiveType] = useState<"classes" | "broadcasts">(
+    "classes",
+  );
+  const broadcastChannelId = process.env.NEXT_PUBLIC_YOUTUBE_CHANNEL_ID || "";
+
+  // Stabilize parameters
+  const classesParams = useMemo(
+    () => ({
+      limit: limit,
+      // page is not supported by ClassListParams based on interface
+    }),
+    [limit],
+  );
+
+  // LMS Classes
+  const { data: classesResponse, isLoading: lmsLoading } =
+    useClasses(classesParams);
+
+  // YouTube Broadcasts
+  const { data: liveYT, isLoading: liveYTLoading } = useQuery({
+    queryKey: ["yt-live", broadcastChannelId],
+    queryFn: () => getCurrentBroadcasts(broadcastChannelId),
+    enabled: activeType === "broadcasts" && !!broadcastChannelId,
+    staleTime: CACHE_STALE_TIME,
+    gcTime: CACHE_GC_TIME,
   });
 
-  const recentSessions = classesResponse?.data || [];
+  const { data: pastYT, isLoading: pastYTLoading } = useQuery({
+    queryKey: ["yt-past", broadcastChannelId],
+    queryFn: () => getPastBroadcasts(broadcastChannelId),
+    enabled: activeType === "broadcasts" && !!broadcastChannelId,
+    staleTime: CACHE_STALE_TIME,
+    gcTime: CACHE_GC_TIME,
+  });
+
+  const recentClasses = classesResponse?.data || [];
+  const broadcasts = [...(liveYT || []), ...(pastYT || [])].slice(0, limit);
 
   return (
-    <CardMotion delay={0.6}>
-      <div className="flex items-center justify-between mb-6">
+    <CardMotion delay={0.6} className="h-full">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <div>
-          <Heading level={2}>Recent Sessions</Heading>
-          <Text className="text-default-500 text-sm mt-1">
-            Latest classes and broadcasts
+          <Heading as="h2" size="xl" weight="bold">
+            Activity Logs
+          </Heading>
+          <Text size="sm" color="muted" className="mt-1">
+            Latest learning and streaming activities
           </Text>
         </div>
-        <button className="text-primary hover:text-primary/80 text-sm font-medium flex items-center gap-1 transition-colors">
-          View All
-          <Icon icon="solar:alt-arrow-right-bold" />
-        </button>
+
+        <Tabs
+          selectedKey={activeType}
+          onSelectionChange={(key) =>
+            setActiveType(key as "classes" | "broadcasts")
+          }
+          size="sm"
+          color="primary"
+          variant="bordered" // Fixed invalid variant 'flat'
+          radius="lg"
+        >
+          <Tab key="classes" title="LMS Classes" />
+          <Tab key="broadcasts" title="Broadcasts" />
+        </Tabs>
       </div>
 
-      <div className="space-y-3">
-        {isLoading && (
-          <div className="text-center py-4 text-gray-500">
-            Loading sessions...
-          </div>
+      <div className="space-y-3 min-h-[300px]">
+        {activeType === "classes" && (
+          <>
+            {lmsLoading ? (
+              <div className="flex justify-center items-center h-48">
+                <Spinner size="lg" label="Fetching classes..." />
+              </div>
+            ) : recentClasses.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-default-400 bg-default-50 rounded-2xl border-2 border-dashed border-default-200">
+                <Icon
+                  icon="solar:clipboard-list-broken"
+                  className="text-4xl mb-2"
+                />
+                <Text size="sm">No recent classes found</Text>
+              </div>
+            ) : (
+              recentClasses.map((session, idx) => (
+                <ListItemMotion
+                  key={session.id}
+                  index={idx}
+                  className="flex items-center gap-4 p-3 rounded-xl bg-default-50 hover:bg-default-100 border border-default-200 transition-all group cursor-pointer"
+                >
+                  <div
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${session.isActive ? "bg-green-500/10" : "bg-default-200/50"}`}
+                  >
+                    <Icon
+                      icon={
+                        session.isActive
+                          ? "solar:play-circle-bold"
+                          : "solar:stop-circle-bold"
+                      }
+                      className={`text-2xl ${session.isActive ? "text-green-500" : "text-default-400"}`}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Heading
+                      as="h3"
+                      size="base"
+                      className="font-semibold line-clamp-1"
+                    >
+                      {session.name}
+                    </Heading>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        size="sm"
+                        variant="flat"
+                        color="primary"
+                        className="text-[10px] h-4"
+                      >
+                        LMS
+                      </Badge>
+                      <span className="text-xs text-default-400">
+                        Code: {session.code}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-default-400 block mb-1">
+                      {formatDistanceToNow(new Date(session.createdAt), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                    {session.isActive && (
+                      <span className="px-2 py-0.5 rounded-full bg-green-500 text-white text-[9px] font-bold uppercase animate-pulse">
+                        Live
+                      </span>
+                    )}
+                  </div>
+                </ListItemMotion>
+              ))
+            )}
+          </>
         )}
 
-        {!isLoading && recentSessions.length === 0 && (
-          <div className="text-center py-4 text-gray-500">
-            No recent sessions found.
-          </div>
+        {activeType === "broadcasts" && (
+          <>
+            {liveYTLoading || pastYTLoading ? (
+              <div className="flex justify-center items-center h-48">
+                <Spinner size="lg" color="danger" label="Syncing YouTube..." />
+              </div>
+            ) : broadcasts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-default-400 bg-default-50 rounded-2xl border-2 border-dashed border-default-200">
+                <Icon
+                  icon="solar:videocamera-record-broken"
+                  className="text-4xl mb-2"
+                />
+                <Text size="sm">No broadcasts found</Text>
+              </div>
+            ) : (
+              broadcasts.map((video, idx) => {
+                const isLive = video.snippet.liveBroadcastContent === "live";
+                const thumbnailUrl =
+                  video.snippet.thumbnails.medium?.url ||
+                  video.snippet.thumbnails.default?.url ||
+                  "";
+
+                return (
+                  <ListItemMotion
+                    key={video.id.videoId}
+                    index={idx}
+                    className="flex items-center gap-4 p-3 rounded-xl bg-default-50 hover:bg-default-100 border border-default-200 transition-all group cursor-pointer"
+                  >
+                    <div className="relative w-16 aspect-video rounded-lg overflow-hidden flex-shrink-0 bg-default-200">
+                      {thumbnailUrl && (
+                        <Image
+                          src={thumbnailUrl}
+                          alt={video.snippet.title}
+                          fill
+                          className="object-cover"
+                        />
+                      )}
+                      {isLive && (
+                        <div className="absolute inset-0 bg-red-600/20 flex items-center justify-center z-10">
+                          <Icon
+                            icon="solar:play-bold"
+                            className="text-white drop-shadow-md"
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Heading
+                        as="h3"
+                        size="sm"
+                        className="font-semibold line-clamp-1"
+                      >
+                        {video.snippet.title}
+                      </Heading>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          size="sm"
+                          variant="flat"
+                          color="danger"
+                          className="text-[10px] h-4"
+                        >
+                          YT
+                        </Badge>
+                        <span className="text-[10px] text-default-400">
+                          {formatDistanceToNow(
+                            new Date(video.snippet.publishedAt),
+                            { addSuffix: true },
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                    {isLive && (
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-red-100 text-red-600 border border-red-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          Live
+                        </span>
+                      </div>
+                    )}
+                  </ListItemMotion>
+                );
+              })
+            )}
+          </>
         )}
-
-        {recentSessions.map((session, idx) => (
-          <ListItemMotion
-            key={session.id}
-            index={idx}
-            baseDelay={0.2}
-            staggerDelay={0.1}
-            direction="right"
-            className="flex items-center gap-4 p-4 rounded-xl bg-default-50 hover:bg-default-100 border border-default-200 hover:border-default-300 transition-all group cursor-pointer"
-          >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <Icon
-                icon={
-                  session.isActive
-                      ? "solar:play-circle-bold"
-                      : "solar:stop-circle-bold"
-                } 
-                className={`text-2xl ${
-                  session.isActive ? "text-green-500" : "text-default-400"
-                }`}
-              />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-default-900 font-medium line-clamp-1">
-                {session.title}
-              </h3>
-              <p className="text-default-500 text-sm">
-                {session.description || "No description"}
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              <span className="text-xs text-default-400">
-                {session.createdAt
-                  ? formatDistanceToNow(new Date(session.createdAt), {
-                      addSuffix: true,
-                    })
-                  : "Unknown date"}
-              </span>
-              {session.isActive && (
-                <span className="px-2 py-0.5 rounded-lg bg-green-500/10 text-green-600 text-[10px] font-bold uppercase tracking-wider">
-                  Active
-                </span>
-              )}
-            </div>
-
-            <Icon
-              icon="solar:alt-arrow-right-bold"
-              className="text-default-400 group-hover:text-default-900 group-hover:translate-x-1 transition-all"
-            />
-          </ListItemMotion>
-        ))}
       </div>
     </CardMotion>
   );

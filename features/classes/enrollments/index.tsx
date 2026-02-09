@@ -4,18 +4,10 @@ import React from "react";
 import { ListGrid } from "@/components/ui/ListGrid";
 import { useClassEnrollments } from "@/services/classesService";
 import { ClassEnrollmentItem } from "@/features/classes/interfaces";
-import {
-  ACTION_BUTTONS,
-  ADD_BUTTON,
-} from "@/components/ui/Button/ActionButtons";
+import { ACTION_BUTTONS, ADD_BUTTON } from "@/components/button/ActionButtons";
 
 export default function ClassEnrollmentList() {
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-  } = useClassEnrollments();
+  const { data, isLoading, isError, error } = useClassEnrollments();
 
   const queryError = error instanceof Error ? error : undefined;
 

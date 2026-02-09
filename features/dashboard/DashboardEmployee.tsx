@@ -2,6 +2,8 @@
 
 import { Icon } from "@iconify/react";
 import { AuthUser } from "@/lib/auth/getAuthUser";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 
 interface DashboardEmployeeProps {
   user: AuthUser | null;
@@ -13,10 +15,13 @@ export default function DashboardEmployee({ user }: DashboardEmployeeProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-default-900">Employee Dashboard</h1>
-          <p className="text-default-500 mt-1">
-            Welcome back{user?.name ? `, ${user.name}` : ""}! Manage administrative tasks.
-          </p>
+          <Heading as="h1" size="3xl" className="text-default-900">
+            Employee Dashboard
+          </Heading>
+          <Text color="muted" className="mt-1">
+            Welcome back{user?.name ? `, ${user.name}` : ""}! Manage
+            administrative tasks.
+          </Text>
         </div>
         <div className="glass-panel px-4 py-3 rounded-xl border border-default-200">
           <div className="flex items-center gap-2 text-default-500">
@@ -32,13 +37,14 @@ export default function DashboardEmployee({ user }: DashboardEmployeeProps) {
           icon="solar:case-round-bold-duotone"
           className="text-6xl text-primary mx-auto mb-4"
         />
-        <h2 className="text-2xl font-bold text-default-900 mb-2">
+        <Heading as="h2" size="2xl" className="text-default-900 mb-2">
           Administrative Employee Dashboard
-        </h2>
-        <p className="text-default-500">
-          This is a placeholder for the administrative employee dashboard. You can customize this view
-          to show administrative tasks, reports, and system management.
-        </p>
+        </Heading>
+        <Text color="default" className="text-default-500">
+          This is a placeholder for the administrative employee dashboard. You
+          can customize this view to show administrative tasks, reports, and
+          system management.
+        </Text>
       </div>
     </div>
   );

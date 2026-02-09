@@ -4,18 +4,10 @@ import React from "react";
 import { ListGrid } from "@/components/ui/ListGrid";
 import { useTeacherClasses } from "@/services/classesService";
 import { TeacherClassItem } from "@/features/classes/interfaces";
-import {
-  ACTION_BUTTONS,
-  ADD_BUTTON,
-} from "@/components/ui/Button/ActionButtons";
+import { ACTION_BUTTONS, ADD_BUTTON } from "@/components/button/ActionButtons";
 
 export default function TeacherClassList() {
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-  } = useTeacherClasses();
+  const { data, isLoading, isError, error } = useTeacherClasses();
 
   const queryError = error instanceof Error ? error : undefined;
 

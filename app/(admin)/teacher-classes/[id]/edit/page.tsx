@@ -1,5 +1,5 @@
 import React from "react";
-import TeacherClassEdit from "@/features/classes/teacher-classes/edit";
+import TeacherClassEdit from "@/features/lms/teacher-classes/edit";
 
 interface TeacherClassEditPageProps {
   params: { id: string };

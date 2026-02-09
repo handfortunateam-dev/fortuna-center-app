@@ -21,7 +21,7 @@ import {
   deletePodcastEpisodeMedia,
 } from "@/services/azurecast/azuracastPrivateService";
 import { useRouter } from "next/navigation";
-import { Toast } from "@/components/ui/Toast";
+import { Toast } from "@/components/toast";
 import Image from "next/image";
 import { ConfirmDialog } from "@/components/ui/Common/ConfirmDialog";
 
