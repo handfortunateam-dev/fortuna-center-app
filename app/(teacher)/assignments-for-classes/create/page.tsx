@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
@@ -118,7 +120,7 @@ export default function CreateAssignmentPage() {
             size="lg"
             className="px-8 font-bold shadow-lg shadow-primary-200"
             isLoading={isSubmitting}
-            onPress={handleSubmit(onSubmit)}
+            onPress={() => handleSubmit(onSubmit)()}
             startContent={<Icon icon="lucide:save" />}
           >
             Create Assignment
