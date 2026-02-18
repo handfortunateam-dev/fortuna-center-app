@@ -7,6 +7,7 @@
 import { Icon } from "@iconify/react";
 import { ReactNode } from "react";
 import { LinkButton } from "./LinkButton";
+import { Tooltip } from "@heroui/react";
 
 // ============================================
 // HELPER FUNCTIONS
@@ -352,6 +353,7 @@ export interface ActionButtonConfig {
       | "ghost";
     onClick?: (id: string, item?: unknown) => void;
     href?: string;
+    isIconOnly?: boolean;
   }>;
 }
 
@@ -399,52 +401,60 @@ export const createActionButtons = (
           // Convert to Link for auto-routing
           const href = getAutoRoute(config.show.onClick, item.id);
           buttons.push(
-            <LinkButton
-              key="show"
-              color="primary"
-              href={href}
-              size="sm"
-              startContent={
-                config.show.icon || (
-                  <Icon icon="lucide:eye" className="w-4 h-4" />
-                )
-              }
-              variant="light"
-            >
-              {config.show.label || "Detail"}
-            </LinkButton>,
+            <Tooltip content={config.show.label || "Detail"}>
+              <LinkButton
+                key="show"
+                color="primary"
+                href={href}
+                size="lg"
+                startContent={
+                  config.show.icon || (
+                    <Icon icon="lucide:eye" className="w-6 h-6" />
+                  )
+                }
+                variant="light"
+              >
+                {config.show.label || "Detail"}
+              </LinkButton>
+            </Tooltip>,
           );
         } else {
           // Regular onClick handler (backward compatible)
           buttons.push(
-            <button
-              key="show"
-              className="text-blue-600 hover:text-blue-700 transition-colors p-1.5 rounded-md hover:bg-blue-50"
-              onClick={() => config.show?.onClick?.(item.id)}
-              title={config.show.label || "Detail"}
-            >
-              {config.show.icon || (
-                <Icon icon="lucide:eye" className="w-4 h-4" />
-              )}
-            </button>,
+            <Tooltip content={config.show.label || "Detail"}>
+              <button
+                key="show"
+                className="text-blue-600 hover:text-blue-700 transition-colors p-3 rounded-md hover:bg-blue-50"
+                onClick={() => config.show?.onClick?.(item.id)}
+                title={config.show.label || "Detail"}
+              >
+                {config.show.icon || (
+                  <Icon icon="lucide:eye" className="w-6 h-6" />
+                )}
+              </button>
+            </Tooltip>,
           );
         }
       } else if (config.show.href) {
         // Manual href provided (old way)
         const showHref = config.show.href || "#";
         buttons.push(
-          <LinkButton
-            key="show"
-            color="primary"
-            href={showHref}
-            size="sm"
-            startContent={
-              config.show.icon || <Icon icon="lucide:eye" className="w-4 h-4" />
-            }
-            variant="light"
-          >
-            {config.show.label || "Detail"}
-          </LinkButton>,
+          <Tooltip content={config.show.label || "Detail"}>
+            <LinkButton
+              key="show"
+              color="primary"
+              href={showHref}
+              size="lg"
+              startContent={
+                config.show.icon || (
+                  <Icon icon="lucide:eye" className="w-6 h-6" />
+                )
+              }
+              variant="light"
+            >
+              {config.show.label || "Detail"}
+            </LinkButton>
+          </Tooltip>,
         );
       }
     }
@@ -457,54 +467,60 @@ export const createActionButtons = (
           // Convert to Link for auto-routing
           const href = getAutoRoute(config.edit.onClick, item.id);
           buttons.push(
-            <LinkButton
-              key="edit"
-              color="warning"
-              href={href}
-              size="sm"
-              startContent={
-                config.edit.icon || (
-                  <Icon icon="lucide:pencil" className="w-4 h-4" />
-                )
-              }
-              variant="light"
-            >
-              {config.edit.label || "Edit"}
-            </LinkButton>,
+            <Tooltip content={config.edit.label || "Edit"}>
+              <LinkButton
+                key="edit"
+                color="warning"
+                href={href}
+                size="lg"
+                startContent={
+                  config.edit.icon || (
+                    <Icon icon="lucide:pencil" className="w-6 h-6" />
+                  )
+                }
+                variant="light"
+              >
+                {config.edit.label || "Edit"}
+              </LinkButton>
+            </Tooltip>,
           );
         } else {
           // Regular onClick handler (backward compatible)
           buttons.push(
-            <button
-              key="edit"
-              className="text-yellow-600 hover:text-yellow-700 transition-colors p-1.5 rounded-md hover:bg-yellow-50"
-              onClick={() => config.edit?.onClick?.(item.id)}
-              title={config.edit.label || "Edit"}
-            >
-              {config.edit.icon || (
-                <Icon icon="lucide:pencil" className="w-4 h-4" />
-              )}
-            </button>,
+            <Tooltip content={config.edit.label || "Edit"}>
+              <button
+                key="edit"
+                className="text-yellow-600 hover:text-yellow-700 transition-colors p-3 rounded-md hover:bg-yellow-50"
+                onClick={() => config.edit?.onClick?.(item.id)}
+                title={config.edit.label || "Edit"}
+              >
+                {config.edit.icon || (
+                  <Icon icon="lucide:pencil" className="w-6 h-6" />
+                )}
+              </button>
+            </Tooltip>,
           );
         }
       } else if (config.edit.href) {
         // Manual href provided (old way)
         const editHref = config.edit.href || "#";
         buttons.push(
-          <LinkButton
-            key="edit"
-            color="warning"
-            href={editHref}
-            size="sm"
-            startContent={
-              config.edit.icon || (
-                <Icon icon="lucide:pencil" className="w-4 h-4" />
-              )
-            }
-            variant="light"
-          >
-            {config.edit.label || "Edit"}
-          </LinkButton>,
+          <Tooltip content={config.edit.label || "Edit"}>
+            <LinkButton
+              key="edit"
+              color="warning"
+              href={editHref}
+              size="lg"
+              startContent={
+                config.edit.icon || (
+                  <Icon icon="lucide:pencil" className="w-6 h-6" />
+                )
+              }
+              variant="light"
+            >
+              {config.edit.label || "Edit"}
+            </LinkButton>
+          </Tooltip>,
         );
       }
     }
@@ -515,37 +531,68 @@ export const createActionButtons = (
         if (customBtn.href) {
           const customHref = customBtn.href || "#";
           buttons.push(
-            <LinkButton
-              key={customBtn.key}
-              color={customBtn.color || "default"}
-              href={customHref}
-              size="sm"
-              startContent={customBtn.icon}
-              variant={customBtn.variant || "light"}
-            >
-              {customBtn.label}
-            </LinkButton>,
+            <Tooltip content={customBtn.label} key={customBtn.key}>
+              <LinkButton
+                color={customBtn.color || "default"}
+                href={customHref}
+                size="lg"
+                startContent={
+                  !customBtn.isIconOnly ? customBtn.icon : undefined
+                }
+                variant={customBtn.variant || "light"}
+                // Pass implicit props if LinkButton supported isIconOnly (it currently requires children)
+                // Since LinkButton requires children, we can't easily make it icon-only without modifying LinkButton too.
+                // Instead, if isIconOnly, we might need a different approach or just passing icon as children if LinkButton allows?
+                // HeroUI Button supports isIconOnly prop. LinkButton wraps HeroButton.
+                // Let's modify LinkButton properties if needed, but for now assuming LinkButton might not proxy isIconOnly.
+                // Actually, simply passing the icon as children and empty text if isIconOnly might work if LinkButton supports it.
+                // BUT, looking at LinkButton implementation, it passes children to HeroButton.
+                // HeroButton with isIconOnly prop expects children to be the icon?
+                // Let's use standard button for isIconOnly if href is not needed, OR assume LinkButton needs update.
+                // Wait, previous step showed LinkButton.tsx taking exact props.
+                // Let's just use the `button` element implementation for both if isIconOnly is true?
+                // No, we want Link (a tag) for hrefs.
+                // Let's use LinkButton but with children = icon if isIconOnly?
+              >
+                {customBtn.isIconOnly ? customBtn.icon : customBtn.label}
+              </LinkButton>
+            </Tooltip>,
           );
         } else if (customBtn.onClick) {
+          const isIconOnly = customBtn.isIconOnly;
           buttons.push(
-            <button
-              key={customBtn.key}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                customBtn.color === "danger"
-                  ? "text-red-600 hover:bg-red-50"
-                  : customBtn.color === "warning"
-                    ? "text-yellow-600 hover:bg-yellow-50"
-                    : customBtn.color === "success"
-                      ? "text-green-600 hover:bg-green-50"
-                      : "text-gray-600 hover:bg-gray-100"
-              }`}
-              onClick={() => customBtn.onClick?.(item.id, item)}
-            >
-              {customBtn.icon && (
-                <span className="inline-block mr-1">{customBtn.icon}</span>
-              )}
-              {customBtn.label}
-            </button>,
+            <Tooltip content={customBtn.label} key={customBtn.key}>
+              <button
+                className={`transition-colors rounded-md flex items-center justify-center ${
+                  isIconOnly ? "p-3" : "px-5 py-2.5 font-medium"
+                } ${
+                  customBtn.color === "danger"
+                    ? "text-red-600 hover:bg-red-50"
+                    : customBtn.color === "warning"
+                      ? "text-yellow-600 hover:bg-yellow-50"
+                      : customBtn.color === "success"
+                        ? "text-green-600 hover:bg-green-50"
+                        : customBtn.color === "primary"
+                          ? "text-primary-600 hover:bg-primary-50"
+                          : "text-gray-600 hover:bg-gray-100"
+                }`}
+                onClick={() => customBtn.onClick?.(item.id, item)}
+                title={customBtn.label}
+              >
+                {isIconOnly ? (
+                  customBtn.icon
+                ) : (
+                  <>
+                    {customBtn.icon && (
+                      <span className="inline-block mr-1">
+                        {customBtn.icon}
+                      </span>
+                    )}
+                    {customBtn.label}
+                  </>
+                )}
+              </button>
+            </Tooltip>,
           );
         }
       });
@@ -554,16 +601,18 @@ export const createActionButtons = (
     // Delete button
     if (config.delete) {
       buttons.push(
-        <button
-          key="delete"
-          className="text-red-600 hover:text-red-700 transition-colors p-1.5 rounded-md hover:bg-red-50"
-          title={config.delete.label || "Hapus"}
-          onClick={() => openDeleteDialog(item.id, item)}
-        >
-          {config.delete.icon || (
-            <Icon icon="lucide:trash-2" className="w-4 h-4" />
-          )}
-        </button>,
+        <Tooltip content={config.delete.label || "Hapus"}>
+          <button
+            key="delete"
+            className="text-red-600 hover:text-red-700 transition-colors p-3 rounded-md hover:bg-red-50"
+            title={config.delete.label || "Hapus"}
+            onClick={() => openDeleteDialog(item.id, item)}
+          >
+            {config.delete.icon || (
+              <Icon icon="lucide:trash-2" className="w-6 h-6" />
+            )}
+          </button>
+        </Tooltip>,
       );
     }
 
@@ -587,7 +636,7 @@ export const createAddButtonFromConfig = (config: ActionButtonConfig) => {
       href={config.add.href}
       size="md"
       startContent={
-        config.add.icon || <Icon icon="lucide:plus" className="w-4 h-4" />
+        config.add.icon || <Icon icon="lucide:plus" className="w-5 h-5" />
       }
       variant={config.add.variant || "solid"}
     >
@@ -605,9 +654,9 @@ export const createAddButton = (config: AddButtonConfig) => {
     <LinkButton
       color={config.color || "primary"}
       href={config.href}
-      size="md"
+      size="lg"
       startContent={
-        config.icon || <Icon icon="lucide:plus" className="w-4 h-4" />
+        config.icon || <Icon icon="lucide:plus" className="w-5 h-5" />
       }
       variant={config.variant || "solid"}
     >

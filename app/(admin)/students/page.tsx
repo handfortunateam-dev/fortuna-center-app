@@ -9,9 +9,12 @@ export default function StudentsPage() {
     <ListGrid
       title="Students"
       columns={columns}
-      enableEdit={true}
+      enableSearch
+      enableEdit
       resourcePath="/students"
       searchPlaceholder="Search students..."
+      enableExport
+      enableImport
     />
   );
 }

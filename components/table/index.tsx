@@ -208,7 +208,7 @@ type DataExtractor<T> =
   | { data: { data: T[] } }
   | { data?: { data?: T[] } };
 
-interface OptionsMenuItem {
+export interface OptionsMenuItem {
   key: string;
   label: string;
   icon?: ReactNode;
@@ -323,6 +323,14 @@ interface ListGridProps<T = unknown> {
   defaultVisibleColumns?: string[]; // Default visible column keys (default: all columns)
   onVisibleColumnsChange?: (columns: string[]) => void; // Callback when visible columns change
   columnVisibilityStorageKey?: string; // localStorage key for persisting column visibility
+
+  // NEW! Additional Toolbar Options
+  enableExport?: boolean;
+  onExport?: () => void;
+  enableImport?: boolean;
+  onImport?: () => void;
+  exportResourcePath?: string;
+  customOptions?: OptionsMenuItem[];
 }
 
 export function ListGrid<T = unknown>({
@@ -389,6 +397,13 @@ export function ListGrid<T = unknown>({
   defaultVisibleColumns,
   onVisibleColumnsChange,
   columnVisibilityStorageKey,
+  // Additional Toolbar Options
+  enableExport = false,
+  onExport,
+  enableImport = false,
+  onImport,
+  exportResourcePath,
+  customOptions = [],
 }: ListGridProps<T>) {
   // Apply defaults based on resourcePath if available, otherwise fall back to standard defaults
   const resourceDefaults =
@@ -697,7 +712,6 @@ export function ListGrid<T = unknown>({
       setIsDeleteDialogOpen(false);
       setItemToDelete(null);
     } catch (error) {
-      console.error("Delete failed:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -781,7 +795,6 @@ export function ListGrid<T = unknown>({
         color: "success",
       });
     } catch (error) {
-      console.error("Bulk action failed:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -836,7 +849,6 @@ export function ListGrid<T = unknown>({
         color: "success",
       });
     } catch (error) {
-      console.error("Bulk delete failed:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -1202,11 +1214,12 @@ export function ListGrid<T = unknown>({
   }, [filteredRows, currentPage, pageSize, externalTotalCount, serverSide]);
 
   useEffect(() => {
-    // Only reset page if not externally controlled
-    if (!externalOnPageChange) {
+    // Only reset page if not externally controlled and not server-side
+    // For server-side, row changes are expected when changing pages, so we shouldn't reset
+    if (!externalOnPageChange && !serverSide) {
       setInternalCurrentPage(1);
     }
-  }, [searchQuery, rows, externalOnPageChange]);
+  }, [searchQuery, rows, externalOnPageChange, serverSide]);
 
   const renderMobileCard = (item: Row, _index: number) => {
     const mobileColumns = filteredColumns.filter(
@@ -1306,26 +1319,121 @@ export function ListGrid<T = unknown>({
   };
 
   const renderOptionsMenu = () => {
-    if (optionsMenu.length === 0) return null;
+    // Combine default options with custom options
+    const allOptions: OptionsMenuItem[] = optionsMenu ? [...optionsMenu] : [];
+
+    if (customOptions && customOptions.length > 0) {
+      allOptions.push(...customOptions);
+    }
+
+    if (enableImport) {
+      allOptions.unshift({
+        key: "import",
+        label: "Import",
+        icon: <Icon icon="lucide:upload" className="w-6 h-6" />,
+        onPress:
+          onImport ||
+          (() => {
+            const targetPath = exportResourcePath || resourcePath;
+            if (targetPath) {
+              const resource = targetPath.replace(/^\//, "");
+              router.push(`/${resource}/import`);
+            } else {
+              Toast({
+                title: "Error",
+                description:
+                  "Resource path tidak konfigurasikan untuk auto-import",
+                color: "danger",
+              });
+            }
+          }),
+      });
+    }
+
+    if (enableExport) {
+      allOptions.unshift({
+        key: "export",
+        label: "Export",
+        icon: <Icon icon="lucide:download" className="w-6 h-6" />,
+        onPress:
+          onExport ||
+          (async () => {
+            const targetPath = exportResourcePath || resourcePath;
+            if (!targetPath) {
+              Toast({
+                title: "Error",
+                description: "Resource path tidak ditemukan untuk auto-export",
+                color: "danger",
+              });
+              return;
+            }
+            try {
+              Toast({
+                title: "Processing",
+                description: "Mempersiapkan data export...",
+                color: "primary",
+              });
+
+              const response = await fetch(`/api/export${targetPath}`);
+
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(
+                  errorData.message || "Gagal melakukan export data",
+                );
+              }
+
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              const fileName = `${targetPath.replace(/^\//, "")}-export-${new Date().toISOString().split("T")[0]}.csv`;
+              a.download = fileName;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+
+              Toast({
+                title: "Success",
+                description: "Data berhasil diexport",
+                color: "success",
+              });
+            } catch (error) {
+              const errorMessage =
+                error instanceof Error
+                  ? error.message
+                  : "Terjadi kesalahan saat export";
+              Toast({
+                title: "Error",
+                description: errorMessage,
+                color: "danger",
+              });
+            }
+          }),
+      });
+    }
+
+    if (allOptions.length === 0) return null;
 
     return (
       <Dropdown>
         <DropdownTrigger>
-          <Button isIconOnly size="sm" variant="light">
-            <Icon icon="lucide:ellipsis-vertical" className="w-5 h-5" />
+          <Button isIconOnly size="lg" variant="light">
+            <Icon icon="lucide:ellipsis-vertical" className="w-6 h-6" />
           </Button>
         </DropdownTrigger>
         <DropdownMenu
           aria-label="Options menu"
           onAction={(key) => {
-            const menuItem = optionsMenu.find((item) => item.key === key);
+            const menuItem = allOptions.find((item) => item.key === key);
 
             if (menuItem && menuItem.onPress) {
               menuItem.onPress();
             }
           }}
         >
-          {optionsMenu.map((item) => (
+          {allOptions.map((item) => (
             <DropdownItem
               key={item.key}
               color={item.color}
@@ -1353,9 +1461,9 @@ export function ListGrid<T = unknown>({
       <Dropdown>
         <DropdownTrigger>
           <Button
-            size="sm"
+            size="lg"
             variant="flat"
-            startContent={<Icon icon="lucide:columns-3" className="w-4 h-4" />}
+            startContent={<Icon icon="lucide:columns-3" className="w-6 h-6" />}
           >
             Kolom
             {hiddenCount > 0 && (
@@ -1443,7 +1551,7 @@ export function ListGrid<T = unknown>({
             {selectedCount} item dipilih
           </Chip>
           <Button
-            size="sm"
+            size="lg"
             variant="light"
             onPress={() => onSelectionChange(new Set([]))}
           >
@@ -1457,12 +1565,12 @@ export function ListGrid<T = unknown>({
           {allBulkActions.map((action) => (
             <Button
               key={action.key}
-              size="sm"
+              size="lg"
               color={action.color || "default"}
               variant="flat"
               startContent={
                 action.icon ? (
-                  <Icon icon={action.icon} className="w-4 h-4" />
+                  <Icon icon={action.icon} className="w-6 h-6" />
                 ) : undefined
               }
               onPress={() => handleBulkActionClick(action)}
@@ -1548,7 +1656,7 @@ export function ListGrid<T = unknown>({
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
             {!isMobile && renderColumnVisibilityDropdown()}
-            {!isMobile && renderOptionsMenu()}
+            {renderOptionsMenu()}
             {renderAddButton || customActions}
           </div>
         </div>

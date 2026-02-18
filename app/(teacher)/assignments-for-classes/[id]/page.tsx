@@ -1,7 +1,9 @@
 "use client";
 
-import { use } from "react";
-import { useRouter } from "next/navigation";
+import { use, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 import {
   Card,
   CardBody,
@@ -22,6 +24,7 @@ import { format } from "date-fns";
 
 import { useAssignmentDetail } from "@/services/assignmentsService";
 import { IAssignment } from "@/features/lms/assignments-by-teacher/interface";
+import { SubmissionsTab } from "@/components/teacher/SubmissionsTab";
 
 interface AssignmentDetailProps {
   id: string;
@@ -29,7 +32,74 @@ interface AssignmentDetailProps {
 
 function AssignmentDetail({ id }: AssignmentDetailProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: response, isLoading, isError } = useAssignmentDetail(id);
+  const [selectedTab, setSelectedTab] = useState(() => {
+    const tab = searchParams.get("tab");
+    return tab === "submissions" ? "submissions" : "content";
+  });
+
+  // Handle tab change
+  const handleTabChange = (key: React.Key) => {
+    const newTab = key.toString();
+    setSelectedTab(newTab);
+
+    // Update URL without page reload
+    const url = new URL(window.location.href);
+    if (newTab === "submissions") {
+      url.searchParams.set("tab", "submissions");
+    } else {
+      url.searchParams.delete("tab");
+    }
+    router.replace(url.pathname + url.search, { scroll: false });
+  };
+
+  // Fetch submissions data for stats
+  const { data: submissionsData } = useQuery({
+    queryKey: ["assignment-submissions", id],
+    queryFn: async () => {
+      const { data } = await apiClient.get(
+        `/teacher/assignments/${id}/submissions`,
+      );
+      return data.data;
+    },
+    enabled: !!id,
+  });
+
+  // Calculate stats from submissions
+  const stats = useMemo(() => {
+    if (!submissionsData) {
+      return {
+        total: 0,
+        submitted: 0,
+        graded: 0,
+        submittedPercent: 0,
+        gradedPercent: 0,
+      };
+    }
+
+    const total = submissionsData.submissions.length;
+    const submitted = submissionsData.submissions.filter(
+      (s: any) => s.submission && s.submission.status !== "pending",
+    ).length;
+    const graded = submissionsData.submissions.filter(
+      (s: any) => s.submission && s.submission.status === "graded",
+    ).length;
+
+    return {
+      total,
+      submitted,
+      graded,
+      submittedPercent: total > 0 ? Math.round((submitted / total) * 100) : 0,
+      gradedPercent: total > 0 ? Math.round((graded / total) * 100) : 0,
+    };
+  }, [submissionsData]);
+
+  // Get enrolled students for avatars
+  const enrolledStudents = useMemo(() => {
+    if (!submissionsData) return [];
+    return submissionsData.submissions.map((s: any) => s.student);
+  }, [submissionsData]);
 
   if (isLoading) {
     return <AssignmentDetailSkeleton />;
@@ -97,7 +167,7 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
   return (
     <div className="space-y-6 pb-20">
       {/* Breadcrumbs */}
-      <Breadcrumbs color="primary" variant="flat">
+      <Breadcrumbs color="primary" variant="light">
         <BreadcrumbItem onPress={() => router.push("/dashboard")}>
           Dashboard
         </BreadcrumbItem>
@@ -170,6 +240,8 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
             aria-label="Assignment view options"
             variant="underlined"
             color="primary"
+            selectedKey={selectedTab}
+            onSelectionChange={handleTabChange}
             classNames={{
               tabList: "gap-6 w-full border-b border-default-100",
               cursor: "w-full bg-primary",
@@ -187,22 +259,22 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
             >
               <div className="pt-6 space-y-10">
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold flex items-center gap-2 text-default-800">
+                  <h3 className="text-xl font-bold flex items-center gap-2 text-default-foreground">
                     <div className="w-1.5 h-6 bg-primary rounded-full" />
                     Description
                   </h3>
-                  <div className="bg-white p-6 rounded-3xl border border-default-100 shadow-sm leading-relaxed text-default-600 text-lg">
+                  <div className="bg-content1 p-6 rounded-3xl border border-default-200 shadow-sm leading-relaxed text-default-600 text-lg">
                     {assignment.description ||
                       "No description provided for this assignment."}
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-xl font-bold flex items-center gap-2 text-default-800">
+                  <h3 className="text-xl font-bold flex items-center gap-2 text-default-foreground">
                     <div className="w-1.5 h-6 bg-secondary rounded-full" />
                     Instructions for Students
                   </h3>
-                  <div className="bg-primary-50/30 p-8 rounded-3xl border border-primary-100/50 leading-relaxed text-default-700 italic border-l-4 border-l-primary-500">
+                  <div className="bg-primary-50 dark:bg-primary-100/10 p-8 rounded-3xl border border-primary-200 dark:border-primary-200/20 leading-relaxed text-default-700 dark:text-default-300 italic border-l-4 border-l-primary">
                     {assignment.instructions ||
                       "Standard class submission rules apply."}
                   </div>
@@ -211,8 +283,8 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
                 {assignment.attachments &&
                   assignment.attachments.length > 0 && (
                     <div className="space-y-4">
-                      <h3 className="text-xl font-bold flex items-center gap-2 text-default-800">
-                        <div className="w-1.5 h-6 bg-green-500 rounded-full" />
+                      <h3 className="text-xl font-bold flex items-center gap-2 text-default-foreground">
+                        <div className="w-1.5 h-6 bg-success rounded-full" />
                         Attached Resources ({assignment.attachments.length})
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -221,7 +293,7 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
                             key={index}
                             isPressable
                             isHoverable
-                            className="group border-none bg-white shadow-sm hover:shadow-xl transition-all rounded-2xl overflow-hidden"
+                            className="group border-none shadow-sm hover:shadow-xl transition-all rounded-2xl overflow-hidden"
                             as="a"
                             href={att.url}
                             target="_blank"
@@ -234,7 +306,7 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
                                 />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-bold text-default-900 truncate">
+                                <p className="font-bold text-default-foreground truncate">
                                   {att.name}
                                 </p>
                                 <p className="text-xs text-default-400 uppercase font-extrabold tracking-tighter">
@@ -262,22 +334,7 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
                 </div>
               }
             >
-              <div className="pt-6">
-                <div className="flex flex-col items-center justify-center p-20 bg-default-50 rounded-3xl border-2 border-dashed border-default-200 text-center">
-                  <Icon
-                    icon="lucide:inbox"
-                    width={80}
-                    className="text-default-200 mb-6"
-                  />
-                  <h4 className="text-2xl font-bold text-default-400">
-                    Work in Progress
-                  </h4>
-                  <p className="text-default-400 max-w-sm mt-2">
-                    Soon you&apos;ll be able to see and grade all student
-                    submissions directly from this tab.
-                  </p>
-                </div>
-              </div>
+              <SubmissionsTab assignmentId={id} />
             </Tab>
           </Tabs>
         </div>
@@ -301,7 +358,7 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
                   <span className="text-primary-200 text-sm">
                     Target Students
                   </span>
-                  <span className="font-bold">24 Students</span>
+                  <span className="font-bold">{stats.total} Students</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-primary-200 text-sm">Status</span>
@@ -324,21 +381,23 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
             </CardBody>
           </Card>
 
-          <Card className="rounded-3xl border-none shadow-md bg-white p-4">
+          <Card className="rounded-3xl border-none shadow-md p-4">
             <CardBody className="space-y-6">
-              <h4 className="text-lg font-bold text-default-800">
+              <h4 className="text-lg font-bold text-default-foreground">
                 Participation Overview
               </h4>
               <div className="space-y-6">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm font-bold">
                     <span className="text-default-500 uppercase tracking-widest text-[10px]">
-                      Submitted (0/24)
+                      Submitted ({stats.submitted}/{stats.total})
                     </span>
-                    <span className="text-primary-600">0%</span>
+                    <span className="text-primary">
+                      {stats.submittedPercent}%
+                    </span>
                   </div>
                   <Progress
-                    value={0}
+                    value={stats.submittedPercent}
                     color="primary"
                     className="h-2"
                     size="sm"
@@ -348,12 +407,12 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm font-bold">
                     <span className="text-default-500 uppercase tracking-widest text-[10px]">
-                      Graded (0/24)
+                      Graded ({stats.graded}/{stats.total})
                     </span>
-                    <span className="text-success-600">0%</span>
+                    <span className="text-success">{stats.gradedPercent}%</span>
                   </div>
                   <Progress
-                    value={0}
+                    value={stats.gradedPercent}
                     color="success"
                     className="h-2"
                     size="sm"
@@ -364,16 +423,25 @@ function AssignmentDetail({ id }: AssignmentDetailProps) {
               <Divider />
 
               <div className="space-y-4">
-                <h5 className="font-bold text-default-800 text-sm">
-                  Active Students in Class
+                <h5 className="font-bold text-default-foreground text-sm">
+                  Enrolled Students
                 </h5>
-                <AvatarGroup isBordered max={5} total={24}>
-                  <Avatar src="https://i.pravatar.cc/150?u=a042581f4e29026024d" />
-                  <Avatar src="https://i.pravatar.cc/150?u=a042581f4e29026704d" />
-                  <Avatar src="https://i.pravatar.cc/150?u=a04258114e29026702d" />
-                  <Avatar src="https://i.pravatar.cc/150?u=a04258114e29026302d" />
-                  <Avatar src="https://i.pravatar.cc/150?u=a04258114e29026708c" />
-                </AvatarGroup>
+                {enrolledStudents.length > 0 ? (
+                  <AvatarGroup isBordered max={5} total={stats.total}>
+                    {enrolledStudents.slice(0, 5).map((student: any) => (
+                      <Avatar
+                        key={student.id}
+                        name={student.name}
+                        src={student.image}
+                        showFallback
+                      />
+                    ))}
+                  </AvatarGroup>
+                ) : (
+                  <p className="text-sm text-default-500">
+                    No students enrolled
+                  </p>
+                )}
               </div>
             </CardBody>
           </Card>

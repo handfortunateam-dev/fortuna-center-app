@@ -17,7 +17,7 @@ export default async function DashboardGrid() {
 
   // Redirect to login if not authenticated
   if (!user) {
-    redirect("/sign-in");
+    redirect("/auth/login");
   }
 
   // Render dashboard based on user role

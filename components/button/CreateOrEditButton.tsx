@@ -37,7 +37,7 @@ export const CreateOrEditButton = ({
   isDisabled = false,
   variant = "solid",
   color = "primary",
-  size = "md",
+  size = "lg",
   startContent,
   fullWidth = false,
   type = "button",
@@ -51,9 +51,9 @@ export const CreateOrEditButton = ({
       fullWidth={fullWidth}
       isDisabled={isDisabled}
       isLoading={isLoading}
-      size={size}
+      size={size} // Default prop value updated or passed as lg
       startContent={
-        startContent || <Icon icon={iconName} className="w-4 h-4" />
+        startContent || <Icon icon={iconName} className="w-6 h-6" />
       }
       type={type}
       variant={variant}

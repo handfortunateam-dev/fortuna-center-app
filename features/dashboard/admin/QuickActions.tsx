@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
 import { Icon } from "@iconify/react";
-import CardMotion from "@/components/motion/CardMotion";
-import { Heading } from "@/components/heading";
+import CardWrapper from "@/components/wrappers/card-wrappers";
 import { Text } from "@/components/text";
 import { useRouter } from "next/navigation";
+import { NAV_URL } from "@/constants/url";
 
 interface ActionItem {
   title: string;
@@ -32,25 +32,25 @@ export default function QuickActions() {
 
   const lmsActions: ActionItem[] = [
     {
-      title: "New Session",
+      title: "Class Scheduler Management",
       icon: "solar:add-circle-bold",
       color: "text-blue-500",
       bgColor: "bg-blue-500/10",
-      href: "/admin/scheduler",
+      href: NAV_URL.ADMIN.SCHEDULER,
     },
     {
       title: "Add Student",
       icon: "solar:user-plus-bold",
-      color: "text-green-500",
-      bgColor: "bg-green-500/10",
-      href: "/admin/students?action=create",
+      color: "text-blue-600",
+      bgColor: "bg-blue-600/10",
+      href: NAV_URL.ADMIN.LMS.STUDENTS,
     },
     {
       title: "Attendance",
-      icon: "solar:calendar-check-bold",
-      color: "text-purple-500",
-      bgColor: "bg-purple-500/10",
-      href: "/admin/attendance",
+      icon: "solar:clipboard-check-bold",
+      color: "text-blue-600",
+      bgColor: "bg-blue-600/10",
+      href: NAV_URL.ADMIN.LMS.ATTENDANCE,
     },
   ];
 
@@ -63,18 +63,11 @@ export default function QuickActions() {
       onClick: handleConnectYouTube,
     },
     {
-      title: "View Channel",
-      icon: "solar:tv-bold",
-      color: "text-amber-500",
-      bgColor: "bg-amber-500/10",
-      href: "/admin/youtube-integration",
-    },
-    {
-      title: "Radio Control",
-      icon: "solar:radio-bold",
-      color: "text-cyan-500",
-      bgColor: "bg-cyan-500/10",
-      href: "/admin/radio-management",
+      title: "YouTube Broadcasts",
+      icon: "logos:youtube-icon",
+      color: "text-red-600",
+      bgColor: "bg-red-600/10",
+      href: NAV_URL.ADMIN.YOUTUBE.BROADCASTS,
     },
   ];
 
@@ -101,22 +94,12 @@ export default function QuickActions() {
   );
 
   return (
-    <CardMotion delay={0.5} direction="left" className="h-full">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <Heading as="h2" size="xl" weight="bold" className="text-default-900">
-            Quick Actions
-          </Heading>
-          <Text size="sm" color="muted" className="mt-1">
-            Common tasks
-          </Text>
-        </div>
-        <Icon
-          icon="solar:widget-5-bold-duotone"
-          className="text-2xl text-primary"
-        />
-      </div>
-
+    <CardWrapper
+      title="Quick Actions"
+      description="Common tasks"
+      titleSize="xl"
+      className="h-full"
+    >
       <div className="space-y-6">
         <section className="space-y-3">
           <Text
@@ -146,6 +129,6 @@ export default function QuickActions() {
           </div>
         </section>
       </div>
-    </CardMotion>
+    </CardWrapper>
   );
 }

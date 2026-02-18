@@ -53,7 +53,22 @@ export async function PATCH(
 
         const { id } = await params;
         const body = await request.json();
-        const { firstName, lastName, email, phone, address, userId } = body;
+        const {
+            studentId,
+            registrationDate,
+            firstName,
+            middleName,
+            lastName,
+            gender,
+            placeOfBirth,
+            dateOfBirth,
+            email,
+            phone,
+            address,
+            education,
+            occupation,
+            userId
+        } = body;
 
         // Check if student exists
         const [existingStudent] = await db
@@ -67,6 +82,22 @@ export async function PATCH(
                 { success: false, message: "Student not found" },
                 { status: 404 }
             );
+        }
+
+        // Check for studentId duplicates if studentId is being updated
+        if (studentId && studentId !== existingStudent.studentId) {
+            const [duplicateStudentId] = await db
+                .select()
+                .from(students)
+                .where(eq(students.studentId, studentId))
+                .limit(1);
+
+            if (duplicateStudentId) {
+                return NextResponse.json(
+                    { success: false, message: "Student ID already in use" },
+                    { status: 409 }
+                );
+            }
         }
 
         // Check for email duplicates if email is being updated
@@ -104,12 +135,20 @@ export async function PATCH(
         const [updatedStudent] = await db
             .update(students)
             .set({
-                firstName,
-                lastName,
-                email,
-                phone,
-                address,
-                userId,
+                ...(studentId !== undefined && { studentId }),
+                ...(registrationDate !== undefined && { registrationDate }),
+                ...(firstName !== undefined && { firstName }),
+                ...(middleName !== undefined && { middleName }),
+                ...(lastName !== undefined && { lastName }),
+                ...(gender !== undefined && { gender }),
+                ...(placeOfBirth !== undefined && { placeOfBirth }),
+                ...(dateOfBirth !== undefined && { dateOfBirth }),
+                ...(email !== undefined && { email }),
+                ...(phone !== undefined && { phone }),
+                ...(address !== undefined && { address }),
+                ...(education !== undefined && { education }),
+                ...(occupation !== undefined && { occupation }),
+                ...(userId !== undefined && { userId }),
                 updatedAt: new Date(),
             })
             .where(eq(students.id, id))

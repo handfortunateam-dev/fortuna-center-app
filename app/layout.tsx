@@ -43,11 +43,16 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
-export default function RootLayout({
+import { checkMaintenanceMode } from "@/lib/maintenance";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Check maintenance mode on every request blockable by middleware
+  await checkMaintenanceMode();
+
   return (
     <ClerkProviderWrapper>
       <html lang="en" suppressHydrationWarning>

@@ -8,6 +8,8 @@ export interface LookupOption {
     text: string;
     key: string;
     value: string;
+    disabled?: boolean;
+    originalData?: any;
 }
 
 export type LookupType = "teachers" | "students" | "classes";

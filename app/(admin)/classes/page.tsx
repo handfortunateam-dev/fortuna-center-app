@@ -5,19 +5,22 @@ export default function ClassesPage() {
   return (
     <ListGrid
       // Field mapping
-      keyField="id"
-      idField="id"
-      nameField="name"
+      // keyField="id"
+      // idField="id"
+      // nameField="name"
       // Header
       title="Class Management"
       description="Manage classes and courses"
       // Resource configuration for auto-fetching and CRUD
       resourcePath="/classes"
       // Auto-generated actions (enabled by default when resourcePath is set)
-      enableCreate={true}
-      enableShow={true}
-      enableEdit={true}
-      enableDelete={true}
+      enableCreate
+      enableShow
+      enableEdit
+      enableDelete
+      enableSearch
+      enableExport
+      enableImport
       // Search & Table
       searchPlaceholder="Search classes by name or code..."
       columns={columnsClasses}

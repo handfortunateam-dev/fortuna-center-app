@@ -36,6 +36,12 @@ export default function StudentCreatePage() {
         refetchType: "all", // Mark as stale and refetch active
       });
 
+      // Also invalidate the key used by ListGrid (resourcePath)
+      await queryClient.invalidateQueries({
+        queryKey: ["/students"],
+        refetchType: "all", // Mark as stale and refetch active
+      });
+
       Toast({
         title: "Success",
         description: "Student created successfully!",

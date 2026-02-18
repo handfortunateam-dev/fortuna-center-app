@@ -16,10 +16,13 @@ export default function ClassEnrollmentsPage() {
       // Resource configuration
       resourcePath="/class-enrollments"
       // Auto-generated actions
-      enableCreate={true}
-      enableShow={true}
-      enableEdit={true}
-      enableDelete={true}
+      enableCreate
+      enableShow
+      enableEdit
+      enableDelete
+      enableExport
+      enableImport
+      enableSearch
       // Search & Table
       searchPlaceholder="Search by student or class..."
       columns={columnsClassEnrollments}

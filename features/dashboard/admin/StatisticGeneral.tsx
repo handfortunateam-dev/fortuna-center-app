@@ -4,7 +4,7 @@ import StatCard from "@/components/ui/StatCard";
 import React from "react";
 import { useDashboardStats } from "./hooks/useDashboardStats";
 import { Heading } from "@/components/heading";
-import { Badge } from "@heroui/react";
+import { Badge, Spinner } from "@heroui/react";
 
 export default function StatisticGeneral() {
   const { lms, broadcast } = useDashboardStats();
@@ -24,31 +24,61 @@ export default function StatisticGeneral() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard
             title="Total Students"
-            value={lms.isLoading ? "..." : lms.totalStudents.toLocaleString()}
+            value={
+              lms.isLoading ? (
+                <Spinner
+                  classNames={{ label: "text-foreground mt-4" }}
+                  variant="wave"
+                  size="sm"
+                />
+              ) : (
+                lms.totalStudents.toLocaleString()
+              )
+            }
             change="+12% from last month"
-            icon="solar:users-group-rounded-bold-duotone"
-            bgColor="bg-blue-100 dark:bg-blue-500/10"
-            textColor="text-blue-600 dark:text-blue-400"
+            icon="solar:users-group-rounded-bold"
+            bgColor="bg-blue-500/10"
+            textColor="text-blue-600"
             delay={0.1}
           />
           <StatCard
             title="Total Classes"
-            value={lms.isLoading ? "..." : lms.totalClasses.toString()}
+            value={
+              lms.isLoading ? (
+                <Spinner
+                  classNames={{ label: "text-foreground mt-4" }}
+                  variant="wave"
+                  size="sm"
+                />
+              ) : (
+                lms.totalClasses.toString()
+              )
+            }
             change="Active programs"
-            icon="solar:black-hole-bold-duotone"
-            bgColor="bg-purple-100 dark:bg-purple-500/10"
-            textColor="text-purple-600 dark:text-purple-400"
+            icon="solar:book-bookmark-bold"
+            bgColor="bg-blue-600/10"
+            textColor="text-blue-700"
             delay={0.2}
           />
           <StatCard
             title="Active Sessions"
-            value={lms.isLoading ? "..." : lms.activeClasses.toString()}
+            value={
+              lms.isLoading ? (
+                <Spinner
+                  classNames={{ label: "text-foreground mt-4" }}
+                  variant="wave"
+                  size="sm"
+                />
+              ) : (
+                lms.activeClasses.toString()
+              )
+            }
             change={
               lms.activeClasses > 0 ? "ongoing right now" : "No live classes"
             }
-            icon="solar:play-circle-bold-duotone"
-            bgColor="bg-green-100 dark:bg-green-500/10"
-            textColor="text-green-600 dark:text-green-400"
+            icon="solar:play-circle-bold"
+            bgColor="bg-blue-700/10"
+            textColor="text-blue-800"
             delay={0.3}
           />
         </div>
@@ -68,27 +98,39 @@ export default function StatisticGeneral() {
           <StatCard
             title="Subscribers"
             value={
-              broadcast.isLoading
-                ? "..."
-                : Number(broadcast.subscribers).toLocaleString()
+              broadcast.isLoading ? (
+                <Spinner
+                  classNames={{ label: "text-foreground mt-4" }}
+                  variant="wave"
+                  size="sm"
+                />
+              ) : (
+                Number(broadcast.subscribers).toLocaleString()
+              )
             }
             change="YouTube Channel"
-            icon="solar:star-bold-duotone"
-            bgColor="bg-amber-100 dark:bg-amber-500/10"
-            textColor="text-amber-600 dark:text-amber-400"
+            icon="solar:user-heart-bold"
+            bgColor="bg-slate-500/10"
+            textColor="text-slate-700"
             delay={0.4}
           />
           <StatCard
             title="Total Views"
             value={
-              broadcast.isLoading
-                ? "..."
-                : Number(broadcast.totalViews).toLocaleString()
+              broadcast.isLoading ? (
+                <Spinner
+                  classNames={{ label: "text-foreground mt-4" }}
+                  variant="wave"
+                  size="sm"
+                />
+              ) : (
+                Number(broadcast.totalViews).toLocaleString()
+              )
             }
             change="All time reach"
-            icon="solar:eye-bold-duotone"
-            bgColor="bg-red-100 dark:bg-red-500/10"
-            textColor="text-red-600 dark:text-red-400"
+            icon="solar:eye-bold"
+            bgColor="bg-slate-600/10"
+            textColor="text-slate-800"
             delay={0.5}
           />
           <StatCard
@@ -99,16 +141,12 @@ export default function StatisticGeneral() {
                 ? "Needs attention"
                 : "API fully operational"
             }
-            icon="solar:heart-pulse-bold-duotone"
+            icon="solar:shield-check-bold"
             bgColor={
-              broadcast.isQuotaExceeded
-                ? "bg-red-100 dark:bg-red-500/20"
-                : "bg-cyan-100 dark:bg-cyan-500/10"
+              broadcast.isQuotaExceeded ? "bg-red-500/10" : "bg-slate-700/10"
             }
             textColor={
-              broadcast.isQuotaExceeded
-                ? "text-red-600"
-                : "text-cyan-600 dark:text-cyan-400"
+              broadcast.isQuotaExceeded ? "text-red-600" : "text-slate-900"
             }
             delay={0.6}
           />

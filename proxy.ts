@@ -23,7 +23,14 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
         return NextResponse.redirect(new URL('/', request.url))
     }
 
-    return NextResponse.next()
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-pathname", request.nextUrl.pathname);
+
+    return NextResponse.next({
+        request: {
+            headers: requestHeaders,
+        },
+    });
 })
 
 

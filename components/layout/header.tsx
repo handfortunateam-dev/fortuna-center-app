@@ -6,6 +6,7 @@ import { Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@heroui/navbar";
 import { Icon } from "@iconify/react";
 import { HeaderUserProfile } from "./header-user-profile";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
+import CommandBar from "@/components/CommandBar";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -18,7 +19,7 @@ export function Header({
   onToggleCollapse,
   isCollapsed,
 }: HeaderProps) {
-  const { userName, isAdmin, isLoading } = useAccessControl();
+  const { userName, role, isAdmin, isLoading } = useAccessControl();
 
   // ✅ Ambil nilai awal saat komponen pertama kali di-mount
   const [isDark, setIsDark] = useState(() => {
@@ -127,6 +128,11 @@ export function Header({
       </NavbarBrand>
 
       <NavbarContent justify="end" className="flex gap-2">
+        {/* Command Bar */}
+        <NavbarItem>
+          <CommandBar userRole={role} />
+        </NavbarItem>
+
         {/* Theme Toggle */}
         <NavbarItem>
           <Button

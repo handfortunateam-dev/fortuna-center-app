@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
+import { Toast } from "@/components/toast/index";
 
 import { CreateOrEditFormWrapper } from "@/components/form/CreateOrEditFormWrapper";
 import { EnrollmentForm } from "@/features/lms/enrollments/forms/EnrollmentForm";
@@ -28,6 +29,12 @@ export default function CreateEnrollmentPage() {
         throw new Error(response.data.message || "Failed to enrol student");
       }
 
+      Toast({
+        title: "Success",
+        description: "Student enrolled in class successfully",
+        color: "success",
+      });
+
       // Redirect after short delay
       setTimeout(() => {
         router.push("/class-enrollments");
@@ -37,6 +44,13 @@ export default function CreateEnrollmentPage() {
       const message =
         err.response?.data?.message || err.message || "An error occurred";
       setError(message);
+
+      Toast({
+        title: "Error",
+        description: message,
+        color: "danger",
+      });
+
       throw err;
     }
   };

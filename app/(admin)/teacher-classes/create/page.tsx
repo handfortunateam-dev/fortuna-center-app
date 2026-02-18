@@ -4,6 +4,7 @@ import { Card, CardBody, CardHeader } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
+import { Toast } from "@/components/toast/index";
 
 import { CreateOrEditFormWrapper } from "@/components/form/CreateOrEditFormWrapper";
 import { TeacherClassForm } from "@/features/lms/teacher-classes/forms/TeacherClassForm";
@@ -28,16 +29,29 @@ export default function CreateTeacherClassPage() {
         throw new Error(response.data.message || "Failed to assign teacher");
       }
 
+      Toast({
+        title: "Success",
+        description: "Teacher assigned to class successfully",
+        color: "success",
+      });
+
       // Redirect after short delay
-      setTimeout(() => {
-        router.push("/teacher-classes");
-      }, 1000);
+      // setTimeout(() => {
+      router.push("/teacher-classes");
+      // }, 1000);
     } catch (err: any) {
       console.error("Create failed:", err);
       // Handle axios error or standard error
       const message =
         err.response?.data?.message || err.message || "An error occurred";
       setError(message);
+
+      Toast({
+        title: "Error",
+        description: message,
+        color: "danger",
+      });
+
       throw err; // Re-throw for the wrapper to handle loading state
     }
   };

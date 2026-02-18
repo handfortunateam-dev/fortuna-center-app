@@ -13,3 +13,4 @@ export { ReadOnlyInput } from "./ReadOnlyInput";
 // export { IconSelector } from "./IconSelector";
 export { FirebaseMultiFileUpload } from "./FirebaseMultiFileUpload";
 export { TimeInput } from "./TimeInput";
+export { MoneyInput } from "./MoneyInput";
