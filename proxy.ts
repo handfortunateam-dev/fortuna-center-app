@@ -18,6 +18,13 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     const protectedPaths = collectPaths(adminSidebarNavigation)
     const isProtected = protectedPaths.some(path => pathname.startsWith(path))
 
+    // Explicitly allow public API routes that don't need auth protection here
+    // or handle them via matcher exclusions.
+    // Specifically allow /api/auth endpoints to be handled by Clerk or pass through
+    if (pathname.startsWith('/api/auth')) {
+        return NextResponse.next();
+    }
+
     // If route is protected and user is not authenticated, redirect to home
     if (isProtected && !userId) {
         return NextResponse.redirect(new URL('/', request.url))
