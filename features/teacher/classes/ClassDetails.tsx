@@ -8,7 +8,7 @@ import {
   Card,
   CardBody,
   CardHeader,
-  Spinner,
+  Skeleton,
   User,
   Button,
   Divider,
@@ -49,8 +49,66 @@ export default function ClassDetails({ classId }: { classId: string }) {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner size="lg" label="Loading class details..." />
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-lg" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64 rounded-lg" />
+            <Skeleton className="h-4 w-24 rounded-lg" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader className="px-6 py-4">
+                <Skeleton className="h-6 w-48 rounded-lg" />
+              </CardHeader>
+              <Divider />
+              <CardBody className="p-0">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-4 border-b border-default-100 last:border-none"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="w-10 h-10 rounded-full" />
+                      <div className="flex flex-col gap-2">
+                        <Skeleton className="h-3 w-32 rounded-lg" />
+                        <Skeleton className="h-3 w-48 rounded-lg" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-3 w-24 rounded-lg" />
+                  </div>
+                ))}
+              </CardBody>
+            </Card>
+          </div>
+
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="px-6 py-4">
+                <Skeleton className="h-6 w-32 rounded-lg" />
+              </CardHeader>
+              <Divider />
+              <CardBody className="px-6 py-4">
+                <Skeleton className="h-4 w-full rounded-lg mb-2" />
+                <Skeleton className="h-4 w-3/4 rounded-lg" />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader className="px-6 py-4">
+                <Skeleton className="h-6 w-32 rounded-lg" />
+              </CardHeader>
+              <Divider />
+              <CardBody className="p-4 space-y-2">
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+              </CardBody>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }

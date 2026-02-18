@@ -87,7 +87,7 @@ export default function CardWrapper({
   headerGap = "gap-3",
 }: CardWrapperProps) {
   return (
-    <Card className={className}>
+    <Card className={'rounded-2xl backdrop-blur-xl bg-transparent border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-none ' + className}>
       {(title || description) && (
         <CardHeader
           className={`flex flex-col items-start ${headerGap} ${headerPadding}`}

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
+import axios from "axios";
 
 export interface IdentityResponse {
     id: string;
@@ -12,29 +13,30 @@ export interface IdentityResponse {
     role: string;
 }
 
-export function useGetIdentity() {
-    const [user, setUser] = useState<IdentityResponse | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
-
-    const fetchIdentity = async () => {
-        try {
-            setLoading(true);
-            const { data } = await apiClient.get<{ success: boolean; data: IdentityResponse }>("/auth/me");
-            if (data.success) {
-                setUser(data.data);
-            }
-        } catch (err) {
-            console.error("Failed to fetch user identity:", err);
-            setError(err instanceof Error ? err : new Error("Unknown error"));
-        } finally {
-            setLoading(false);
+const fetchIdentity = async (): Promise<IdentityResponse | null> => {
+    try {
+        const { data } = await apiClient.get<{ success: boolean; data: IdentityResponse }>("/auth/me");
+        if (data.success) {
+            return data.data;
         }
-    };
+        return null;
+    } catch (err) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+            return null;
+        }
+        console.error("Failed to fetch user identity:", err);
+        throw err;
+    }
+};
 
-    useEffect(() => {
-        fetchIdentity();
-    }, []);
+export function useGetIdentity() {
+    const { data, isLoading, error, refetch } = useQuery({
+        queryKey: ["identity"],
+        queryFn: fetchIdentity,
+        staleTime: 1000 * 60 * 5, // 5 minutes cache
+        retry: false,
+        refetchOnWindowFocus: false,
+    });
 
-    return { user, loading, error, refetch: fetchIdentity };
+    return { user: data ?? null, loading: isLoading, error, refetch };
 }

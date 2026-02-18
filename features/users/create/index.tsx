@@ -2,7 +2,14 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Input, Card, CardBody, CardHeader } from "@heroui/react";
+import {
+  Button,
+  Input,
+  Card,
+  CardBody,
+  CardHeader,
+  Checkbox,
+} from "@heroui/react";
 // import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { UserRole } from "@/enums/common";
@@ -27,6 +34,7 @@ export default function CreateUser() {
     role: UserRole.STUDENT,
   });
 
+  const [quickRegistration, setQuickRegistration] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -139,8 +147,17 @@ export default function CreateUser() {
         role: UserRole.STUDENT,
       });
 
-      // Redirect after 2 seconds
+      // Redirect based on role and quickRegistration
       setTimeout(() => {
+        if (quickRegistration && data.user?.id) {
+          if (formData.role === UserRole.STUDENT) {
+            router.push(`/students/onboard/${data.user.id}`);
+            return;
+          } else if (formData.role === UserRole.TEACHER) {
+            router.push(`/teachers/onboard/${data.user.id}`);
+            return;
+          }
+        }
         router.push("/users");
       }, 2000);
     } catch (err) {
@@ -152,6 +169,14 @@ export default function CreateUser() {
       setLoading(false);
     }
   };
+
+  // Debug: Log role changes and constant values
+  React.useEffect(() => {
+    console.log("Current Role:", formData.role);
+    console.log("Is Student?", formData.role === UserRole.STUDENT);
+    console.log("Is Teacher?", formData.role === UserRole.TEACHER);
+    console.log("UserRole Enum:", UserRole);
+  }, [formData.role]);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -182,74 +207,87 @@ export default function CreateUser() {
               />
               <div className="text-sm text-green-800">
                 <p className="font-semibold">User created successfully!</p>
-                <p>Redirecting to user list...</p>
+                <p>
+                  {quickRegistration &&
+                  (formData.role === UserRole.STUDENT ||
+                    formData.role === UserRole.TEACHER)
+                    ? `Redirecting to ${formData.role.toLowerCase()} quick setup...`
+                    : "Redirecting to user list..."}
+                </p>
               </div>
             </div>
           )}
 
           {!success && (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <Input
-                type="email"
-                name="email"
-                label="Email Address"
-                placeholder="user@example.com"
-                value={formData.email}
-                onChange={handleChange}
-                isInvalid={!!validationErrors.email}
-                errorMessage={validationErrors.email}
-                disabled={loading}
-                required
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  type="email"
+                  name="email"
+                  label="Email Address"
+                  placeholder="user@example.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  isInvalid={!!validationErrors.email}
+                  errorMessage={validationErrors.email}
+                  disabled={loading}
+                  required
+                />
 
-              <Input
-                type="text"
-                name="firstName"
-                label="First Name"
-                placeholder="John"
-                value={formData.firstName}
-                onChange={handleChange}
-                isInvalid={!!validationErrors.firstName}
-                errorMessage={validationErrors.firstName}
-                disabled={loading}
-                required
-              />
+                <Input
+                  type="text"
+                  name="firstName"
+                  label="First Name"
+                  placeholder="John"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  isInvalid={!!validationErrors.firstName}
+                  errorMessage={validationErrors.firstName}
+                  disabled={loading}
+                  required
+                />
+              </div>
 
-              <Input
-                type="text"
-                name="lastName"
-                label="Last Name (Optional)"
-                placeholder="Doe"
-                value={formData.lastName}
-                onChange={handleChange}
-                disabled={loading}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  type="text"
+                  name="lastName"
+                  label="Last Name (Optional)"
+                  placeholder="Doe"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  disabled={loading}
+                />
+                <div className="hidden md:block"></div>
+              </div>
 
-              <Input
-                type="password"
-                name="password"
-                label="Password"
-                placeholder="Enter password"
-                value={formData.password}
-                onChange={handleChange}
-                isInvalid={!!validationErrors.password}
-                errorMessage={validationErrors.password}
-                disabled={loading}
-                required
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  type="password"
+                  name="password"
+                  label="Password"
+                  placeholder="Enter password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  isInvalid={!!validationErrors.password}
+                  errorMessage={validationErrors.password}
+                  disabled={loading}
+                  required
+                />
 
-              <Input
-                type="password"
-                name="confirmPassword"
-                label="Confirm Password"
-                placeholder="Confirm password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                isInvalid={!!validationErrors.confirmPassword}
-                errorMessage={validationErrors.confirmPassword}
-                disabled={loading}
-                required
-              />
+                <Input
+                  type="password"
+                  name="confirmPassword"
+                  label="Confirm Password"
+                  placeholder="Confirm password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  isInvalid={!!validationErrors.confirmPassword}
+                  errorMessage={validationErrors.confirmPassword}
+                  disabled={loading}
+                  required
+                />
+              </div>
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">User Role</label>
@@ -267,6 +305,27 @@ export default function CreateUser() {
                   ))}
                 </select>
               </div>
+
+              {/* Quick Registration Checkbox */}
+              {["STUDENT", "TEACHER"].includes(formData.role) && (
+                <div className="bg-primary-50 border border-primary-100 p-4 rounded-lg mt-2">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      isSelected={quickRegistration}
+                      onValueChange={setQuickRegistration}
+                      classNames={{
+                        label: "text-sm font-medium",
+                      }}
+                    >
+                      Continue to Quick Registration
+                    </Checkbox>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1 ml-7">
+                    Immediately set up profile details and class assignment
+                    after creating the account.
+                  </p>
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <Button

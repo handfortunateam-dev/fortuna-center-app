@@ -86,13 +86,13 @@ export async function POST(request: NextRequest) {
       email: body.email,
       firstName: body.firstName,
       lastName: body.lastName,
-      password: body.password,
+      password: body.password ? "***" : undefined,
     });
 
     const createUserParams: Parameters<typeof client.users.createUser>[0] = {
       emailAddress: [body.email],
-      firstName: body.firstName,
       password: body.password,
+      firstName: body.firstName,
     };
 
     // Only add lastName if provided
@@ -100,9 +100,15 @@ export async function POST(request: NextRequest) {
       createUserParams.lastName = body.lastName;
     }
 
-    console.log("Clerk createUser params:", createUserParams);
-
     const clerkUser = await client.users.createUser(createUserParams);
+
+    // Hash password for local database storage if provided
+    let hashedPassword = null;
+    if (body.password) {
+      // Import bcrypt dynamically to avoid issues if not used or to ensure it's loaded
+      const bcrypt = await import("bcryptjs");
+      hashedPassword = await bcrypt.hash(body.password, 10);
+    }
 
     // Create user in database with specified role
     const dbUser = await db
@@ -113,6 +119,7 @@ export async function POST(request: NextRequest) {
         email: body.email,
         image: clerkUser.imageUrl,
         role: body.role as UserRole,
+        password: hashedPassword, // Save hashed password
       })
       .returning();
 

@@ -249,36 +249,12 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
     href: NAV_URL.SYSTEM.DASHBOARD,
     icon: (props) => <Icon icon="solar:home-2-bold-duotone" {...props} />,
   },
-  {
-    name: "Sessions",
-    href: NAV_URL.ADMIN.SESSIONS,
-    icon: (props) => (
-      <Icon icon="solar:video-library-bold-duotone" {...props} />
-    ),
-  },
-
   // {
-  //   name: "Broadcast CMS",
-  //   href: "/broadcast-cms",
+  //   name: "Sessions",
+  //   href: NAV_URL.ADMIN.SESSIONS,
   //   icon: (props) => (
-  //     <Icon icon="solar:document-text-bold-duotone" {...props} />
+  //     <Icon icon="solar:video-library-bold-duotone" {...props} />
   //   ),
-  //   children: [
-  //     {
-  //       name: "Broadcast",
-  //       href: "/broadcast-cms/broadcast",
-  //       icon: (props) => (
-  //         <Icon icon="solar:document-text-bold-duotone" {...props} />
-  //       ),
-  //     },
-  //     {
-  //       name: "Broadcast Categories",
-  //       href: "/broadcast-cms/broadcast-categories",
-  //       icon: (props) => (
-  //         <Icon icon="solar:document-text-bold-duotone" {...props} />
-  //       ),
-  //     },
-  //   ],
   // },
 
   {
@@ -317,12 +293,36 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
     ],
   },
   {
-    name: "LMS",
-    href: NAV_URL.ADMIN.LMS.CLASSES,
+    name: "Podcast CMS",
+    href: NAV_URL.ADMIN.PODCAST_CMS.ROOT,
+    icon: (props) => <Icon icon="lucide:podcast" {...props} />,
+    children: [
+      {
+        name: "Shows",
+        href: NAV_URL.ADMIN.PODCAST_CMS.SHOWS,
+        icon: (props) => <Icon icon="lucide:mic" {...props} />,
+      },
+      {
+        name: "Comments",
+        href: NAV_URL.ADMIN.PODCAST_CMS.COMMENTS,
+        icon: (props) => (
+          <Icon icon="solar:chat-round-dots-bold-duotone" {...props} />
+        ),
+      },
+    ],
+  },
+  {
+    name: "User Management",
+    href: NAV_URL.ADMIN.USERS,
     icon: (props) => (
-      <Icon icon="solar:book-bookmark-bold-duotone" {...props} />
+      <Icon icon="solar:users-group-rounded-bold-duotone" {...props} />
     ),
     children: [
+      {
+        name: "Accounts",
+        href: NAV_URL.ADMIN.USERS,
+        icon: (props) => <Icon icon="lucide:users" {...props} />,
+      },
       {
         name: "Students",
         href: NAV_URL.ADMIN.LMS.STUDENTS,
@@ -335,59 +335,91 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
           <Icon icon="solar:user-speak-bold-duotone" {...props} />
         ),
       },
+    ],
+  },
+  {
+    name: "LMS",
+    href: NAV_URL.ADMIN.LMS.CLASSES,
+    icon: (props) => (
+      <Icon icon="solar:book-bookmark-bold-duotone" {...props} />
+    ),
+    children: [
       {
-        name: "Classes",
+        name: "Class Administration",
         href: NAV_URL.ADMIN.LMS.CLASSES,
         icon: (props) => (
-          <Icon icon="solar:book-bookmark-bold-duotone" {...props} />
+          <Icon icon="solar:widget-2-bold-duotone" {...props} />
         ),
+        children: [
+          {
+            name: "Classes",
+            href: NAV_URL.ADMIN.LMS.CLASSES,
+            icon: (props) => (
+              <Icon icon="solar:book-bookmark-bold-duotone" {...props} />
+            ),
+          },
+          {
+            name: "Teacher Allocations",
+            href: NAV_URL.ADMIN.LMS.TEACHER_CLASSES,
+            icon: (props) => (
+              <Icon icon="solar:users-group-rounded-bold-duotone" {...props} />
+            ),
+          },
+          {
+            name: "Enrollments",
+            href: NAV_URL.ADMIN.LMS.CLASS_ENROLLMENTS,
+            icon: (props) => (
+              <Icon icon="solar:layers-minimalistic-bold-duotone" {...props} />
+            ),
+          },
+          {
+            name: "Scheduler",
+            href: NAV_URL.ADMIN.SCHEDULER,
+            icon: (props) => (
+              <Icon icon="solar:calendar-date-bold-duotone" {...props} />
+            ),
+          },
+          {
+            name: "Attendance",
+            href: NAV_URL.ADMIN.LMS.ATTENDANCE,
+            icon: (props) => (
+              <Icon icon="solar:calendar-mark-bold-duotone" {...props} />
+            ),
+          },
+        ],
       },
       {
-        name: "Teacher Classes",
-        href: NAV_URL.ADMIN.LMS.TEACHER_CLASSES,
-        icon: (props) => (
-          <Icon icon="solar:users-group-rounded-bold-duotone" {...props} />
-        ),
-      },
-      {
-        name: "Class Enrollments",
-        href: NAV_URL.ADMIN.LMS.CLASS_ENROLLMENTS,
-        icon: (props) => (
-          <Icon icon="solar:layers-minimalistic-bold-duotone" {...props} />
-        ),
-      },
-      {
-        name: "Class Scheduler Management",
-        href: NAV_URL.ADMIN.SCHEDULER,
-        icon: (props) => (
-          <Icon icon="solar:calendar-date-bold-duotone" {...props} />
-        ),
-      },
-      {
-        name: "Lessons",
+        name: "Coursework & Grading",
         href: NAV_URL.ADMIN.LMS.LESSONS,
-        icon: (props) => <Icon icon="solar:book-bold-duotone" {...props} />,
-      },
-      {
-        name: "Attendance Management",
-        href: NAV_URL.ADMIN.LMS.ATTENDANCE,
-        icon: (props) => (
-          <Icon icon="solar:calendar-mark-bold-duotone" {...props} />
-        ),
-      },
-      {
-        name: "Assignments by Teacher",
-        href: NAV_URL.ADMIN.LMS.ASSIGNMENTS_BY_TEACHER,
-        icon: (props) => (
-          <Icon icon="solar:layers-minimalistic-bold-duotone" {...props} />
-        ),
-      },
-      {
-        name: "Submissions by Student",
-        href: NAV_URL.ADMIN.LMS.SUBMISSIONS_BY_STUDENT,
-        icon: (props) => (
-          <Icon icon="solar:layers-minimalistic-bold-duotone" {...props} />
-        ),
+        icon: (props) => <Icon icon="solar:notebook-bold-duotone" {...props} />,
+        children: [
+          {
+            name: "Lessons",
+            href: NAV_URL.ADMIN.LMS.LESSONS,
+            icon: (props) => <Icon icon="solar:book-bold-duotone" {...props} />,
+          },
+          {
+            name: "Assignments",
+            href: NAV_URL.ADMIN.LMS.ASSIGNMENTS_BY_TEACHER,
+            icon: (props) => (
+              <Icon icon="solar:document-add-bold-duotone" {...props} />
+            ),
+          },
+          {
+            name: "Submissions",
+            href: NAV_URL.ADMIN.LMS.SUBMISSIONS_BY_STUDENT,
+            icon: (props) => (
+              <Icon icon="solar:inbox-line-bold-duotone" {...props} />
+            ),
+          },
+          {
+            name: "Grades",
+            href: NAV_URL.ADMIN.LMS.GRADES,
+            icon: (props) => (
+              <Icon icon="solar:diploma-verified-bold-duotone" {...props} />
+            ),
+          },
+        ],
       },
     ],
   },
@@ -474,16 +506,40 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
   //   { name: "Comments", href: "/comments", icon: (props) => <Icon icon="lucide:messages-square" {...props} /> },
   //   { name: "Types", href: "/types", icon: (props) => <Icon icon="lucide:type" {...props} /> },
   {
+    name: "Vultr Billing",
+    href: NAV_URL.ADMIN.VULTR.ROOT,
+    icon: (props) => <Icon icon="lucide:credit-card" {...props} />,
+    children: [
+      {
+        name: "History",
+        href: NAV_URL.ADMIN.VULTR.HISTORY,
+        icon: (props) => <Icon icon="lucide:history" {...props} />,
+      },
+      {
+        name: "Invoices",
+        href: NAV_URL.ADMIN.VULTR.INVOICES,
+        icon: (props) => <Icon icon="lucide:file-text" {...props} />,
+      },
+      {
+        name: "Pending Charges",
+        href: NAV_URL.ADMIN.VULTR.PENDING,
+        icon: (props) => <Icon icon="lucide:clock" {...props} />,
+      },
+    ],
+  },
+  {
     name: "Analytics",
     href: NAV_URL.ADMIN.ANALYTICS,
     icon: (props) => <Icon icon="solar:chart-2-bold-duotone" {...props} />,
   },
 
   {
-    name: "Users",
-    href: NAV_URL.ADMIN.USERS,
-    icon: (props) => <Icon icon="lucide:users" {...props} />,
+    name: "Payment Course History",
+    href: NAV_URL.ADMIN.PAYMENT_COURSE_HISTORY,
+    icon: (props) => <Icon icon="lucide:file-text" {...props} />,
   },
+
+
 
   {
     name: "Settings",

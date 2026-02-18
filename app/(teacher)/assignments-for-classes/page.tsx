@@ -13,13 +13,19 @@ import {
   Input,
   Select,
   SelectItem,
-  Spinner,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
   Chip,
   Badge,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+  Skeleton,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { format } from "date-fns";
@@ -35,6 +41,12 @@ export default function AssignmentsForClassesPage() {
   const queryClient = useQueryClient();
   const [selectedClassId, setSelectedClassId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [assignmentToDelete, setAssignmentToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [submissionCount, setSubmissionCount] = useState<number>(0);
 
   // Fetch Teacher's Classes
   const { data: classesData, isLoading: isClassesLoading } = useQuery({
@@ -66,6 +78,8 @@ export default function AssignmentsForClassesPage() {
         description: "Assignment deleted successfully",
         color: "success",
       });
+      onClose();
+      setAssignmentToDelete(null);
     },
     onError: (err: any) => {
       Toast({
@@ -75,6 +89,35 @@ export default function AssignmentsForClassesPage() {
       });
     },
   });
+
+  // Handle delete with submission check
+  const handleDeleteClick = async (assignmentId: string, title: string) => {
+    try {
+      // Fetch submission count
+      const { data } = await apiClient.get(
+        `/teacher/assignments/${assignmentId}/submissions`,
+      );
+      const count = data.data.submissions.filter(
+        (s: any) => s.submission && s.submission.status !== "pending",
+      ).length;
+
+      setSubmissionCount(count);
+      setAssignmentToDelete({ id: assignmentId, title });
+      onOpen();
+    } catch (error) {
+      Toast({
+        title: "Error",
+        description: "Failed to check submissions",
+        color: "danger",
+      });
+    }
+  };
+
+  const confirmDelete = () => {
+    if (assignmentToDelete) {
+      deleteMutation.mutate(assignmentToDelete.id);
+    }
+  };
 
   // Filter local search
   const filteredAssignments = useMemo(() => {
@@ -125,8 +168,35 @@ export default function AssignmentsForClassesPage() {
 
   if (isClassesLoading) {
     return (
-      <div className="flex justify-center items-center h-[50vh]">
-        <Spinner size="lg" label="Loading assignments..." />
+      <div className="space-y-8 pb-10">
+        <div className="w-full h-48 rounded-3xl bg-default-100 animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))}
+        </div>
+        <Skeleton className="h-16 w-full rounded-2xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="h-64 rounded-3xl border-none shadow-md">
+              <CardBody className="p-6 space-y-4">
+                <div className="flex justify-between">
+                  <Skeleton className="w-12 h-12 rounded-2xl" />
+                  <Skeleton className="w-8 h-8 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="w-20 h-6 rounded-full" />
+                  <Skeleton className="w-3/4 h-8 rounded-lg" />
+                  <Skeleton className="w-1/2 h-4 rounded-lg" />
+                </div>
+                <div className="pt-4 border-t border-default-100 flex justify-between">
+                  <Skeleton className="w-24 h-4 rounded-lg" />
+                  <Skeleton className="w-16 h-4 rounded-lg" />
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -161,34 +231,34 @@ export default function AssignmentsForClassesPage() {
             label: "Total Assignments",
             value: stats.total,
             icon: "lucide:book-open",
-            color: "text-blue-500",
-            bg: "bg-blue-50",
+            color: "text-primary",
+            bg: "bg-primary-50 dark:bg-primary-100/10",
           },
           {
             label: "Active Tasks",
             value: stats.published,
             icon: "lucide:play",
-            color: "text-green-500",
-            bg: "bg-green-50",
+            color: "text-success",
+            bg: "bg-success-50 dark:bg-success-100/10",
           },
           {
             label: "Drafts",
             value: stats.drafts,
             icon: "lucide:edit-3",
-            color: "text-amber-500",
-            bg: "bg-amber-50",
+            color: "text-warning",
+            bg: "bg-warning-50 dark:bg-warning-100/10",
           },
           {
             label: "Closed",
             value: stats.closed,
             icon: "lucide:archive",
-            color: "text-rose-500",
-            bg: "bg-rose-50",
+            color: "text-danger",
+            bg: "bg-danger-50 dark:bg-danger-100/10",
           },
         ].map((stat, i) => (
           <Card
             key={i}
-            className="border-none shadow-md hover:shadow-lg transition-shadow bg-white rounded-2xl"
+            className="border-none shadow-md hover:shadow-lg transition-shadow rounded-2xl"
           >
             <CardBody className="flex flex-row items-center gap-4 p-5">
               <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl`}>
@@ -198,7 +268,7 @@ export default function AssignmentsForClassesPage() {
                 <p className="text-sm font-medium text-default-500">
                   {stat.label}
                 </p>
-                <p className="text-2xl font-bold text-default-900">
+                <p className="text-2xl font-bold text-default-900 dark:text-default-100">
                   {stat.value}
                 </p>
               </div>
@@ -208,7 +278,7 @@ export default function AssignmentsForClassesPage() {
       </div>
 
       {/* Filters Hub */}
-      <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-2xl shadow-sm border border-default-100">
+      <div className="flex flex-col md:flex-row gap-4 items-center bg-content1 p-4 rounded-2xl shadow-sm border border-default-200">
         <Input
           placeholder="Search assignment title..."
           startContent={
@@ -244,11 +314,26 @@ export default function AssignmentsForClassesPage() {
 
       {/* Assignments List Section */}
       {isAssignmentsLoading ? (
-        <div className="flex flex-col items-center py-20 gap-4">
-          <Spinner size="lg" color="primary" />
-          <p className="text-default-500 animate-pulse">
-            Gathering material data...
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-appearance-in">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="h-64 rounded-3xl border-none shadow-md">
+              <CardBody className="p-6 space-y-4">
+                <div className="flex justify-between">
+                  <Skeleton className="w-12 h-12 rounded-2xl" />
+                  <Skeleton className="w-8 h-8 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="w-20 h-6 rounded-full" />
+                  <Skeleton className="w-3/4 h-8 rounded-lg" />
+                  <Skeleton className="w-1/2 h-4 rounded-lg" />
+                </div>
+                <div className="pt-4 border-t border-default-100 flex justify-between">
+                  <Skeleton className="w-24 h-4 rounded-lg" />
+                  <Skeleton className="w-16 h-4 rounded-lg" />
+                </div>
+              </CardBody>
+            </Card>
+          ))}
         </div>
       ) : filteredAssignments.length === 0 ? (
         <Card className="p-12 text-center border-dashed border-2 border-default-200 bg-default-50/50 rounded-3xl">
@@ -281,7 +366,7 @@ export default function AssignmentsForClassesPage() {
             return (
               <Card
                 key={assignment.id}
-                className="group border-none shadow-md hover:shadow-2xl transition-all duration-300 rounded-3xl overflow-hidden bg-white hover:-translate-y-1"
+                className="group border-none shadow-md hover:shadow-2xl transition-all duration-300 rounded-3xl overflow-hidden hover:-translate-y-1"
               >
                 <div
                   className={`h-2 w-full bg-${statusCfg.color}-500 group-hover:bg-${statusCfg.color}-600 transition-colors opacity-10 group-hover:opacity-100`}
@@ -336,6 +421,11 @@ export default function AssignmentsForClassesPage() {
                         <DropdownItem
                           key="submissions"
                           startContent={<Icon icon="lucide:users" />}
+                          onPress={() =>
+                            router.push(
+                              `/assignments-for-classes/${assignment.id}?tab=submissions`,
+                            )
+                          }
                         >
                           View Submissions
                         </DropdownItem>
@@ -344,7 +434,9 @@ export default function AssignmentsForClassesPage() {
                           className="text-danger"
                           color="danger"
                           startContent={<Icon icon="lucide:trash-2" />}
-                          onPress={() => deleteMutation.mutate(assignment.id)}
+                          onPress={() =>
+                            handleDeleteClick(assignment.id, assignment.title)
+                          }
                         >
                           Delete Assignment
                         </DropdownItem>
@@ -364,7 +456,7 @@ export default function AssignmentsForClassesPage() {
                     >
                       {statusCfg.label}
                     </Chip>
-                    <h3 className="text-xl font-bold text-default-900 group-hover:text-primary-600 transition-colors line-clamp-1 mb-1">
+                    <h3 className="text-xl font-bold text-default-foreground group-hover:text-primary transition-colors line-clamp-1 mb-1">
                       {assignment.title}
                     </h3>
                     <p className="text-sm text-default-500 flex items-center gap-1">
@@ -385,7 +477,7 @@ export default function AssignmentsForClassesPage() {
                             : "No Date"}
                         </span>
                       </div>
-                      <p className="font-medium text-default-700">
+                      <p className="font-medium text-default-700 dark:text-default-300">
                         {assignment.dueDate
                           ? format(new Date(assignment.dueDate), "EEEE, p")
                           : "Evergreen"}
@@ -393,24 +485,17 @@ export default function AssignmentsForClassesPage() {
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t border-default-100">
-                      <div className="flex -space-x-3">
-                        {[1, 2, 3].map((_, i) => (
-                          <div
-                            key={i}
-                            className="w-8 h-8 rounded-full border-2 border-white bg-primary-100 flex items-center justify-center text-[10px] font-bold text-primary-700"
-                          >
-                            {String.fromCharCode(65 + i)}
-                          </div>
-                        ))}
-                        <div className="w-8 h-8 rounded-full border-2 border-white bg-default-200 flex items-center justify-center text-[10px] font-bold text-default-600">
-                          +12
-                        </div>
+                      <div className="flex items-center gap-2 text-default-500">
+                        <Icon icon="lucide:users" width={16} />
+                        <span className="text-xs font-medium">
+                          Class Assignment
+                        </span>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-bold text-default-400 uppercase tracking-wider">
                           Weight
                         </p>
-                        <p className="font-bold text-primary-600">
+                        <p className="font-bold text-primary">
                           {assignment.maxScore} pts
                         </p>
                       </div>
@@ -422,6 +507,80 @@ export default function AssignmentsForClassesPage() {
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-danger">
+                  <Icon icon="lucide:alert-triangle" width={24} />
+                  <h3 className="text-xl font-bold">Delete Assignment?</h3>
+                </div>
+              </ModalHeader>
+              <ModalBody>
+                <div className="space-y-4">
+                  <p className="text-default-600">
+                    Are you sure you want to delete{" "}
+                    <span className="font-bold text-default-900">
+                      &quot;{assignmentToDelete?.title}&quot;
+                    </span>
+                    ?
+                  </p>
+
+                  {submissionCount > 0 && (
+                    <Card className="bg-warning-50 border-warning-200 border">
+                      <CardBody className="p-4">
+                        <div className="flex items-start gap-3">
+                          <Icon
+                            icon="lucide:alert-circle"
+                            className="text-warning-600 flex-shrink-0 mt-0.5"
+                            width={20}
+                          />
+                          <div>
+                            <p className="font-semibold text-warning-800 mb-1">
+                              Warning: Active Submissions Detected
+                            </p>
+                            <p className="text-sm text-warning-700">
+                              This assignment has{" "}
+                              <span className="font-bold">
+                                {submissionCount} student submission
+                                {submissionCount > 1 ? "s" : ""}
+                              </span>
+                              . Deleting this assignment will permanently remove
+                              all student work and grades.
+                            </p>
+                          </div>
+                        </div>
+                      </CardBody>
+                    </Card>
+                  )}
+
+                  <p className="text-sm text-danger-600 font-medium">
+                    This action cannot be undone.
+                  </p>
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="flat" onPress={onClose}>
+                  Cancel
+                </Button>
+                <Button
+                  color="danger"
+                  onPress={confirmDelete}
+                  isLoading={deleteMutation.isPending}
+                  startContent={<Icon icon="lucide:trash-2" />}
+                >
+                  {submissionCount > 0
+                    ? `Delete Anyway (${submissionCount} submissions)`
+                    : "Delete Assignment"}
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

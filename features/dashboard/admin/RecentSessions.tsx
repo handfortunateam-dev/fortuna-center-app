@@ -1,6 +1,6 @@
 "use client";
 
-import CardMotion from "@/components/motion/CardMotion";
+import CardWrapper from "@/components/wrappers/card-wrappers";
 import ListItemMotion from "@/components/motion/ListItemMotion";
 import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
@@ -12,7 +12,7 @@ import {
   getPastBroadcasts,
   getCurrentBroadcasts,
 } from "@/services/youtubeService";
-import { Spinner, Tabs, Tab, Badge } from "@heroui/react";
+import { Skeleton, Tabs, Tab, Badge } from "@heroui/react";
 import { useState, useMemo } from "react";
 import Image from "next/image";
 
@@ -22,6 +22,25 @@ interface RecentSessionsProps {
 
 const CACHE_STALE_TIME = 1000 * 60 * 5; // 5 minutes
 const CACHE_GC_TIME = 1000 * 60 * 10; // 10 minutes
+
+// Skeleton loading component
+const ActivityLogSkeleton = () => (
+  <div className="space-y-3">
+    {[1, 2, 3].map((i) => (
+      <div
+        key={i}
+        className="flex items-center gap-4 p-3 rounded-xl bg-default-50 border border-default-200"
+      >
+        <Skeleton className="w-12 h-12 rounded-xl" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-3/4 rounded-lg" />
+          <Skeleton className="h-3 w-1/2 rounded-lg" />
+        </div>
+        <Skeleton className="h-4 w-16 rounded-lg" />
+      </div>
+    ))}
+  </div>
+);
 
 export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
   const [activeType, setActiveType] = useState<"classes" | "broadcasts">(
@@ -63,17 +82,14 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
   const broadcasts = [...(liveYT || []), ...(pastYT || [])].slice(0, limit);
 
   return (
-    <CardMotion delay={0.6} className="h-full">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
-        <div>
-          <Heading as="h2" size="xl" weight="bold">
-            Activity Logs
-          </Heading>
-          <Text size="sm" color="muted" className="mt-1">
-            Latest learning and streaming activities
-          </Text>
-        </div>
-
+    <CardWrapper
+      title="Activity Logs"
+      description="Latest learning and streaming activities"
+      titleSize="xl"
+      className="h-full"
+      headerPadding="p-6 pb-0"
+    >
+      <div className="mb-0 flex justify-end">
         <Tabs
           selectedKey={activeType}
           onSelectionChange={(key) =>
@@ -81,7 +97,7 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
           }
           size="sm"
           color="primary"
-          variant="bordered" // Fixed invalid variant 'flat'
+          variant="bordered"
           radius="lg"
         >
           <Tab key="classes" title="LMS Classes" />
@@ -93,9 +109,7 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
         {activeType === "classes" && (
           <>
             {lmsLoading ? (
-              <div className="flex justify-center items-center h-48">
-                <Spinner size="lg" label="Fetching classes..." />
-              </div>
+              <ActivityLogSkeleton />
             ) : recentClasses.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-default-400 bg-default-50 rounded-2xl border-2 border-dashed border-default-200">
                 <Icon
@@ -112,7 +126,7 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
                   className="flex items-center gap-4 p-3 rounded-xl bg-default-50 hover:bg-default-100 border border-default-200 transition-all group cursor-pointer"
                 >
                   <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${session.isActive ? "bg-green-500/10" : "bg-default-200/50"}`}
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${session.isActive ? "bg-blue-500/10" : "bg-default-200/50"}`}
                   >
                     <Icon
                       icon={
@@ -120,7 +134,7 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
                           ? "solar:play-circle-bold"
                           : "solar:stop-circle-bold"
                       }
-                      className={`text-2xl ${session.isActive ? "text-green-500" : "text-default-400"}`}
+                      className={`text-2xl ${session.isActive ? "text-blue-500" : "text-default-400"}`}
                     />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -132,14 +146,7 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
                       {session.name}
                     </Heading>
                     <div className="flex items-center gap-2">
-                      <Badge
-                        size="sm"
-                        variant="flat"
-                        color="primary"
-                        className="text-[10px] h-4"
-                      >
-                        LMS
-                      </Badge>
+                      LMS
                       <span className="text-xs text-default-400">
                         Code: {session.code}
                       </span>
@@ -152,7 +159,7 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
                       })}
                     </span>
                     {session.isActive && (
-                      <span className="px-2 py-0.5 rounded-full bg-green-500 text-white text-[9px] font-bold uppercase animate-pulse">
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500 text-white text-[9px] font-bold uppercase animate-pulse">
                         Live
                       </span>
                     )}
@@ -166,9 +173,7 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
         {activeType === "broadcasts" && (
           <>
             {liveYTLoading || pastYTLoading ? (
-              <div className="flex justify-center items-center h-48">
-                <Spinner size="lg" color="danger" label="Syncing YouTube..." />
-              </div>
+              <ActivityLogSkeleton />
             ) : broadcasts.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-default-400 bg-default-50 rounded-2xl border-2 border-dashed border-default-200">
                 <Icon
@@ -249,6 +254,6 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
           </>
         )}
       </div>
-    </CardMotion>
+    </CardWrapper>
   );
 }

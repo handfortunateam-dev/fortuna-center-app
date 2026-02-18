@@ -52,7 +52,8 @@ export const NAV_URL = {
             ATTENDANCE: "/attendance-management",
             ASSIGNMENTS_BY_TEACHER: "/assignments-by-teacher",
             SUBMISSIONS_BY_STUDENT: "/submissions-by-student",
-            STUDENTS: "/students"
+            STUDENTS: "/students",
+            GRADES: "/grades"
         },
         AZURACAST: {
             ROOT: "/azuracast",
@@ -63,6 +64,11 @@ export const NAV_URL = {
             STORAGE_QUOTA: "/azuracast/storage-quota",
             STATISTICS: "/azuracast/statistics",
             LOGS: "/azuracast/logs"
+        },
+        PODCAST_CMS: {
+            ROOT: "/podcast-cms",
+            SHOWS: "/podcast-cms/shows",
+            COMMENTS: "/podcast-cms/comments",
         },
         YOUTUBE: {
             ROOT: "/youtube-integration",
@@ -75,6 +81,13 @@ export const NAV_URL = {
         SCHEDULER: "/class-scheduler-management",
         ANALYTICS: "/analytics",
         USERS: "/users",
+        VULTR: {
+            ROOT: "/vultr-billing",
+            HISTORY: "/vultr-billing/history",
+            INVOICES: "/vultr-billing/invoices",
+            PENDING: "/vultr-billing/pending-charges",
+        },
+        PAYMENT_COURSE_HISTORY: "/payment-course-history",
     },
     TEACHER: {
         DASHBOARD: "/dashboard",

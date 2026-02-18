@@ -13,19 +13,47 @@ import {
   Button,
   Chip,
   Avatar,
-Breadcrumbs,
+  Breadcrumbs,
   BreadcrumbItem,
+  Tabs,
+  Tab,
 } from "@heroui/react";
 import PodcastPagination from "@/features/public/podcast-live/PodcastPagination";
-import type { Podcast, PodcastEpisode } from "@/services/azurecast/interfaces";
+import type {
+  PodcastShowDetail,
+  PodcastEpisodeDetail,
+} from "@/features/podcast-cms/interfaces";
+import type {
+  PlayerEpisode,
+  PlayerPodcast,
+} from "@/providers/AudioPlayerContext";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface PodcastDetailSectionProps {
-  podcast: Podcast;
-  episodes: PodcastEpisode[];
+  podcast: PodcastShowDetail;
+  episodes: PodcastEpisodeDetail[];
   totalPages: number;
   currentPage: number;
-  podcastId: string;
   query?: string;
+  seasons?: number[];
+  currentSeason?: number;
+}
+
+// Map to generic player types
+function toPlayerEpisode(ep: PodcastEpisodeDetail): PlayerEpisode {
+  return {
+    id: ep.id,
+    title: ep.title,
+    art: ep.thumbnailUrl || null,
+    audioUrl: ep.audioUrl,
+  };
+}
+
+function toPlayerPodcast(p: PodcastShowDetail): PlayerPodcast {
+  return {
+    id: p.id,
+    title: p.title,
+  };
 }
 
 export function PodcastDetailSection({
@@ -33,9 +61,12 @@ export function PodcastDetailSection({
   episodes,
   totalPages,
   currentPage,
-  podcastId,
   query,
+  seasons = [],
+  currentSeason,
 }: PodcastDetailSectionProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     playingEpisode,
     isPlaying,
@@ -44,7 +75,7 @@ export function PodcastDetailSection({
     resumeEpisode,
   } = useAudioPlayer();
 
-  const handlePlay = (episode: PodcastEpisode) => {
+  const handlePlay = (episode: PodcastEpisodeDetail) => {
     if (playingEpisode?.id === episode.id) {
       if (isPlaying) {
         pauseEpisode();
@@ -52,9 +83,22 @@ export function PodcastDetailSection({
         resumeEpisode();
       }
     } else {
-      playEpisode(episode, podcast);
+      playEpisode(toPlayerEpisode(episode), toPlayerPodcast(podcast));
     }
   };
+
+  const handleSeasonChange = (key: string) => {
+    const params = new URLSearchParams(searchParams?.toString());
+    if (key === "all") {
+      params.delete("season");
+    } else {
+      params.set("season", key);
+    }
+    // Reset page to 1 when changing season
+    params.set("page", "1");
+    router.push(`/podcast-list/${podcast.slug}?${params.toString()}`);
+  };
+
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header Section */}
@@ -62,9 +106,9 @@ export function PodcastDetailSection({
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row gap-8 items-start">
             <div className="shrink-0">
-              {podcast.art ? (
+              {podcast.coverImage ? (
                 <Avatar
-                  src={podcast.art}
+                  src={podcast.coverImage}
                   alt={podcast.title}
                   className="w-40 h-40 md:w-48 md:h-48"
                   radius="lg"
@@ -98,7 +142,7 @@ export function PodcastDetailSection({
                   {podcast.title}
                 </h1>
                 <p className="text-yellow-200 text-lg mt-1">
-                  by {podcast.author}
+                  by {podcast.author?.name || "Unknown Author"}
                 </p>
               </div>
 
@@ -111,54 +155,37 @@ export function PodcastDetailSection({
                   }}
                   size="sm"
                 >
-                  {podcast.language_name}
+                  {podcast.episodeCount} Episodes
                 </Chip>
-                {podcast.categories?.map((cat) => (
+                {podcast.status === "published" && (
                   <Chip
-                    key={cat.category}
                     variant="flat"
-                    color="danger"
+                    color="success"
                     classNames={{
-                      base: "bg-red-700/50 backdrop-blur-sm border border-red-500/30",
+                      base: "bg-green-700/50 backdrop-blur-sm border border-green-500/30",
                       content: "text-white font-semibold",
                     }}
                     size="sm"
                   >
-                    {cat.text}
+                    Published
                   </Chip>
-                ))}
+                )}
               </div>
 
-              <div
-                className="text-white/90 text-sm leading-relaxed max-w-3xl"
-                dangerouslySetInnerHTML={{ __html: podcast.description }}
-              />
+              <p className="text-white/90 text-sm leading-relaxed max-w-3xl whitespace-pre-line">
+                {podcast.description || ""}
+              </p>
 
-              {podcast.links?.public_feed && (
-                <div className="pt-2 flex gap-2">
-                  <ShareButton
-                    title={podcast.title}
-                    text={`Check out this podcast: ${podcast.title}`}
-                    url={`/podcast-list/${podcastId}`}
-                    variant="solid"
-                    className="bg-white/20 text-white hover:bg-white/30"
-                  />
-                  <Button
-                    as="a"
-                    href={podcast.links.public_feed}
-                    target="_blank"
-                    rel="noreferrer"
-                    color="default"
-                    variant="solid"
-                    startContent={
-                      <Icon icon="lucide:rss" className="w-4 h-4" />
-                    }
-                    className="bg-white text-red-900 font-bold"
-                  >
-                    RSS Feed
-                  </Button>
-                </div>
-              )}
+              <div className="pt-2 flex gap-2">
+                <ShareButton
+                  title={podcast.title}
+                  text={`Check out this podcast: ${podcast.title}`}
+                  url={`/podcast-list/${podcast.slug}`}
+                  variant="solid"
+                  className="bg-white/20 text-white hover:bg-white/30"
+                />
+                {/* Add RSS feed button logic later if implemented */}
+              </div>
             </div>
           </div>
         </div>
@@ -167,6 +194,23 @@ export function PodcastDetailSection({
       {/* Content Section */}
       <section className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
+          {seasons.length > 0 && (
+            <div className="mb-6">
+              <Tabs
+                aria-label="Seasons"
+                color="warning"
+                variant="underlined"
+                selectedKey={currentSeason ? String(currentSeason) : "all"}
+                onSelectionChange={(key) => handleSeasonChange(key as string)}
+              >
+                <Tab key="all" title="All Episodes" />
+                {seasons.map((season) => (
+                  <Tab key={String(season)} title={`Season ${season}`} />
+                ))}
+              </Tabs>
+            </div>
+          )}
+
           <Card shadow="sm" className="dark:bg-gray-900 dark:border-gray-800">
             <CardHeader className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-gray-50/50 dark:bg-gray-800/50 border-b dark:border-gray-800">
               <div className="flex items-center gap-2">
@@ -252,9 +296,9 @@ export function PodcastDetailSection({
                     </div>
 
                     <div className="shrink-0 hidden sm:block">
-                      {episode.art ? (
+                      {episode.thumbnailUrl ? (
                         <Avatar
-                          src={episode.art}
+                          src={episode.thumbnailUrl}
                           alt={episode.title}
                           className="w-16 h-16"
                           radius="lg"
@@ -277,23 +321,37 @@ export function PodcastDetailSection({
                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <span className="flex items-center gap-1">
                           <Icon icon="lucide:calendar" className="w-3 h-3" />
-                          {format(
-                            new Date(episode.publish_at * 1000),
-                            "MMM d, yyyy"
-                          )}
+                          {episode.publishedAt
+                            ? format(
+                                new Date(episode.publishedAt),
+                                "MMM d, yyyy",
+                              )
+                            : "Unpublished"}
                         </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Icon icon="lucide:clock" className="w-3 h-3" />
-                          {format(
-                            new Date(episode.publish_at * 1000),
-                            "h:mm a"
-                          )}
-                        </span>
+                        {episode.duration && (
+                          <>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Icon icon="lucide:clock" className="w-3 h-3" />
+                              {Math.floor(episode.duration / 60)}:
+                              {(episode.duration % 60)
+                                .toString()
+                                .padStart(2, "0")}
+                            </span>
+                          </>
+                        )}
+                        {episode.seasonNumber && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              S{episode.seasonNumber} E{episode.episodeNumber}
+                            </span>
+                          </>
+                        )}
                       </div>
-                      {episode.description_short && (
-                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1">
-                          {episode.description_short}
+                      {episode.description && (
+                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mt-1 whitespace-pre-line">
+                          {episode.description}
                         </p>
                       )}
                     </div>
@@ -301,8 +359,7 @@ export function PodcastDetailSection({
                     <div className="shrink-0 pt-1">
                       <Button
                         as={Link}
-                        href={episode.links.public}
-                        target="_blank"
+                        href={`/podcast-list/${podcast.slug}/${episode.slug}`}
                         variant="bordered"
                         size="sm"
                         endContent={
@@ -350,7 +407,7 @@ export function PodcastDetailSection({
                 <PodcastPagination
                   totalPages={totalPages}
                   currentPage={currentPage}
-                  podcastId={podcastId}
+                  podcastId={podcast.slug}
                   query={query}
                 />
               </div>

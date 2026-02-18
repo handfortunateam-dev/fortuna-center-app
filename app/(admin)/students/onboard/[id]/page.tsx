@@ -10,9 +10,15 @@ import { Toast } from "@/components/toast";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { TextInput } from "@/components/inputs/TextInput";
 import { SelectInput } from "@/components/inputs/SelectInput";
+import { DatePickerInput } from "@/components/inputs/DatePickerInput";
 import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
 import { LoadingScreen } from "@/components/loading/LoadingScreen";
+import { AutocompleteInput } from "@/components/inputs/AutoCompleteInput";
+import {
+  EDUCATION_LEVELS,
+  OCCUPATION_TYPES,
+} from "@/features/lms/students/constants";
 
 interface UserFormData {
   name: string;
@@ -26,6 +32,11 @@ interface StudentFormData {
   email: string;
   phone?: string;
   address?: string;
+  gender?: "male" | "female";
+  placeOfBirth?: string;
+  dateOfBirth?: string;
+  education?: string;
+  occupation?: string;
 }
 
 interface EnrollmentFormData {
@@ -81,6 +92,11 @@ export default function StudentOnboardingPage() {
       middleName: "",
       phone: "",
       address: "",
+      gender: undefined,
+      placeOfBirth: "",
+      dateOfBirth: "",
+      education: "",
+      occupation: "",
     },
   });
 
@@ -149,6 +165,11 @@ export default function StudentOnboardingPage() {
           middleName: userData.student.middleName || "",
           phone: userData.student.phone || "",
           address: userData.student.address || "",
+          gender: userData.student.gender || undefined,
+          placeOfBirth: userData.student.placeOfBirth || "",
+          dateOfBirth: userData.student.dateOfBirth || "",
+          education: userData.student.education || "",
+          occupation: userData.student.occupation || "",
         });
       } else {
         // Pre-fill student form with user data if no student record
@@ -164,6 +185,11 @@ export default function StudentOnboardingPage() {
           middleName: "",
           phone: "",
           address: "",
+          gender: undefined,
+          placeOfBirth: "",
+          dateOfBirth: "",
+          education: "",
+          occupation: "",
         });
       }
 
@@ -479,6 +505,30 @@ export default function StudentOnboardingPage() {
                 placeholder="Enter middle name"
                 required={false}
               />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <SelectInput
+                  name="gender"
+                  label="Gender"
+                  placeholder="Select gender"
+                  options={[
+                    { label: "Male", value: "male" },
+                    { label: "Female", value: "female" },
+                  ]}
+                />
+                <DatePickerInput
+                  name="dateOfBirth"
+                  label="Date of Birth"
+                  placeholder="Select date"
+                />
+              </div>
+
+              <TextInput
+                name="placeOfBirth"
+                label="Place of Birth"
+                placeholder="Enter place of birth"
+              />
+
               <TextInput
                 name="email"
                 label="Email"
@@ -506,6 +556,25 @@ export default function StudentOnboardingPage() {
                 placeholder="Enter address"
                 required={false}
               />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <AutocompleteInput
+                  label="Latest Education"
+                  name="education"
+                  placeholder="Select education level"
+                  options={EDUCATION_LEVELS}
+                  required={false}
+                  isClearable
+                />
+                <AutocompleteInput
+                  label="Occupation"
+                  name="occupation"
+                  placeholder="Select occupation"
+                  options={OCCUPATION_TYPES}
+                  required={false}
+                  isClearable
+                />
+              </div>
             </form>
           </FormProvider>
         );
@@ -573,7 +642,9 @@ export default function StudentOnboardingPage() {
         {/* Stepper */}
         <Card>
           <CardBody className="p-6">
-            <Stepper steps={steps} activeStep={activeStep} />
+            <div className="w-full max-w-2xl mx-auto">
+              <Stepper steps={steps} activeStep={activeStep} />
+            </div>
           </CardBody>
         </Card>
 

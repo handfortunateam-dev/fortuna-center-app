@@ -43,7 +43,7 @@ export function Stepper({
             key={index}
             className={clsx(
               "flex items-center",
-              isHorizontal ? "flex-1" : "w-full",
+              isHorizontal ? (isLast ? "flex-none" : "flex-1") : "w-full",
             )}
           >
             {/* Step item */}

@@ -18,8 +18,11 @@ export default function UserList() {
       // Auto-generated actions (enabled by default when resourcePath is set)
       enableCreate={true}
       enableShow={true}
-      enableEdit={false} // Edit not requested in example
-      enableDelete={true}
+      enableEdit={true}
+      enableDelete
+      enableExport
+      enableImport
+      enableSearch
       searchPlaceholder="Search users by name, email, or username..."
       columns={columnsUsers}
       pageSize={10}

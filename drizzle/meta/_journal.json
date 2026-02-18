@@ -113,6 +113,41 @@
       "when": 1770700900000,
       "tag": "0015_drop_schedule_teacher_id",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1771000406800,
+      "tag": "0016_workable_piledriver",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1771165715114,
+      "tag": "0017_parallel_veda",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1771344167294,
+      "tag": "0018_wakeful_zeigeist",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1771344940182,
+      "tag": "0019_cooing_queen_noir",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1771405353141,
+      "tag": "0020_greedy_landau",
+      "breakpoints": true
     }
   ]
 }

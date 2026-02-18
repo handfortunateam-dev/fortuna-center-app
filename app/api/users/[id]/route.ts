@@ -6,6 +6,10 @@ import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
 import { teacherClasses } from "@/db/schema/teacher-class.schema";
 import { classEnrollments } from "@/db/schema/class-enrollment.schema";
+import { students } from "@/db/schema/students.schema";
+import { assignmentSubmissions } from "@/db/schema/assignment-submission.schema";
+import { posts } from "@/db/schema/posts.schema";
+import { postComments } from "@/db/schema/post-comment.schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(
@@ -164,10 +168,29 @@ export async function DELETE(
 
         if (userInDb) {
             // Delete related records manually to avoid FK constraint errors if cascade isn't set
-            // 1. Delete from teacher_classes
+
+            // 1. Unlink from students (set userId to null)
+            await db.update(students)
+                .set({ userId: null })
+                .where(eq(students.userId, userInDb.id));
+
+            // 2. Delete assignment submissions by this student
+            await db.delete(assignmentSubmissions).where(eq(assignmentSubmissions.studentId, userInDb.id));
+
+            // 3. Set gradedBy to null for submissions graded by this user
+            await db.update(assignmentSubmissions)
+                .set({ gradedBy: null })
+                .where(eq(assignmentSubmissions.gradedBy, userInDb.id));
+
+            // 4. Delete posts by this author
+            // Note: This might fail if posts have comments/likes, so we delete comments first
+            await db.delete(postComments).where(eq(postComments.authorId, userInDb.id));
+            await db.delete(posts).where(eq(posts.authorId, userInDb.id));
+
+            // 5. Delete from teacher_classes
             await db.delete(teacherClasses).where(eq(teacherClasses.teacherId, userInDb.id));
 
-            // 2. Delete from class_enrollments
+            // 6. Delete from class_enrollments
             await db.delete(classEnrollments).where(eq(classEnrollments.studentId, userInDb.id));
 
             // Proceed to delete user
@@ -239,20 +262,25 @@ export async function PATCH(
         const updateParams: Parameters<typeof client.users.updateUser>[1] = {};
         if (body.firstName) updateParams.firstName = body.firstName;
         if (body.lastName) updateParams.lastName = body.lastName;
-
-        // Note: Changing email or password usually requires different flows or permissions in Clerk, 
-        // passing them directly to updateUser might work depending on instance settings or return errors.
-        // For simplicity we update basic profile info.
+        if (body.password) updateParams.password = body.password;
 
         const updatedClerkUser = await client.users.updateUser(id, updateParams);
 
-        // Update DB User (if name changed)
-        if (body.firstName || body.lastName) {
+        // Update DB User (if name or password changed)
+        if (body.firstName || body.lastName || body.password) {
+            const dbUpdateData: any = {};
+
+            if (body.firstName || body.lastName) {
+                dbUpdateData.name = `${updatedClerkUser.firstName || ""} ${updatedClerkUser.lastName || ""}`.trim();
+            }
+
+            if (body.password) {
+                const bcrypt = await import("bcryptjs");
+                dbUpdateData.password = await bcrypt.hash(body.password, 10);
+            }
+
             await db.update(users)
-                .set({
-                    name: `${updatedClerkUser.firstName || ""} ${updatedClerkUser.lastName || ""}`.trim(),
-                    // Update other fields if synced
-                })
+                .set(dbUpdateData)
                 .where(eq(users.clerkId, id));
         }
 

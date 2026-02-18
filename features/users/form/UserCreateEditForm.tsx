@@ -4,13 +4,16 @@ import { useFormContext } from "react-hook-form";
 import { UserRole } from "@/enums/common";
 import { TextInput } from "@/components/inputs/TextInput";
 import { SelectInput } from "@/components/inputs/SelectInput";
+import { PasswordGeneratorInput } from "@/components/inputs/PasswordGeneratorInput";
 
 export const UserCreateEditForm = ({
   mode = "create",
+  hideRole = false,
 }: {
   mode?: "create" | "edit";
+  hideRole?: boolean;
 }) => {
-  const { watch } = useFormContext();
+  const { watch, register } = useFormContext();
   const password = watch("password");
 
   const roleOptions = Object.values(UserRole).map((role) => ({
@@ -49,22 +52,10 @@ export const UserCreateEditForm = ({
         name="lastName"
         label="Last Name (Optional)"
         placeholder="Doe"
+        required={false}
       />
 
-      <TextInput
-        name="password"
-        label="Password"
-        type="password"
-        placeholder="Enter password"
-        required={mode === "create"}
-        validation={{
-          required: mode === "create" ? "Password is required" : false,
-          minLength: {
-            value: 8,
-            message: "Password must be at least 8 characters",
-          },
-        }}
-      />
+      <PasswordGeneratorInput required={mode === "create"} />
 
       <TextInput
         name="confirmPassword"
@@ -86,15 +77,19 @@ export const UserCreateEditForm = ({
         }}
       />
 
-      <SelectInput
-        name="role"
-        label="User Role"
-        options={roleOptions}
-        required
-        validation={{
-          required: "Role is required",
-        }}
-      />
+      {!hideRole ? (
+        <SelectInput
+          name="role"
+          label="User Role"
+          options={roleOptions}
+          required
+          validation={{
+            required: "Role is required",
+          }}
+        />
+      ) : (
+        <input type="hidden" {...register("role")} />
+      )}
     </>
   );
 };

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { classEnrollments, users, classes } from "@/db/schema";
+import { classEnrollments, users, classes, students } from "@/db/schema";
 
 type CreateEnrollmentPayload = {
   studentId?: string;
@@ -87,19 +87,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify student exists
-    const [student] = await db
+    // Verify student exists (check both users table and students table)
+    let finalStudentId = studentId;
+
+    // First check if it's a valid user ID
+    const [user] = await db
       .select()
       .from(users)
       .where(eq(users.id, studentId))
       .limit(1);
 
-    if (!student) {
-      return NextResponse.json(
-        { success: false, message: "Student not found" },
-        { status: 404 }
-      );
+    if (!user) {
+      // If not found in users, check if it's a student ID in students table
+      // This handles cases where frontend might send the student profile ID instead of user ID
+      const [studentProfile] = await db
+        .select()
+        .from(students) // Ensure students is imported from schema
+        .where(eq(students.id, studentId)) // Assuming studentId in payload matches students.id
+        .limit(1);
+
+      if (studentProfile && studentProfile.userId) {
+        finalStudentId = studentProfile.userId;
+      } else {
+        return NextResponse.json(
+          { success: false, message: "Student not found (invalid User ID or Student Profile ID)" },
+          { status: 404 }
+        );
+      }
+    } else {
+      // Ensure the user has role 'STUDENT' ?? Optional validation
     }
+
+    // Use the resolved finalStudentId for enrollment
+    const enrollmentStudentId = finalStudentId;
 
     // Verify class exists
     const [classRecord] = await db
@@ -119,7 +139,7 @@ export async function POST(request: NextRequest) {
     const [existing] = await db
       .select({ id: classEnrollments.id })
       .from(classEnrollments)
-      .where(and(eq(classEnrollments.studentId, studentId), eq(classEnrollments.classId, classId)))
+      .where(and(eq(classEnrollments.studentId, enrollmentStudentId), eq(classEnrollments.classId, classId)))
       .limit(1);
 
     if (existing) {
@@ -152,7 +172,7 @@ export async function POST(request: NextRequest) {
     const [created] = await db
       .insert(classEnrollments)
       .values({
-        studentId,
+        studentId: enrollmentStudentId,
         classId,
         enrolledBy: enrolledById, // Can be null for onboarding flow
       })

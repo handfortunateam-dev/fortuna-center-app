@@ -25,7 +25,6 @@ export function GlobalAudioPlayer() {
       if (playPromise !== undefined) {
         playPromise.catch((e) => {
           console.error("Audio playback failed:", e);
-          // Don't necessarily setPlayingState(false) here, as it might cause loops or UI flicker
         });
       }
     } else {
@@ -69,7 +68,7 @@ export function GlobalAudioPlayer() {
             controls
             autoPlay
             className="w-full h-10"
-            src={playingEpisode.links.download}
+            src={playingEpisode.audioUrl}
             onPlay={() => setPlayingState(true)}
             onPause={() => setPlayingState(false)}
             onEnded={() => setPlayingState(false)}

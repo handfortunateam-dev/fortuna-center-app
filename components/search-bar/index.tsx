@@ -151,7 +151,7 @@ export function SearchBar({
 
       setTimeoutId(newTimeoutId);
     },
-    [isControlled, onChange, onSearch, debounceMs, timeoutId]
+    [isControlled, onChange, onSearch, debounceMs, timeoutId],
   );
 
   // Handle clear action
@@ -181,12 +181,12 @@ export function SearchBar({
         input: "text-sm",
         inputWrapper: [
           "bg-default-100",
-          "dark:bg-default-50/10",
+          "dark:bg-default-100",
           "backdrop-blur-sm",
           "hover:bg-default-200/70",
-          "dark:hover:bg-default-50/20",
+          "dark:hover:bg-default-200",
           "group-data-[focused=true]:bg-default-200/70",
-          "dark:group-data-[focused=true]:bg-default-50/20",
+          "dark:group-data-[focused=true]:bg-default-200",
           "!cursor-text",
         ],
       }}
@@ -198,7 +198,9 @@ export function SearchBar({
       radius={radius}
       size={size}
       startContent={
-        startContent ?? <Icon icon="lucide:search" className="w-4 h-4 text-default-400" />
+        startContent ?? (
+          <Icon icon="lucide:search" className="w-4 h-4 text-default-400" />
+        )
       }
       type="search"
       value={searchValue}

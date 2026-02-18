@@ -21,7 +21,7 @@ interface UserFormData {
   role: UserRole;
 }
 
-// Component to conditionally show Quick Student Registration checkbox
+// Component to conditionally show Quick Registration checkbox
 function QuickRegistrationCheckbox({
   isSelected,
   onValueChange,
@@ -32,22 +32,27 @@ function QuickRegistrationCheckbox({
   const { control } = useFormContext<UserFormData>();
   const selectedRole = useWatch({ control, name: "role" });
 
-  // Only show checkbox if role is STUDENT
-  if (selectedRole !== UserRole.STUDENT) {
+  // Only show checkbox if role is STUDENT or TEACHER
+  if (selectedRole !== UserRole.STUDENT && selectedRole !== UserRole.TEACHER) {
     return null;
   }
+
+  const label =
+    selectedRole === UserRole.STUDENT
+      ? "Continue to Quick Student Registration"
+      : "Continue to Quick Teacher Setup";
+
+  const description =
+    selectedRole === UserRole.STUDENT
+      ? "After creating the user account, proceed to complete student identity and class enrollment"
+      : "After creating the user account, proceed to complete teacher profile and class assignment";
 
   return (
     <div className="mt-6 pt-4 border-t border-divider">
       <Checkbox isSelected={isSelected} onValueChange={onValueChange}>
         <div className="flex flex-col">
-          <span className="text-sm font-medium">
-            Continue to Quick Student Registration
-          </span>
-          <span className="text-xs text-default-500">
-            After creating the user account, proceed to complete student
-            identity and class enrollment
-          </span>
+          <span className="text-sm font-medium">{label}</span>
+          <span className="text-xs text-default-500">{description}</span>
         </div>
       </Checkbox>
     </div>
@@ -108,15 +113,17 @@ export default function CreateUserPage() {
 
       // Redirect based on checkbox
       setTimeout(() => {
-        if (
-          continueToRegistration &&
-          formData.role === UserRole.STUDENT &&
-          data.data?.id
-        ) {
-          router.push(`/students/onboard/${data.data.id}`);
-        } else {
-          router.push("/users");
+        if (continueToRegistration && data.data?.id) {
+          if (formData.role === UserRole.STUDENT) {
+            router.push(`/students/onboard/${data.data.id}`);
+            return;
+          }
+          if (formData.role === UserRole.TEACHER) {
+            router.push(`/teachers/onboard/${data.data.id}`);
+            return;
+          }
         }
+        router.push("/users");
       }, 1000);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "An error occurred";
@@ -135,7 +142,7 @@ export default function CreateUserPage() {
         <CardHeader className="flex flex-col items-start px-4 py-4">
           <h1 className="text-2xl font-bold">Create New User</h1>
           <p className="text-sm text-gray-500">
-            Add a new user account with role assignment
+            Add a new user account with role assignment dsf
           </p>
         </CardHeader>
         <CardBody>
@@ -161,6 +168,8 @@ export default function CreateUserPage() {
               isSelected={continueToRegistration}
               onValueChange={setContinueToRegistration}
             />
+
+            {/* Quick Student Registration Checkbox - Only shows when role is STUDENT */}
           </CreateOrEditFormWrapper>
         </CardBody>
       </Card>

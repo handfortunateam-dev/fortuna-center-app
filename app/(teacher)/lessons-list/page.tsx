@@ -21,11 +21,11 @@ import {
   useDisclosure,
   Select,
   SelectItem,
-  Spinner,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+  Skeleton,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Toast } from "@/components/toast";
@@ -103,7 +103,8 @@ export default function LessonsListPage() {
   const { data: classesData, isLoading: isClassesLoading } = useQuery({
     queryKey: ["teacher-classes"],
     queryFn: async () => {
-      const res = await apiClient.get<{ id: string; name: string }[]>("/teacher/classes");
+      const res =
+        await apiClient.get<{ id: string; name: string }[]>("/teacher/classes");
       return res.data;
     },
   });
@@ -365,8 +366,22 @@ export default function LessonsListPage() {
 
   if (isClassesLoading)
     return (
-      <div className="p-8 flex justify-center">
-        <Spinner size="lg" />
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-64 rounded-lg" />
+            <Skeleton className="h-4 w-48 rounded-lg" />
+          </div>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <Skeleton className="h-10 w-[200px] rounded-lg" />
+            <Skeleton className="h-10 w-32 rounded-lg" />
+          </div>
+        </div>
+        <div className="space-y-4 mt-6">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
 
@@ -408,8 +423,20 @@ export default function LessonsListPage() {
 
       <div className="mt-6">
         {isLessonsLoading ? (
-          <div className="flex justify-center p-10">
-            <Spinner />
+          <div className="space-y-4 animate-appearance-in">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border border-default-200">
+                <CardBody className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2 w-full max-w-md">
+                      <Skeleton className="h-6 w-3/4 rounded-lg" />
+                      <Skeleton className="h-4 w-1/2 rounded-lg" />
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                  </div>
+                </CardBody>
+              </Card>
+            ))}
           </div>
         ) : !lessonsData || lessonsData.length === 0 ? (
           <div className="text-center py-16 bg-default-50 rounded-lg border border-dashed border-default-200">

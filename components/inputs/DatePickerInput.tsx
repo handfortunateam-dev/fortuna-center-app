@@ -17,6 +17,7 @@ interface DatePickerInputProps {
   rangeMode?: boolean;
   minValue?: CalendarDate;
   maxValue?: CalendarDate;
+  rules?: any;
 }
 
 export const DatePickerInput = ({
@@ -29,6 +30,7 @@ export const DatePickerInput = ({
   rangeMode = false,
   minValue,
   maxValue,
+  rules,
 }: DatePickerInputProps) => {
   const {
     control,
@@ -49,6 +51,7 @@ export const DatePickerInput = ({
         <Controller
           control={control}
           name={name}
+          rules={rules}
           render={({ field }) => {
             let dateValue: CalendarDate | undefined;
 
@@ -109,6 +112,7 @@ export const DatePickerInput = ({
       <Controller
         control={control}
         name={name}
+        rules={rules}
         render={({ field }) => (
           <DateRangePicker
             errorMessage={error}

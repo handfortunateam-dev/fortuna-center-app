@@ -5,7 +5,8 @@ import { getClerkUserList } from "@/lib/clerk";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
-import { and, eq, ilike } from "drizzle-orm";
+import { students } from "@/db/schema/students.schema";
+import { and, eq, ilike, notInArray, isNotNull } from "drizzle-orm";
 
 // GET - Fetch all users from Clerk
 export async function GET(request: NextRequest) {
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
         const role = searchParams.get("role");
         const source = searchParams.get("source");
         const id = searchParams.get("id"); // Database user ID
+        const excludeLinkedStudents = searchParams.get("excludeLinkedStudents") === "true" || searchParams.get("unassigned") === "true";
 
         // If id is specified, fetch single user by database ID
         if (id) {
@@ -80,6 +82,19 @@ export async function GET(request: NextRequest) {
 
             if (query) {
                 whereConditions.push(ilike(users.name, `%${query}%`));
+            }
+
+            if (excludeLinkedStudents) {
+                const linkedUserIds = await db
+                    .select({ userId: students.userId })
+                    .from(students)
+                    .where(isNotNull(students.userId));
+
+                const ids = linkedUserIds.map(s => s.userId).filter(Boolean) as string[];
+
+                if (ids.length > 0) {
+                    whereConditions.push(notInArray(users.id, ids));
+                }
             }
 
             const where = whereConditions.length > 0 ? and(...whereConditions) : undefined;

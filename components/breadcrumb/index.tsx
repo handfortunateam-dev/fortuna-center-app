@@ -160,6 +160,10 @@ export function BreadcrumbsNav({
         let current = "";
         for (const seg of segments) {
           current += `/${seg}`;
+          // Avoid duplicates if root is already added (e.g. /dashboard)
+          if (parts.some((p) => p.href === current)) {
+            continue;
+          }
           parts.push({ label: formatSegment(seg), href: current });
         }
         return parts;

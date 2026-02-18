@@ -63,7 +63,7 @@ export async function fetchClass(
   return data;
 }
 
-async function fetchTeacherClasses(
+export async function fetchTeacherClasses(
   filters?: TeacherClassFilters
 ): Promise<ApiResponse<TeacherClassItem[]>> {
   const { data } = await apiClient.get<ApiResponse<TeacherClassItem[]>>(

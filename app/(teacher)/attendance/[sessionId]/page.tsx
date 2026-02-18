@@ -60,6 +60,23 @@ export default function AttendanceDetailPage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
 
+  // Mutation to start session (update status to in_progress)
+  const startSessionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/teacher/sessions/${sessionId}/start`, {
+        method: "PATCH",
+      });
+      if (!response.ok) throw new Error("Failed to start session");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["session-attendance", sessionId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["teacher-sessions"] });
+    },
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ["session-attendance", sessionId],
     queryFn: () => getSessionAttendance(sessionId),
@@ -133,6 +150,11 @@ export default function AttendanceDetailPage() {
   }
 
   const { session } = data;
+  const isScheduled = session.status === "scheduled";
+  const isNotStarted = session.status === "not_started";
+  const canEditAttendance =
+    session.status === "in_progress" || session.status === "completed";
+
   const stats = records.reduce(
     (acc, r) => {
       acc[r.status]++;
@@ -143,6 +165,10 @@ export default function AttendanceDetailPage() {
       number
     >,
   );
+
+  const handleStartSession = () => {
+    startSessionMutation.mutate();
+  };
 
   return (
     <div className="space-y-6">
@@ -173,6 +199,46 @@ export default function AttendanceDetailPage() {
         </div>
       </div>
 
+      {/* Session Status Warning */}
+      {(isScheduled || isNotStarted) && (
+        <Card className="border-2 border-warning bg-warning-50 dark:bg-warning-100/10">
+          <CardBody className="p-6">
+            <div className="flex items-start gap-4">
+              <Icon
+                icon="lucide:alert-triangle"
+                className="w-8 h-8 text-warning shrink-0"
+              />
+              <div className="flex-1">
+                <Heading className="text-lg font-bold text-warning-700 dark:text-warning mb-2">
+                  {isScheduled
+                    ? "Session Not Started"
+                    : "Session Ready to Start"}
+                </Heading>
+                <Text className="text-warning-700 dark:text-warning-300 mb-4">
+                  {isScheduled
+                    ? "This session is still scheduled. You need to start the session before you can mark attendance."
+                    : "This session is ready to begin. Start the session to enable attendance marking."}
+                </Text>
+                <div className="flex items-center gap-3">
+                  <Button
+                    color="warning"
+                    variant="solid"
+                    startContent={<Icon icon="lucide:play-circle" />}
+                    onPress={handleStartSession}
+                    isLoading={startSessionMutation.isPending}
+                  >
+                    Start Session Now
+                  </Button>
+                  <Chip color="warning" variant="flat" size="sm">
+                    Status: {isScheduled ? "Scheduled" : "Not Started"}
+                  </Chip>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {ATTENDANCE_STATUS.map((status) => (
@@ -190,33 +256,35 @@ export default function AttendanceDetailPage() {
       </div>
 
       {/* Bulk Actions */}
-      <Card className="border border-default-200">
-        <CardBody className="p-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <Text weight="semibold" className="mr-2">
-              Quick Actions:
-            </Text>
-            <Button
-              size="sm"
-              color="success"
-              variant="flat"
-              startContent={<Icon icon="lucide:check-circle" />}
-              onPress={() => handleBulkAction("present")}
-            >
-              Mark All Present
-            </Button>
-            <Button
-              size="sm"
-              color="danger"
-              variant="flat"
-              startContent={<Icon icon="lucide:x-circle" />}
-              onPress={() => handleBulkAction("absent")}
-            >
-              Mark All Absent
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
+      {canEditAttendance && (
+        <Card className="border border-default-200">
+          <CardBody className="p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Text weight="semibold" className="mr-2">
+                Quick Actions:
+              </Text>
+              <Button
+                size="sm"
+                color="success"
+                variant="flat"
+                startContent={<Icon icon="lucide:check-circle" />}
+                onPress={() => handleBulkAction("present")}
+              >
+                Mark All Present
+              </Button>
+              <Button
+                size="sm"
+                color="danger"
+                variant="flat"
+                startContent={<Icon icon="lucide:x-circle" />}
+                onPress={() => handleBulkAction("absent")}
+              >
+                Mark All Absent
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Attendance Table */}
       <Card className="border border-default-200">
@@ -250,6 +318,7 @@ export default function AttendanceDetailPage() {
                       }}
                       className="min-w-[150px]"
                       aria-label="Attendance status"
+                      isDisabled={!canEditAttendance}
                     >
                       {ATTENDANCE_STATUS.map((status) => (
                         <SelectItem key={status.key} textValue={status.label}>
@@ -272,6 +341,7 @@ export default function AttendanceDetailPage() {
                       minRows={1}
                       maxRows={3}
                       className="min-w-[200px]"
+                      isDisabled={!canEditAttendance}
                     />
                   </TableCell>
                 </TableRow>
@@ -297,7 +367,7 @@ export default function AttendanceDetailPage() {
             size="lg"
             startContent={<Icon icon="lucide:save" />}
             onPress={handleSave}
-            isLoading={updateMutation.isLoading}
+            isLoading={updateMutation.isPending}
             isDisabled={!hasChanges}
           >
             Save Attendance

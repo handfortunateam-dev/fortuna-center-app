@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { users, classes } from "@/db/schema";
+import { users, classes, students } from "@/db/schema";
 
 export async function GET(request: NextRequest) {
     try {
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        let data: { text: string; key: string; value: string }[] = [];
+        let data: { text: string; key: string; value: string; disabled?: boolean }[] = [];
 
         switch (type) {
             case "teachers":
@@ -35,19 +35,49 @@ export async function GET(request: NextRequest) {
                 break;
 
             case "students":
-                const students = await db
+                const studentList = await db
                     .select({
-                        id: users.id,
-                        name: users.name,
+                        id: students.id,
+                        userId: students.userId,
+                        firstName: students.firstName,
+                        middleName: students.middleName,
+                        lastName: students.lastName,
+                        studentId: students.studentId,
+                        phone: students.phone,
+                        address: students.address,
+                        placeOfBirth: students.placeOfBirth,
+                        dateOfBirth: students.dateOfBirth,
+                        gender: students.gender,
+                        education: students.education,
                     })
-                    .from(users)
-                    .where(eq(users.role, "STUDENT"));
+                    .from(students);
 
-                data = students.map((s) => ({
-                    text: s.name,
-                    key: s.id,
-                    value: s.id,
-                }));
+                data = studentList.map((s) => {
+                    // Check for completeness
+                    // Required fields: phone, address, placeOfBirth, dateOfBirth, gender, education
+                    const isComplete =
+                        !!s.phone &&
+                        !!s.address &&
+                        !!s.placeOfBirth &&
+                        !!s.dateOfBirth &&
+                        !!s.gender &&
+                        !!s.education;
+
+                    const fullName = [s.firstName, s.middleName, s.lastName]
+                        .filter(Boolean)
+                        .join(" ");
+
+                    const label = isComplete
+                        ? `${fullName} (${s.studentId})`
+                        : `${fullName} (${s.studentId}) (lengkapi terlebih dahulu data student utk akun itu)`;
+
+                    return {
+                        text: label,
+                        key: s.id,
+                        value: s.userId || "", // Use userId for enrollment, fallback to empty string if null (though it should be unique and not null usually?)
+                        disabled: !isComplete || !s.userId, // Disable if no userId
+                    };
+                });
                 break;
 
             case "classes":

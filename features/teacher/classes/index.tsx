@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardBody, Chip, Input, Button, Spinner } from "@heroui/react";
+import { Card, CardBody, Chip, Input, Button, Skeleton } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
@@ -42,8 +42,36 @@ export default function TeacherClasses() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner size="lg" label="Loading classes..." />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 rounded-lg mb-2" />
+            <Skeleton className="h-4 w-96 rounded-lg" />
+          </div>
+        </div>
+        <Skeleton className="h-10 w-full max-w-md rounded-lg" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="hover:scale-105 transition-transform">
+              <CardBody className="p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 w-32 rounded-lg" />
+                    <Skeleton className="h-5 w-16 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                </div>
+                <Skeleton className="h-4 w-full rounded-lg" />
+                <Skeleton className="h-4 w-3/4 rounded-lg" />
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4 rounded-lg" />
+                  <Skeleton className="h-4 w-24 rounded-lg" />
+                </div>
+                <Skeleton className="h-10 w-full rounded-lg mt-4" />
+              </CardBody>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

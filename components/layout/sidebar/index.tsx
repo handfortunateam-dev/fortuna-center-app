@@ -7,6 +7,13 @@ import { Tooltip } from "@heroui/tooltip";
 import { Icon } from "@iconify/react";
 import { MenuItem as MenuItemType } from "@/constants/resource";
 import { useAccessControl } from "@/lib/hooks/useAccessControl";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from "@heroui/react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -31,28 +38,27 @@ const MenuItem = ({
 }: MenuItemProps) => {
   const hasChildren = item.children && item.children.length > 0;
 
+  // Check if any child is currently selected
+  const isChildSelected = item.children?.some(
+    (child) => child.key === selectedKey,
+  );
+
   const [isExpanded, setIsExpanded] = useState(() => {
     if (hasChildren && item.children) {
-      return item.children.some((child) => child.key === selectedKey);
+      return isChildSelected;
     }
     return false;
   });
-  const isActive = selectedKey === item.key;
 
-  /*
-   * We need to track the previous selectedKey to detect when it changes,
-   * so we can auto-expand the menu item if a child becomes active.
-   * This replace the useEffect pattern which caused "setState in effect" warnings.
-   */
+  const isActive = selectedKey === item.key;
+  const showActiveState = isActive || isChildSelected;
+
   const [prevSelectedKey, setPrevSelectedKey] = useState(selectedKey);
 
   if (selectedKey !== prevSelectedKey) {
     setPrevSelectedKey(selectedKey);
     if (hasChildren && item.children) {
-      const isChildActive = item.children.some(
-        (child) => child.key === selectedKey,
-      );
-      if (isChildActive) {
+      if (isChildSelected) {
         setIsExpanded(true);
       }
     }
@@ -69,97 +75,195 @@ const MenuItem = ({
     transition-all duration-200 relative group w-full
     ${isCollapsed ? "justify-center" : "justify-between"}
     ${
-      isActive && !hasChildren
-        ? "bg-blue-600/10 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-blue-600/20 backdrop-blur-sm"
+      showActiveState
+        ? "bg-danger-50 text-danger-600 dark:text-danger-400 shadow-sm ring-1 ring-danger-200/50 dark:ring-danger-800/50 backdrop-blur-sm"
         : "text-gray-600 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white"
     }
   `;
 
+  // Standard content (Icon + Label + Arrow)
   const NavContent = (
     <>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 overflow-hidden">
         {icon || (
           <Icon icon="solar:file-text-bold" className="w-5 h-5 shrink-0" />
         )}
-        {!isCollapsed && (
-          <span className="whitespace-nowrap">{item.label}</span>
-        )}
-      </div>
-      {!isCollapsed && hasChildren && (
-        <span className="text-gray-400">
-          {isExpanded ? (
-            <Icon icon="solar:alt-arrow-down-linear" className="w-4 h-4" />
-          ) : (
-            <Icon icon="solar:alt-arrow-right-linear" className="w-4 h-4" />
+        <AnimatePresence mode="wait">
+          {!isCollapsed && (
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "auto" }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.2 }}
+              className="whitespace-nowrap overflow-hidden"
+            >
+              {item.label}
+            </motion.span>
           )}
-        </span>
-      )}
+        </AnimatePresence>
+      </div>
+      <AnimatePresence>
+        {!isCollapsed && hasChildren && (
+          <motion.span
+            className="text-gray-400 shrink-0"
+            initial={{ opacity: 0, width: 0 }}
+            animate={{
+              opacity: 1,
+              width: "auto",
+              rotate: isExpanded ? 0 : -90,
+            }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Icon icon="solar:alt-arrow-down-linear" className="w-4 h-4" />
+          </motion.span>
+        )}
+      </AnimatePresence>
     </>
   );
 
-  const itemContent = isCollapsed ? (
-    <Tooltip
-      content={item.label}
-      placement="right"
-      classNames={{
-        base: "hidden lg:block",
-        content:
-          "bg-gray-900 dark:bg-white text-white dark:text-black text-sm px-3 py-1.5 rounded-lg shadow-lg",
-      }}
-    >
-      <div className="flex justify-center w-full">
-        {icon || (
-          <Icon icon="solar:file-text-bold" className="w-5 h-5 shrink-0" />
-        )}
-      </div>
-    </Tooltip>
-  ) : (
-    NavContent
-  );
-
-  const renderItem = hasChildren ? (
-    <div onClick={toggleExpand} className={`${navLinkClass} cursor-pointer`}>
-      {itemContent}
+  // Content for collapsed state (Icon only, usually wrapped in Tooltip)
+  const collapsedContent = (
+    <div className="flex justify-center w-full">
+      {icon || (
+        <Icon icon="solar:file-text-bold" className="w-5 h-5 shrink-0" />
+      )}
     </div>
-  ) : (
-    <Link href={item.route ?? "/"} onClick={onClose} className={navLinkClass}>
-      {itemContent}
-    </Link>
   );
 
-  return (
-    <div className="flex flex-col">
-      {renderItem}
-      {/* Render children */}
-      {!isCollapsed && hasChildren && isExpanded && item.children && (
-        <div className="ml-4 mt-1 space-y-1 border-l border-gray-200 dark:border-gray-800 pl-2">
-          {item.children.map((child: MenuItemType) => (
-            <MenuItem
+  let renderItem;
+
+  if (isCollapsed && hasChildren) {
+    // Dropdown for collapsed menu with children
+    renderItem = (
+      <Dropdown placement="right-start" offset={20}>
+        <DropdownTrigger>
+          <div className={`${navLinkClass} cursor-pointer`}>
+            <Tooltip
+              content={item.label}
+              placement="right"
+              classNames={{
+                base: "hidden lg:block",
+                content:
+                  "bg-gray-900 dark:bg-white text-white dark:text-black text-sm px-3 py-1.5 rounded-lg shadow-lg",
+              }}
+            >
+              {collapsedContent}
+            </Tooltip>
+          </div>
+        </DropdownTrigger>
+        <DropdownMenu
+          aria-label={item.label}
+          className="bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800 rounded-xl shadow-lg"
+        >
+          {(item.children || []).map((child: MenuItemType) => (
+            <DropdownItem
               key={child.key}
-              item={child}
-              isCollapsed={isCollapsed}
-              selectedKey={selectedKey}
-              onClose={onClose}
-              icon={
+              href={child.route}
+              startContent={
                 child.icon ? (
                   typeof child.icon === "function" ? (
-                    <child.icon className="w-5 h-5 shrink-0" />
+                    <child.icon className="w-4 h-4 shrink-0" />
                   ) : typeof child.icon === "string" ? (
-                    <Icon icon={child.icon} className="w-5 h-5 shrink-0" />
+                    <Icon icon={child.icon} className="w-4 h-4 shrink-0" />
                   ) : (
                     child.icon
                   )
                 ) : (
                   <Icon
                     icon="solar:file-text-bold"
-                    className="w-5 h-5 shrink-0"
+                    className="w-4 h-4 shrink-0"
                   />
                 )
               }
-            />
+              className={
+                selectedKey === child.key
+                  ? "bg-primary/10 text-primary font-medium"
+                  : ""
+              }
+            >
+              {child.label}
+            </DropdownItem>
           ))}
-        </div>
-      )}
+        </DropdownMenu>
+      </Dropdown>
+    );
+  } else if (hasChildren) {
+    // Expandable item (full sidebar)
+    renderItem = (
+      <div onClick={toggleExpand} className={`${navLinkClass} cursor-pointer`}>
+        {NavContent}
+      </div>
+    );
+  } else if (isCollapsed) {
+    // Simple link (collapsed, no children)
+    renderItem = (
+      <Link href={item.route ?? "/"} onClick={onClose} className={navLinkClass}>
+        <Tooltip
+          content={item.label}
+          placement="right"
+          classNames={{
+            base: "hidden lg:block",
+            content:
+              "bg-gray-900 dark:bg-white text-white dark:text-black text-sm px-3 py-1.5 rounded-lg shadow-lg",
+          }}
+        >
+          {collapsedContent}
+        </Tooltip>
+      </Link>
+    );
+  } else {
+    // Simple link (expanded)
+    renderItem = (
+      <Link href={item.route ?? "/"} onClick={onClose} className={navLinkClass}>
+        {NavContent}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex flex-col">
+      {renderItem}
+      {/* Render children for Expanded Sidebar with Smooth Transition */}
+      <AnimatePresence>
+        {!isCollapsed && hasChildren && isExpanded && item.children && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="ml-4 mt-1 space-y-1 border-l border-gray-200 dark:border-gray-800 pl-2">
+              {item.children.map((child: MenuItemType) => (
+                <MenuItem
+                  key={child.key}
+                  item={child}
+                  isCollapsed={isCollapsed}
+                  selectedKey={selectedKey}
+                  onClose={onClose}
+                  icon={
+                    child.icon ? (
+                      typeof child.icon === "function" ? (
+                        <child.icon className="w-5 h-5 shrink-0" />
+                      ) : typeof child.icon === "string" ? (
+                        <Icon icon={child.icon} className="w-5 h-5 shrink-0" />
+                      ) : (
+                        child.icon
+                      )
+                    ) : (
+                      <Icon
+                        icon="solar:file-text-bold"
+                        className="w-5 h-5 shrink-0"
+                      />
+                    )
+                  }
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -179,16 +283,32 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
   // Force expand on mobile
   const effectiveCollapsed = isMobile ? false : isCollapsed;
 
-  // Helper to flatten menu and find selected key
+  // Helper to find the best matching selected key (longest matching route)
   const findSelectedKey = (items: MenuItemType[], path: string): string => {
-    for (const item of items) {
-      if (item.route === path) return item.key;
-      if (item.children) {
-        const childKey = findSelectedKey(item.children, path);
-        if (childKey) return childKey;
+    let bestMatch = { key: "", length: 0 };
+
+    const traverse = (menuList: MenuItemType[]) => {
+      for (const item of menuList) {
+        if (item.route) {
+          const isExact = item.route === path;
+          // Ensure prefix match includes a slash to prevent partial word matches (e.g. /user vs /users)
+          const isPrefix =
+            item.route !== "/" && path.startsWith(item.route + "/");
+
+          if (isExact || isPrefix) {
+            if (item.route.length > bestMatch.length) {
+              bestMatch = { key: item.key, length: item.route.length };
+            }
+          }
+        }
+        if (item.children) {
+          traverse(item.children);
+        }
       }
-    }
-    return "";
+    };
+
+    traverse(items);
+    return bestMatch.key;
   };
 
   const selectedKey = findSelectedKey(menuItems, pathname);
@@ -201,7 +321,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
           fixed top-0 left-0 z-50 h-screen
           bg-white dark:bg-gray-950/80 backdrop-blur-md
           border-r border-gray-200/50 dark:border-gray-800/50
-          transform transition-all duration-300 ease-in-out shadow-lg
+          transform transition-all duration-300 ease-in-out shadow-lg 
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0 flex flex-col
           ${effectiveCollapsed ? "w-20" : "w-80"}
@@ -250,20 +370,28 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
         >
           <Link
             href="/"
-            className={`flex items-center transition-all duration-300 ${effectiveCollapsed ? "justify-center" : "gap-2"}`}
+            className={`flex items-center gap-3 transition-all duration-300 ${effectiveCollapsed ? "justify-center" : "justify-start"}`}
           >
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-xl shrink-0 overflow-hidden">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-xl shrink-0 overflow-hidden relative">
               <img
                 src="/android-chrome-192x192.png"
                 alt="Fortuna Center"
                 className="w-full h-full object-cover"
               />
             </div>
-            {!effectiveCollapsed && (
-              <span className="font-bold text-lg text-gray-900 dark:text-white whitespace-nowrap">
-                Fortuna Center
-              </span>
-            )}
+            <AnimatePresence>
+              {!effectiveCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="font-bold text-lg text-gray-900 dark:text-white whitespace-nowrap overflow-hidden"
+                >
+                  Fortuna Center
+                </motion.span>
+              )}
+            </AnimatePresence>
           </Link>
 
           <button
@@ -276,7 +404,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto overflow-x-hidden">
           {menuItems.map((item) => (
             <MenuItem
               key={item.key}
@@ -303,6 +431,32 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
             />
           ))}
         </nav>
+
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-gray-200/50 dark:border-gray-800/50 shrink-0">
+          <Link
+            href="/"
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-primary dark:hover:text-primary transition-all duration-200 ${
+              effectiveCollapsed ? "justify-center" : "justify-start"
+            }`}
+            target="_blank"
+          >
+            <Icon icon="lucide:external-link" className="w-5 h-5 shrink-0" />
+            <AnimatePresence>
+              {!effectiveCollapsed && (
+                <motion.span
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="whitespace-nowrap overflow-hidden"
+                >
+                  Go to Public Home
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </Link>
+        </div>
       </aside>
     </>
   );

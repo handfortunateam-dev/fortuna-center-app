@@ -3,34 +3,69 @@
 import { UserButton, useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import AuthButtonsClient from "./AuthButtonsClient";
+import { useAuthProvider } from "@/hooks/useAuthProvider";
+import { useGetIdentity } from "@/hooks/useGetIdentity";
+import LocalUserMenu from "./LocalUserMenu";
 
 export default function AuthButtons() {
-  const { user, isSignedIn } = useUser();
+  const { authProvider } = useAuthProvider();
+
+  // Clerk hooks
+  const {
+    user: clerkUser,
+    isSignedIn: isClerkSignedIn,
+    isLoaded: isClerkLoaded,
+  } = useUser();
+
+  // Local hooks
+  const { user: localUser, loading: localLoading } = useGetIdentity();
+
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch user role from the database
-    if (isSignedIn && user?.id) {
-      const fetchUserRole = async () => {
-        try {
-          const response = await fetch("/api/user/role");
-          const data = await response.json();
-          setUserRole(data.role || "VISITOR");
-        } catch (error) {
-          console.error("Failed to fetch user role:", error);
-          setUserRole("VISITOR");
-        } finally {
-          setIsLoading(false);
-        }
-      };
+    if (authProvider === "clerk") {
+      if (!isClerkLoaded) return;
 
-      fetchUserRole();
+      // Clerk logic
+      if (isClerkSignedIn && clerkUser?.id) {
+        const fetchUserRole = async () => {
+          try {
+            const response = await fetch("/api/user/role");
+            const data = await response.json();
+            setUserRole(data.role || "VISITOR");
+          } catch (error) {
+            console.error("Failed to fetch user role:", error);
+            setUserRole("VISITOR");
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        fetchUserRole();
+      } else {
+        setIsLoading(false);
+      }
     } else {
-      setIsLoading(false);
+      // Local logic
+      if (!localLoading) {
+        if (localUser) {
+          setUserRole(localUser.role || "VISITOR");
+        }
+        setIsLoading(false);
+      }
     }
-  }, [isSignedIn, user?.id]);
+  }, [
+    authProvider,
+    isClerkSignedIn,
+    clerkUser?.id,
+    localLoading,
+    localUser,
+    isClerkLoaded,
+  ]);
 
+  // Determine if signed in, visitor status and effective user role
+  const isSignedIn = authProvider === "clerk" ? !!isClerkSignedIn : !!localUser;
   const isVisitor = userRole === "VISITOR";
 
   if (isLoading) {
@@ -42,13 +77,17 @@ export default function AuthButtons() {
     return (
       <div className="hidden md:flex items-center gap-2">
         <AuthButtonsClient showDashboard={true} />
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: "w-9 h-9",
-            },
-          }}
-        />
+        {authProvider === "clerk" ? (
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "w-9 h-9",
+              },
+            }}
+          />
+        ) : (
+          <LocalUserMenu />
+        )}
       </div>
     );
   }
@@ -57,13 +96,17 @@ export default function AuthButtons() {
   if (isSignedIn && isVisitor) {
     return (
       <div className="hidden md:flex items-center gap-2">
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: "w-9 h-9",
-            },
-          }}
-        />
+        {authProvider === "clerk" ? (
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "w-9 h-9",
+              },
+            }}
+          />
+        ) : (
+          <LocalUserMenu />
+        )}
       </div>
     );
   }

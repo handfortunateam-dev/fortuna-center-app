@@ -13,7 +13,10 @@ export function useAccessControl() {
             return data.data; // This is the AuthUser object
         },
         retry: 1,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 30 * 60 * 1000, // 30 minutes - data stays fresh for 30 min
+        gcTime: 60 * 60 * 1000, // 1 hour - keep in cache for 1 hour even when unused
+        refetchOnWindowFocus: false, // Don't refetch when window regains focus
+        refetchOnMount: false, // Don't refetch on component mount if data exists
     });
 
     const role = user?.role || "";

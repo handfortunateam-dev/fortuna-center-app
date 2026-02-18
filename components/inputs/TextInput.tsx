@@ -19,7 +19,7 @@ interface TextInputProps {
   required?: boolean;
   isInvalid?: boolean;
   errorMessage?: string;
-  type?: "text" | "password" | "email" | "number" | "tel" | "url";
+  type?: "text" | "password" | "email" | "number" | "tel" | "url" | "date";
   validation?: RegisterOptions;
   helperText?: string;
   description?: string;
