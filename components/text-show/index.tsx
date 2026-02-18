@@ -1,7 +1,7 @@
 import React from "react";
 import { cn } from "@heroui/theme";
 
-type ValueType = string | number | boolean | null | undefined;
+type ValueType = string | number | boolean | null | undefined | Date;
 
 interface TextShowProps {
   label: string;

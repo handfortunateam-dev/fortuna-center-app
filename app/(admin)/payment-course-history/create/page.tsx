@@ -1,16 +1,17 @@
 "use client";
 
 import { useForm, FormProvider } from "react-hook-form";
-import { useMutation, useQuery } from "@tanstack/react-query"; // Fixed import source
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Card, CardBody, CardFooter } from "@heroui/react";
 import { apiClient } from "@/lib/axios";
 import { SelectInput } from "@/components/inputs/SelectInput";
 import { TextInput } from "@/components/inputs/TextInput";
-import { AutocompleteInput } from "@/components/inputs/AutoCompleteInput"; // Path check
+import { AutocompleteInput } from "@/components/inputs/AutoCompleteInput";
 import { Heading } from "@/components/heading";
 import { Toast } from "@/components/toast";
 import { Text } from "@/components/text";
+import { Suspense } from "react";
 
 const MONTHS = [
   { label: "January", value: "1" },
@@ -27,7 +28,7 @@ const MONTHS = [
   { label: "December", value: "12" },
 ];
 
-export default function CreatePaymentPage() {
+function CreatePaymentForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -195,5 +196,13 @@ export default function CreatePaymentPage() {
         </FormProvider>
       </Card>
     </div>
+  );
+}
+
+export default function CreatePaymentPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreatePaymentForm />
+    </Suspense>
   );
 }

@@ -1,11 +1,6 @@
 "use client";
 
 import { use } from "react";
-import { useTeacherDetail } from "@/features/lms/teachers/service"; // Wait, I put it in features or services?
-// Step 555 created in services/teachersService.ts.
-// But commonly features refer to feature directory or services refer to services directory.
-// Let's check imports in students/page.tsx step 552: import { useStudentDetail } from "@/services/studentsService";
-// So I should import from @/services/teachersService
 import { useTeacherDetail } from "@/services/teachersService";
 import CardWrapper from "@/components/wrappers/card-wrappers";
 import TextShow from "@/components/text-show";
@@ -38,7 +33,7 @@ export default function TeacherDetailPage({ params }: TeacherDetailPageProps) {
     return (
       <StateMessage
         title="Teacher Not Found"
-        description="The requested teacher could not be found."
+        message="The requested teacher could not be found."
       />
     );
   }
