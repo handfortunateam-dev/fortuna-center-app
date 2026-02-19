@@ -5,14 +5,16 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@iconify/react";
 import { Toast } from "@/components/toast/index";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { CreateOrEditFormWrapper } from "@/components/form/CreateOrEditFormWrapper";
 import { TeacherClassForm } from "@/features/lms/teacher-classes/forms/TeacherClassForm";
 import { TeacherClassFormValues } from "@/features/lms/classes/interfaces";
-import { createTeacherClass } from "@/services/classesService";
+import { createTeacherClass, teacherClassKeys } from "@/services/classesService";
 
 export default function CreateTeacherClassPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
   const defaultValues: Partial<TeacherClassFormValues> = {
@@ -29,16 +31,18 @@ export default function CreateTeacherClassPage() {
         throw new Error(response.data.message || "Failed to assign teacher");
       }
 
+      await queryClient.invalidateQueries({
+        queryKey: teacherClassKeys.all,
+        refetchType: "all",
+      });
+
       Toast({
         title: "Success",
         description: "Teacher assigned to class successfully",
         color: "success",
       });
 
-      // Redirect after short delay
-      // setTimeout(() => {
       router.push("/teacher-classes");
-      // }, 1000);
     } catch (err: any) {
       console.error("Create failed:", err);
       // Handle axios error or standard error

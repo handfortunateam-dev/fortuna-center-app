@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { classEnrollments, users, classes } from "@/db/schema";
+import { classEnrollments, users, classes, students } from "@/db/schema";
 
 const notFoundResponse = () =>
   NextResponse.json({ success: false, message: "Enrollment not found" }, { status: 404 });
@@ -23,14 +23,15 @@ export async function GET(
       .select({
         id: classEnrollments.id,
         studentId: classEnrollments.studentId,
-        studentName: users.name,
+        studentName: sql<string>`concat_ws(' ', ${students.firstName}, ${students.middleName}, ${students.lastName})`,
+        studentEmail: students.email,
         classId: classEnrollments.classId,
         className: classes.name,
         enrolledAt: classEnrollments.enrolledAt,
         enrolledBy: classEnrollments.enrolledBy,
       })
       .from(classEnrollments)
-      .leftJoin(users, eq(classEnrollments.studentId, users.id))
+      .leftJoin(students, eq(classEnrollments.studentId, students.id))
       .leftJoin(classes, eq(classEnrollments.classId, classes.id))
       .where(eq(classEnrollments.id, id))
       .limit(1);
@@ -39,7 +40,7 @@ export async function GET(
       return notFoundResponse();
     }
 
-    // Fetch enrolledBy name separately
+    // Fetch enrolledBy name from users (admin)
     let enrolledByName = null;
     if (result.enrolledBy) {
       const [enrolledUser] = await db
@@ -52,7 +53,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: { ...result, enrolledByName }
+      data: { ...result, enrolledByName },
     });
   } catch (error) {
     console.error("Error fetching class enrollment:", error);
@@ -111,38 +112,28 @@ export async function PATCH(
     const body = (await request.json()) as UpdateEnrollmentPayload;
     const { studentId, classId, enrolledBy } = body;
 
-    if (
-      studentId === undefined &&
-      classId === undefined &&
-      enrolledBy === undefined
-    ) {
+    if (studentId === undefined && classId === undefined && enrolledBy === undefined) {
       return NextResponse.json(
         { success: false, message: "No updates supplied" },
         { status: 400 }
       );
     }
 
-    const targetStudent = studentId;
-    const targetClass = classId;
-
-    // Check collision if updating student or class
-    if (targetStudent && targetClass) {
+    // Check for duplicate if updating student or class
+    if (studentId && classId) {
       const [conflict] = await db
         .select({ id: classEnrollments.id })
         .from(classEnrollments)
         .where(
           and(
-            eq(classEnrollments.studentId, targetStudent),
-            eq(classEnrollments.classId, targetClass)
+            eq(classEnrollments.studentId, studentId),
+            eq(classEnrollments.classId, classId)
           )
         )
         .limit(1);
       if (conflict && conflict.id !== id) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "Student already enrolled in this class",
-          },
+          { success: false, message: "Student already enrolled in this class" },
           { status: 409 }
         );
       }

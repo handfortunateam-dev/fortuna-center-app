@@ -6,7 +6,7 @@ export const useTeachers = (params?: any) => {
     return useQuery<{ data: ITeacher[] }>({
         queryKey: ["teachers", params],
         queryFn: async () => {
-            const { data } = await axios.get("/api/teachers", { params });
+            const { data } = await axios.get("/teachers", { params });
             return data;
         },
     });
@@ -16,7 +16,7 @@ export const useTeacherDetail = (id: string) => {
     return useQuery<{ data: ITeacher }>({
         queryKey: ["teacher", id],
         queryFn: async () => {
-            const { data } = await axios.get(`/api/teachers/${id}`);
+            const { data } = await axios.get(`/teachers/${id}`);
             return data;
         },
         enabled: !!id,

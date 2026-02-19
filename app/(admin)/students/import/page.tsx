@@ -7,7 +7,6 @@ import {
   Card,
   CardBody,
   CardHeader,
-  Checkbox,
   ScrollShadow,
 } from "@heroui/react";
 import * as XLSX from "xlsx";
@@ -37,7 +36,6 @@ export default function ImportStudentsPage() {
   const [previewData, setPreviewData] = useState<Record<string, unknown>[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
-  const [createUserAccounts, setCreateUserAccounts] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
   const resourceLabel = "Students";
@@ -214,7 +212,7 @@ export default function ImportStudentsPage() {
         },
         body: JSON.stringify({
           data: cleanData,
-          createUserAccounts: createUserAccounts,
+          createUserAccounts: false,
         }),
       });
 
@@ -343,14 +341,13 @@ export default function ImportStudentsPage() {
       minWidth: 200,
       options: OCCUPATION_TYPES,
     },
-    { key: "password", label: "Password", type: "text", minWidth: 180 },
+    // { key: "password", label: "Password", type: "text", minWidth: 180 },
   ];
 
   const handleReset = () => {
     setFile(null);
     setPreviewData([]);
     setImportResult(null);
-    setCreateUserAccounts(false);
     const fileInput = document.getElementById(
       "file-upload",
     ) as HTMLInputElement;
@@ -358,7 +355,7 @@ export default function ImportStudentsPage() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="p-6 max-w-8xl mx-auto space-y-6">
       <div className="flex flex-col gap-2">
         <Heading size="2xl">Import Data: {resourceLabel}</Heading>
         <Text className="text-gray-500 dark:text-gray-400">
@@ -613,17 +610,8 @@ export default function ImportStudentsPage() {
             keyField="key"
           />
 
-          <div className="flex justify-between items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm sticky bottom-4 z-20">
-            <Checkbox
-              isSelected={createUserAccounts}
-              onValueChange={setCreateUserAccounts}
-              color="primary"
-            >
-              <span className="text-sm font-medium">
-                Buat akun user juga (untuk login sistem) - password wajib diisi
-              </span>
-            </Checkbox>
-            <div className="flex gap-3 ml-auto">
+          <div className="flex justify-end items-center gap-4 p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm sticky bottom-4 z-20">
+            <div className="flex gap-3">
               <Button variant="bordered" size="lg" onPress={handleReset}>
                 Cancel
               </Button>

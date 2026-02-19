@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { students, users } from "@/db/schema";
-import { hash } from "bcryptjs";
+import { students } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { data, createUserAccounts } = body;
+    const { data } = body;
 
     if (!data || !Array.isArray(data) || data.length === 0) {
       return NextResponse.json(
@@ -20,6 +19,7 @@ export async function POST(request: NextRequest) {
       success: 0,
       failed: 0,
       errors: [] as string[],
+      failedRows: [] as object[],
     };
 
     for (const row of data) {
@@ -38,16 +38,16 @@ export async function POST(request: NextRequest) {
         const address = row.address || row["Address"] || row["Alamat"] || row.ADDRESS || null;
         const education = row.education || row["Education"] || row["Pendidikan"] || row.EDUCATION || null;
         const occupation = row.occupation || row["Occupation"] || row["Pekerjaan"] || row.OCCUPATION || null;
-        const password = row.password || row["Password"] || row.PASSWORD;
 
         // Skip if no essential data
         if (!firstName || !lastName || !email) {
           results.errors.push(`Row skipped: Missing required fields (firstName, lastName, email)`);
           results.failed++;
+          results.failedRows.push(row);
           continue;
         }
 
-        // Skip example data
+        // Skip example/template data
         if (email.includes("example.com") || email.includes("@example")) {
           continue;
         }
@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         if (existingStudentId.length > 0) {
           results.errors.push(`Student ID ${finalStudentId} already exists`);
           results.failed++;
+          results.failedRows.push(row);
           continue;
         }
 
@@ -78,75 +79,23 @@ export async function POST(request: NextRequest) {
         if (existingStudent.length > 0) {
           results.errors.push(`Student with email ${email} already exists`);
           results.failed++;
+          results.failedRows.push(row);
           continue;
         }
 
-        let userId = row.userId || row["User ID"] || null;
-
-        // Verify existing userId if provided
-        if (userId) {
-          const existingUser = await db
-            .select()
-            .from(users)
-            .where(eq(users.id, userId))
-            .limit(1);
-
-          if (!existingUser.length) {
-            results.errors.push(`Row for ${email}: User ID ${userId} not found in database`);
-            results.failed++;
-            continue;
-          }
-        }
-
-        // Create user account if requested AND no existing userId provided
-        if (createUserAccounts && !userId) {
-          if (!password) {
-            results.errors.push(`Student ${email}: No password provided for user account`);
-            results.failed++;
-            continue;
-          }
-
-          // Check if user already exists
-          const existingUser = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, email))
-            .limit(1);
-
-          if (existingUser.length > 0) {
-            results.errors.push(`User with email ${email} already exists`);
-            results.failed++;
-            continue;
-          }
-
-          // Hash password
-          const hashedPassword = await hash(password, 10);
-
-          // Create user account
-          const [newUser] = await db
-            .insert(users)
-            .values({
-              email,
-              name: `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`,
-              role: "STUDENT",
-              clerkId: `clerk_student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Temporary until Clerk integration
-              password: hashedPassword,
-            })
-            .returning();
-
-          userId = newUser.id;
-        }
-
         // Normalize gender value
-        const normalizedGender = gender ?
-          (gender.toLowerCase() === 'male' || gender.toLowerCase() === 'laki-laki' || gender.toLowerCase() === 'l' ? 'male' :
-            gender.toLowerCase() === 'female' || gender.toLowerCase() === 'perempuan' || gender.toLowerCase() === 'p' ? 'female' :
-              null) : null;
+        const normalizedGender = gender
+          ? gender.toLowerCase() === "male" || gender.toLowerCase() === "laki-laki" || gender.toLowerCase() === "l"
+            ? "male"
+            : gender.toLowerCase() === "female" || gender.toLowerCase() === "perempuan" || gender.toLowerCase() === "p"
+            ? "female"
+            : null
+          : null;
 
-        // Create student
+        // Save to students table only
         await db.insert(students).values({
           studentId: finalStudentId,
-          registrationDate: registrationDate || new Date().toISOString().split('T')[0],
+          registrationDate: registrationDate || new Date().toISOString().split("T")[0],
           firstName,
           middleName,
           lastName,
@@ -158,7 +107,7 @@ export async function POST(request: NextRequest) {
           address,
           education,
           occupation,
-          userId,
+          userId: null,
         });
 
         results.success++;
@@ -168,6 +117,7 @@ export async function POST(request: NextRequest) {
         results.errors.push(
           `Row error: ${rowError instanceof Error ? rowError.message : "Unknown error"}`
         );
+        results.failedRows.push(row);
       }
     }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { classEnrollments, users, classes, students } from "@/db/schema";
 
@@ -25,24 +25,25 @@ export async function GET(request: NextRequest) {
 
     const where = filters.length ? and(...filters) : undefined;
 
-    // Join with users (student) and classes to get names
+    // Join with students table (not users) to get student name
     const data = await db
       .select({
         id: classEnrollments.id,
         studentId: classEnrollments.studentId,
-        studentName: users.name,
+        studentName: sql<string>`concat_ws(' ', ${students.firstName}, ${students.middleName}, ${students.lastName})`,
+        studentEmail: students.email,
         classId: classEnrollments.classId,
         className: classes.name,
         enrolledAt: classEnrollments.enrolledAt,
         enrolledBy: classEnrollments.enrolledBy,
       })
       .from(classEnrollments)
-      .leftJoin(users, eq(classEnrollments.studentId, users.id))
+      .leftJoin(students, eq(classEnrollments.studentId, students.id))
       .leftJoin(classes, eq(classEnrollments.classId, classes.id))
       .where(where)
       .orderBy(desc(classEnrollments.enrolledAt));
 
-    // Fetch enrolledBy names separately
+    // Fetch enrolledBy names (admin) from users table
     const dataWithEnrolledBy = await Promise.all(
       data.map(async (item) => {
         let enrolledByName = null;
@@ -54,10 +55,7 @@ export async function GET(request: NextRequest) {
             .limit(1);
           enrolledByName = enrolledUser?.name || null;
         }
-        return {
-          ...item,
-          enrolledByName,
-        };
+        return { ...item, enrolledByName };
       })
     );
 
@@ -87,39 +85,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify student exists (check both users table and students table)
-    let finalStudentId = studentId;
-
-    // First check if it's a valid user ID
-    const [user] = await db
+    // Verify student exists in students table
+    const [student] = await db
       .select()
-      .from(users)
-      .where(eq(users.id, studentId))
+      .from(students)
+      .where(eq(students.id, studentId))
       .limit(1);
 
-    if (!user) {
-      // If not found in users, check if it's a student ID in students table
-      // This handles cases where frontend might send the student profile ID instead of user ID
-      const [studentProfile] = await db
-        .select()
-        .from(students) // Ensure students is imported from schema
-        .where(eq(students.id, studentId)) // Assuming studentId in payload matches students.id
-        .limit(1);
-
-      if (studentProfile && studentProfile.userId) {
-        finalStudentId = studentProfile.userId;
-      } else {
-        return NextResponse.json(
-          { success: false, message: "Student not found (invalid User ID or Student Profile ID)" },
-          { status: 404 }
-        );
-      }
-    } else {
-      // Ensure the user has role 'STUDENT' ?? Optional validation
+    if (!student) {
+      return NextResponse.json(
+        { success: false, message: "Student not found" },
+        { status: 404 }
+      );
     }
-
-    // Use the resolved finalStudentId for enrollment
-    const enrollmentStudentId = finalStudentId;
 
     // Verify class exists
     const [classRecord] = await db
@@ -139,7 +117,7 @@ export async function POST(request: NextRequest) {
     const [existing] = await db
       .select({ id: classEnrollments.id })
       .from(classEnrollments)
-      .where(and(eq(classEnrollments.studentId, enrollmentStudentId), eq(classEnrollments.classId, classId)))
+      .where(and(eq(classEnrollments.studentId, studentId), eq(classEnrollments.classId, classId)))
       .limit(1);
 
     if (existing) {
@@ -149,7 +127,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Try to get session user for enrolledBy (optional)
+    // Get enrolledBy from current admin session (optional)
     let enrolledById: string | null = null;
     try {
       const { userId: clerkUserId } = await auth();
@@ -159,22 +137,20 @@ export async function POST(request: NextRequest) {
           .from(users)
           .where(eq(users.clerkId, clerkUserId))
           .limit(1);
-
         if (currentUser) {
           enrolledById = currentUser.id;
         }
       }
-    } catch (error) {
-      // Session not available (e.g., onboarding flow), continue with null enrolledBy
-      console.log("No session available for enrolledBy, setting to null");
+    } catch {
+      // Session not available, continue with null
     }
 
     const [created] = await db
       .insert(classEnrollments)
       .values({
-        studentId: enrollmentStudentId,
+        studentId,
         classId,
-        enrolledBy: enrolledById, // Can be null for onboarding flow
+        enrolledBy: enrolledById,
       })
       .returning();
 
