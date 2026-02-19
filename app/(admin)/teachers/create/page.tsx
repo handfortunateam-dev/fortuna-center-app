@@ -52,7 +52,7 @@ export default function CreateTeacherPage() {
       });
 
       // Invalidate queries
-      await queryClient.invalidateQueries({ queryKey: ["teachers"] });
+      await queryClient.invalidateQueries({ queryKey: ["/teachers"], refetchType: "all" });
 
       router.push("/teachers");
     } catch (err) {

@@ -182,7 +182,7 @@ export function StudentForm({ mode }: StudentFormProps) {
       </div>
 
       {/* User Account */}
-      <div className="space-y-4">
+      {/* <div className="space-y-4">
         <Heading className="text-lg font-semibold text-gray-900 dark:text-white">
           User Account
         </Heading>
@@ -195,7 +195,7 @@ export function StudentForm({ mode }: StudentFormProps) {
           required={false}
           isClearable
         />
-      </div>
+      </div> */}
     </div>
   );
 }

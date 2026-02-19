@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { db } from "@/db";
-import { classes, users } from "@/db/schema";
+import { classes, students } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET() {
   try {
-    // Fetch students and classes from DB
     const [studentList, classList] = await Promise.all([
       db
-        .select({ id: users.id, name: users.name, email: users.email })
-        .from(users)
-        .where(eq(users.role, "STUDENT")),
+        .select({
+          id: students.id,
+          firstName: students.firstName,
+          middleName: students.middleName,
+          lastName: students.lastName,
+          email: students.email,
+        })
+        .from(students),
       db
         .select({ id: classes.id, name: classes.name, code: classes.code })
         .from(classes)
@@ -38,7 +42,7 @@ export async function GET() {
     headerRow.alignment = { vertical: "middle", horizontal: "center" };
     headerRow.height = 30;
 
-    // === Reference Sheet for dropdown data ===
+    // === Reference Sheet ===
     const refSheet = workbook.addWorksheet("Data");
 
     refSheet.getCell("A1").value = "Students";
@@ -50,7 +54,8 @@ export async function GET() {
     refSheet.getColumn("B").width = 55;
 
     studentList.forEach((s, i) => {
-      refSheet.getCell(`A${i + 2}`).value = `${s.name} - ${s.email} (${s.id})`;
+      const fullName = [s.firstName, s.middleName, s.lastName].filter(Boolean).join(" ");
+      refSheet.getCell(`A${i + 2}`).value = `${fullName} - ${s.email} (${s.id})`;
     });
 
     classList.forEach((c, i) => {
@@ -60,7 +65,7 @@ export async function GET() {
     const studentEndRow = studentList.length + 1;
     const classEndRow = classList.length + 1;
 
-    // Add data validation (dropdown) to main sheet rows 2-100
+    // Add dropdown validation to main sheet rows 2-100
     for (let row = 2; row <= 100; row++) {
       worksheet.getCell(`A${row}`).dataValidation = {
         type: "list",
@@ -84,21 +89,15 @@ export async function GET() {
     const instructionRow = worksheet.addRow([
       "⚠️ Pilih Student dan Class dari dropdown. Data referensi ada di sheet 'Data'.",
     ]);
-    instructionRow.getCell(1).font = {
-      italic: true,
-      color: { argb: "FF6B7280" },
-    };
-    worksheet.mergeCells(
-      `A${instructionRow.number}:B${instructionRow.number}`,
-    );
+    instructionRow.getCell(1).font = { italic: true, color: { argb: "FF6B7280" } };
+    worksheet.mergeCells(`A${instructionRow.number}:B${instructionRow.number}`);
 
     const buffer = await workbook.xlsx.writeBuffer();
 
     return new NextResponse(buffer, {
       status: 200,
       headers: {
-        "Content-Type":
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Content-Disposition": `attachment; filename="class-enrollments-import-template.xlsx"`,
       },
     });
@@ -106,7 +105,7 @@ export async function GET() {
     console.error("Error generating template:", error);
     return NextResponse.json(
       { success: false, message: "Failed to generate template" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

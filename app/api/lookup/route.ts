@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
                 const studentList = await db
                     .select({
                         id: students.id,
-                        userId: students.userId,
                         firstName: students.firstName,
                         middleName: students.middleName,
                         lastName: students.lastName,
@@ -53,8 +52,6 @@ export async function GET(request: NextRequest) {
                     .from(students);
 
                 data = studentList.map((s) => {
-                    // Check for completeness
-                    // Required fields: phone, address, placeOfBirth, dateOfBirth, gender, education
                     const isComplete =
                         !!s.phone &&
                         !!s.address &&
@@ -69,13 +66,13 @@ export async function GET(request: NextRequest) {
 
                     const label = isComplete
                         ? `${fullName} (${s.studentId})`
-                        : `${fullName} (${s.studentId}) (lengkapi terlebih dahulu data student utk akun itu)`;
+                        : `${fullName} (${s.studentId}) - lengkapi data terlebih dahulu`;
 
                     return {
                         text: label,
                         key: s.id,
-                        value: s.userId || "", // Use userId for enrollment, fallback to empty string if null (though it should be unique and not null usually?)
-                        disabled: !isComplete || !s.userId, // Disable if no userId
+                        value: s.id,
+                        disabled: !isComplete,
                     };
                 });
                 break;

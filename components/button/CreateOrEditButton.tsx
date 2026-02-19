@@ -37,12 +37,12 @@ export const CreateOrEditButton = ({
   isDisabled = false,
   variant = "solid",
   color = "primary",
-  size = "lg",
+  size = "md",
   startContent,
   fullWidth = false,
   type = "button",
 }: CreateOrEditButtonProps) => {
-  const defaultLabel = mode === "create" ? "Buat Baru" : "Edit";
+  const defaultLabel = mode === "create" ? "Create New" : "Edit";
   const iconName = mode === "create" ? "lucide:plus" : "lucide:pencil";
 
   return (

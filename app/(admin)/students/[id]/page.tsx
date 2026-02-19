@@ -28,46 +28,64 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
     return <StateMessage message="Student Not Found" />;
   }
 
-  const studentData = data.data;
+  const s = data.data;
+  const fullName = [s.firstName, s.middleName, s.lastName].filter(Boolean).join(" ");
 
   return (
     <div className="max-w-4xl mx-auto">
       <CardWrapper
-        title={`${studentData.firstName} ${studentData.lastName}`}
-        description={`Email: ${studentData.email}`}
+        title={fullName}
+        description={`Student ID: ${s.studentId} • ${s.email}`}
       >
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TextShow label="First Name" value={studentData.firstName} />
-          <TextShow label="Last Name" value={studentData.lastName} />
-          <TextShow label="Email" value={studentData.email} />
-          <TextShow label="Phone" value={studentData.phone || "-"} />
-
-          <div className="md:col-span-2">
-            <TextShow label="Address" value={studentData.address || "-"} />
-          </div>
-
+          {/* Registration */}
+          <TextShow label="Student ID" value={s.studentId} />
           <TextShow
-            label="User ID (System)"
-            value={studentData.userId || "Not Linked"}
-          />
-
-          <TextShow
-            label="Joined At"
-            value={studentData.createdAt}
+            label="Registration Date"
+            value={s.registrationDate}
             renderValue={(val) =>
               val ? format(new Date(val as string), "PPP") : "-"
             }
           />
 
-          {studentData.updatedAt && (
-            <TextShow
-              label="Last Updated"
-              value={studentData.updatedAt}
-              renderValue={(val) =>
-                val ? format(new Date(val as string), "PPP") : "-"
-              }
-            />
-          )}
+          {/* Personal Info */}
+          <TextShow label="Full Name" value={fullName} />
+          <TextShow label="Gender" value={s.gender ? (s.gender === "male" ? "Male" : "Female") : "-"} />
+          <TextShow label="Place of Birth" value={s.placeOfBirth || "-"} />
+          <TextShow
+            label="Date of Birth"
+            value={s.dateOfBirth}
+            renderValue={(val) =>
+              val ? format(new Date(val as string), "PPP") : "-"
+            }
+          />
+
+          {/* Contact */}
+          <TextShow label="Email" value={s.email} />
+          <TextShow label="Phone" value={s.phone || "-"} />
+          <div className="md:col-span-2">
+            <TextShow label="Address" value={s.address || "-"} />
+          </div>
+
+          {/* Education & Occupation */}
+          <TextShow label="Education" value={s.education || "-"} />
+          <TextShow label="Occupation" value={s.occupation || "-"} />
+
+          {/* Timestamps */}
+          <TextShow
+            label="Joined At"
+            value={s.createdAt}
+            renderValue={(val) =>
+              val ? format(new Date(val as string), "PPP p") : "-"
+            }
+          />
+          <TextShow
+            label="Last Updated"
+            value={s.updatedAt}
+            renderValue={(val) =>
+              val ? format(new Date(val as string), "PPP p") : "-"
+            }
+          />
         </dl>
       </CardWrapper>
     </div>

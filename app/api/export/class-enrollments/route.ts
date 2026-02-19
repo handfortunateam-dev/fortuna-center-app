@@ -1,22 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { classEnrollments } from "@/db/schema";
-import { users, classes } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { classEnrollments, classes, students } from "@/db/schema";
+import { eq, desc, sql } from "drizzle-orm";
 import ExcelJS from "exceljs";
 
 export async function GET(request: NextRequest) {
     try {
         const data = await db
             .select({
-                studentName: users.name,
-                studentEmail: users.email,
+                studentName: sql<string>`concat_ws(' ', ${students.firstName}, ${students.middleName}, ${students.lastName})`,
+                studentEmail: students.email,
                 className: classes.name,
                 classCode: classes.code,
                 enrolledAt: classEnrollments.enrolledAt,
             })
             .from(classEnrollments)
-            .leftJoin(users, eq(classEnrollments.studentId, users.id))
+            .leftJoin(students, eq(classEnrollments.studentId, students.id))
             .leftJoin(classes, eq(classEnrollments.classId, classes.id))
             .orderBy(desc(classEnrollments.enrolledAt));
 
@@ -31,13 +30,12 @@ export async function GET(request: NextRequest) {
             { header: "Enrolled At", key: "enrolledAt", width: 25 },
         ];
 
-        // Style the header row
         const headerRow = worksheet.getRow(1);
-        headerRow.font = { bold: true, size: 12, color: { argb: "FFFFFFFF" } }; // White text
+        headerRow.font = { bold: true, size: 12, color: { argb: "FFFFFFFF" } };
         headerRow.fill = {
             type: "pattern",
             pattern: "solid",
-            fgColor: { argb: "FF4F46E5" }, // Indigo-600 background
+            fgColor: { argb: "FF4F46E5" },
         };
         headerRow.alignment = { vertical: "middle", horizontal: "center" };
         headerRow.height = 30;
@@ -54,7 +52,6 @@ export async function GET(request: NextRequest) {
             });
         });
 
-        // Add borders and styling to all cells
         worksheet.eachRow((row, rowNumber) => {
             row.eachCell((cell) => {
                 cell.border = {
@@ -63,16 +60,15 @@ export async function GET(request: NextRequest) {
                     bottom: { style: "thin" },
                     right: { style: "thin" },
                 };
-                // Stripe effect for rows
                 if (rowNumber % 2 === 0 && rowNumber > 1) {
                     row.fill = {
-                        type: 'pattern',
-                        pattern: 'solid',
-                        fgColor: { argb: 'FFF9FAFB' } // Gray-50
+                        type: "pattern",
+                        pattern: "solid",
+                        fgColor: { argb: "FFF9FAFB" },
                     };
                 }
                 if (rowNumber > 1) {
-                    cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+                    cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
                 }
             });
         });
@@ -82,10 +78,8 @@ export async function GET(request: NextRequest) {
         return new NextResponse(buffer, {
             status: 200,
             headers: {
-                "Content-Type":
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "Content-Disposition": `attachment; filename="enrollments-export-${new Date().toISOString().split("T")[0]
-                    }.xlsx"`,
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "Content-Disposition": `attachment; filename="enrollments-export-${new Date().toISOString().split("T")[0]}.xlsx"`,
             },
         });
     } catch (error) {

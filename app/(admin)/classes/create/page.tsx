@@ -9,6 +9,7 @@ import { CreateOrEditFormWrapper } from "@/components/form/CreateOrEditFormWrapp
 import { ClassFormValues } from "@/features/lms/classes/interfaces";
 import { createClass, classKeys } from "@/services/classesService";
 import CardWrapper from "@/components/wrappers/card-wrappers";
+import { Toast } from "@/components/toast";
 
 export default function CreateClassPage() {
   const router = useRouter();
@@ -28,13 +29,20 @@ export default function CreateClassPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: classKeys.all });
-      setTimeout(() => {
-        router.push("/classes");
-      }, 2000);
+      Toast({
+        title: "Success",
+        description: "Class created successfully",
+        color: "success",
+      });
+
+      router.push("/classes");
     },
     onError: (error: unknown) => {
-      setError("root", {
-        message: error instanceof Error ? error.message : "An error occurred",
+      Toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "An error occurred",
+        color: "danger",
       });
     },
   });
