@@ -17,9 +17,64 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fortuna Center Kupang",
+  metadataBase: new URL("https://www.fortunacenter.com"),
+  title: {
+    default: "Fortuna Center Kupang",
+    template: "%s | Fortuna Center Kupang",
+  },
   description:
-    "Fortuna English & Human Resources Development (HRD) Training Centre is a distinguished institution in Kupang. We are dedicated to bridging the gap between potential and professional success through comprehensive training programs.",
+    "Fortuna English & Human Resources Development (HRD) Training Centre is a distinguished institution in Kupang, NTT. We offer comprehensive English courses, broadcast training, and professional HRD programs.",
+  keywords: [
+    "english course kupang",
+    "english training center kupang",
+    "fortuna center",
+    "hrd training kupang",
+    "broadcast training kupang",
+    "english course NTT",
+    "professional development kupang",
+    "fortuna english center",
+  ],
+  authors: [{ name: "Fortuna Center Kupang" }],
+  creator: "Fortuna Center Kupang",
+  publisher: "Fortuna Center Kupang",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://www.fortunacenter.com",
+    siteName: "Fortuna Center Kupang",
+    title: "Fortuna Center Kupang",
+    description:
+      "A leading English course and professional HRD training center in Kupang, East Nusa Tenggara.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Fortuna Center Kupang",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Fortuna Center Kupang",
+    description:
+      "A leading English course and professional HRD training center in Kupang, NTT.",
+    images: ["/og-image.png"],
+  },
+  alternates: {
+    canonical: "https://www.fortunacenter.com",
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },
