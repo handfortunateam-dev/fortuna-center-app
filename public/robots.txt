@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+# Block admin and private routes
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /teachers
+Disallow: /students
+Disallow: /classes
+Disallow: /teacher-classes
+Disallow: /class-enrollments
+Disallow: /courses
+Disallow: /assignments
+Disallow: /podcasts
+Disallow: /billing
+Disallow: /broadcasts
+Disallow: /api/
+
+# Allow public API routes used for SEO content (if any)
+
+# Sitemap
+Sitemap: https://www.fortunacenter.com/sitemap.xml
