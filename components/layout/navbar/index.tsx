@@ -615,7 +615,7 @@ export default function Navbar({
 
                 {renderMobileMenuItems(menuItems)}
 
-                {(isSignedIn || localUser) && systemMenuItems.length > 0 && (
+                {(authProvider === "clerk" ? isSignedIn : !!localUser) && systemMenuItems.length > 0 && (
                   <>
                     <div className="my-2 border-t border-gray-100 dark:border-gray-800" />
                     <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -626,7 +626,7 @@ export default function Navbar({
                 )}
 
                 {/* Auth Buttons Mobile */}
-                {showAuth && !isSignedIn && !localUser && (
+                {showAuth && !(authProvider === "clerk" ? isSignedIn : !!localUser) && (
                   <div className="mt-4 flex flex-col gap-3">
                     <Button
                       fullWidth
