@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 import { db } from "@/db";
 import { students } from "@/db/schema";
 
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
-        const query = searchParams.get("q") || searchParams.get("query") || "";
+        const query  = searchParams.get("q") || searchParams.get("query") || "";
+        const limit  = Math.max(1, Number(searchParams.get("limit")  || 10));
+        const page   = Math.max(1, Number(searchParams.get("page")   || 1));
+        const offset = searchParams.get("offset")
+            ? Number(searchParams.get("offset"))
+            : (page - 1) * limit;
 
         const filters = [];
         if (query) {
@@ -15,21 +20,39 @@ export async function GET(request: NextRequest) {
             filters.push(
                 or(
                     ilike(students.firstName, dbQuery),
-                    ilike(students.lastName, dbQuery),
-                    ilike(students.email, dbQuery)
+                    ilike(students.lastName,  dbQuery),
+                    ilike(students.email,     dbQuery),
+                    ilike(students.nickname,  dbQuery),
+                    ilike(students.phone,     dbQuery),
                 )
             );
         }
 
         const where = filters.length ? and(...filters) : undefined;
 
-        const data = await db
-            .select()
-            .from(students)
-            .where(where)
-            .orderBy(desc(students.createdAt));
+        // Run count and data queries in parallel
+        const [countResult, data] = await Promise.all([
+            db.select({ total: count() }).from(students).where(where),
+            db
+                .select()
+                .from(students)
+                .where(where)
+                .orderBy(desc(students.createdAt))
+                .limit(limit)
+                .offset(offset),
+        ]);
 
-        return NextResponse.json({ success: true, data });
+        const totalCount = countResult[0]?.total ?? 0;
+        const totalPages = Math.ceil(totalCount / limit);
+
+        return NextResponse.json({
+            success: true,
+            data,
+            totalCount,
+            page,
+            limit,
+            totalPages,
+        });
     } catch (error) {
         console.error("Error fetching students:", error);
         return NextResponse.json(
@@ -60,6 +83,7 @@ export async function POST(request: NextRequest) {
             firstName,
             middleName,
             lastName,
+            nickname,
             gender,
             placeOfBirth,
             dateOfBirth,
@@ -68,23 +92,21 @@ export async function POST(request: NextRequest) {
             address,
             education,
             occupation,
-            userId
+            userId,
         } = body;
 
-        // Validation
-        if (!firstName || !lastName || !email) {
+        // Required: firstName and phone — email is optional
+        if (!firstName || !phone) {
             return NextResponse.json(
-                { success: false, message: "Missing required fields: firstName, lastName, email" },
+                { success: false, message: "Missing required fields: firstName, phone" },
                 { status: 400 }
             );
         }
 
-        // Check if studentId provided, otherwise we will generate it after insertion
+        // Generate or validate studentId
         let finalStudentId = studentId;
         const tempId = `TEMP-${crypto.randomUUID()}`;
-
         if (!finalStudentId) {
-            // We use a temporary ID first to let the DB generate the serial studentNumber
             finalStudentId = tempId;
         }
 
@@ -104,18 +126,20 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Check for duplicate email
-        const [existingEmail] = await db
-            .select()
-            .from(students)
-            .where(eq(students.email, email))
-            .limit(1);
+        // Check for duplicate email — only if email is provided
+        if (email) {
+            const [existingEmail] = await db
+                .select()
+                .from(students)
+                .where(eq(students.email, email))
+                .limit(1);
 
-        if (existingEmail) {
-            return NextResponse.json(
-                { success: false, message: "Student with this email already exists" },
-                { status: 409 }
-            );
+            if (existingEmail) {
+                return NextResponse.json(
+                    { success: false, message: "Student with this email already exists" },
+                    { status: 409 }
+                );
+            }
         }
 
         // Check for duplicate userId association if provided
@@ -134,33 +158,32 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Insert with (potentially temporary) ID
         const [insertedStudent] = await db
             .insert(students)
             .values({
                 studentId: finalStudentId,
-                registrationDate: registrationDate || new Date().toISOString().split('T')[0],
+                registrationDate: registrationDate || new Date().toISOString().split("T")[0],
                 firstName,
-                middleName: middleName || null,
-                lastName,
-                gender: gender || null,
+                middleName:   middleName  || null,
+                lastName:     lastName   || "",
+                nickname:     nickname   || null,
+                gender:       gender     || null,
                 placeOfBirth: placeOfBirth || null,
-                dateOfBirth: dateOfBirth || null,
-                email,
-                phone: phone || null,
-                address: address || null,
-                education: education || null,
-                occupation: occupation || null,
-                userId: userId || null,
+                dateOfBirth:  dateOfBirth  || null,
+                email:        email      || null,
+                phone,
+                address:      address    || null,
+                education:    education  || null,
+                occupation:   occupation || null,
+                userId:       userId     || null,
             })
             .returning();
 
         let newStudent = insertedStudent;
 
-        // If we used a temp ID, generate the real one based on the serial studentNumber
+        // Replace temp ID with a proper one based on the auto-increment studentNumber
         if (!studentId && insertedStudent.studentId === tempId) {
-            const year = new Date().getFullYear();
-            // Format: YYYY + 4-digit Sequence (e.g. 20260001)
+            const year     = new Date().getFullYear();
             const sequence = String(insertedStudent.studentNumber).padStart(4, "0");
             const generatedId = `${year}${sequence}`;
 
@@ -174,11 +197,7 @@ export async function POST(request: NextRequest) {
         }
 
         return NextResponse.json(
-            {
-                success: true,
-                data: newStudent,
-                message: "Student created successfully",
-            },
+            { success: true, data: newStudent, message: "Student created successfully" },
             { status: 201 }
         );
     } catch (error) {

@@ -26,9 +26,257 @@ interface ImportResult {
     success: number;
     failed: number;
     errors: string[];
-    failedRows?: any[];
+    failedRows?: unknown[];
   };
 }
+
+// ─── Lookup maps ──────────────────────────────────────────────────────────────
+
+const EDUCATION_VALUE_MAP: Record<string, string> = {
+  SD: "Elementary School",
+  SMP: "Junior High School",
+  SMA: "Senior High School",
+  SMK: "Senior High School",
+  D1: "Diploma 1",
+  D2: "Diploma 2",
+  D3: "Diploma 3",
+  D4: "Diploma 4",
+  S1: "Bachelor's Degree",
+  S2: "Master's Degree",
+  S3: "Doctoral Degree",
+  "BACHELOR'S DEGREE": "Bachelor's Degree",
+  "MASTER'S DEGREE": "Master's Degree",
+  "DOCTORAL DEGREE": "Doctoral Degree",
+  "ELEMENTARY SCHOOL": "Elementary School",
+  "JUNIOR HIGH SCHOOL": "Junior High School",
+  "SENIOR HIGH SCHOOL": "Senior High School",
+  "DIPLOMA 1": "Diploma 1",
+  "DIPLOMA 2": "Diploma 2",
+  "DIPLOMA 3": "Diploma 3",
+  "DIPLOMA 4": "Diploma 4",
+};
+
+const OCCUPATION_VALUE_MAP: Record<string, string> = {
+  STUDENT: "Student (School)",
+  "STUDENT (SCHOOL)": "Student (School)",
+  MAHASISWA: "Student (University)",
+  "STUDENT (UNIVERSITY)": "Student (University)",
+  "KARYAWAN SWASTA": "Private Employee",
+  "PRIVATE EMPLOYEE": "Private Employee",
+  PNS: "Civil Servant",
+  "CIVIL SERVANT": "Civil Servant",
+  WIRASWASTA: "Entrepreneur",
+  ENTREPRENEUR: "Entrepreneur",
+  PROFESSIONAL: "Professional",
+  "IBU RUMAH TANGGA": "Housewife",
+  HOUSEWIFE: "Housewife",
+  FREELANCER: "Freelancer",
+  "TIDAK BEKERJA": "Unemployed",
+  UNEMPLOYED: "Unemployed",
+  PENSIUN: "Retired",
+  RETIRED: "Retired",
+  LAINNYA: "Others",
+  OTHERS: "Others",
+};
+
+const GENDER_MAP: Record<string, string> = {
+  L: "male",
+  "LAKI-LAKI": "male",
+  MALE: "male",
+  M: "male",
+  P: "female",
+  PEREMPUAN: "female",
+  FEMALE: "female",
+  F: "female",
+};
+
+/**
+ * Maps known Excel column headers (uppercase, trimmed) to internal field names.
+ * null  = skip the column.
+ * "__*" = requires special multi-field processing.
+ */
+const EXCEL_COLUMN_MAP: Record<string, string | null> = {
+  NO: null, // skip: row number
+  ID: null, // skip: legacy ID — studentId is auto-generated
+  "REG DATE": "registrationDate",
+  "FULL NAME": "__fullName",
+  NAME: "nickname",
+  GENDER: "gender",
+  "PLACE & DATE OF BIRTH": "placeOfBirth",
+  ADDRESS: "address",
+  "PHONE NUMBER": "phone",
+  "EDUCATION OR OCCUPATION": "__educationOrOccupation",
+  "EDUCATION OR OCUPPATION": "__educationOrOccupation", // typo variant in some files
+};
+
+// ─── Pure helper functions ────────────────────────────────────────────────────
+
+const toTitleCase = (str: string): string =>
+  str.toLowerCase().replace(/(?:^|\s|-)\S/g, (c) => c.toUpperCase());
+
+/**
+ * Convert an Excel serial date number or "DD-MMM-YY" string → "YYYY-MM-DD".
+ */
+const parseExcelDate = (value: unknown): string => {
+  if (!value && value !== 0) return "";
+
+  if (typeof value === "number") {
+    // Excel serial → UTC date (accounts for Excel's 1900-leap-year bug via 25569 offset)
+    const date = new Date(Math.round((value - 25569) * 86400 * 1000));
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(date.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  if (typeof value === "string") {
+    const str = value.trim();
+    const MONTH_MAP: Record<string, string> = {
+      Jan: "01", Feb: "02", Mar: "03", Apr: "04",
+      May: "05", Jun: "06", Jul: "07", Aug: "08",
+      Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+    };
+    // DD-MMM-YY or DD-MMM-YYYY  e.g. "07-Sep-25"
+    const match = str.match(/^(\d{1,2})[-/]([A-Za-z]{3})[-/](\d{2,4})$/);
+    if (match) {
+      const day = match[1].padStart(2, "0");
+      const monthKey =
+        match[2].charAt(0).toUpperCase() + match[2].slice(1).toLowerCase();
+      const month = MONTH_MAP[monthKey] ?? "01";
+      const year =
+        match[3].length === 2
+          ? parseInt(match[3]) >= 50
+            ? `19${match[3]}`
+            : `20${match[3]}`
+          : match[3];
+      return `${year}-${month}-${day}`;
+    }
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+    return str;
+  }
+  return "";
+};
+
+/**
+ * Normalize phone: fix Excel float precision, then ensure leading "0" for
+ * Indonesian numbers stored without it (e.g. 85890765412 → "085890765412").
+ */
+const normalizePhone = (value: unknown): string => {
+  if (!value && value !== 0) return "";
+
+  let phone =
+    typeof value === "number"
+      ? String(Math.trunc(value))
+      : String(value).trim();
+
+  // Strip any spaces or dashes for clean comparison
+  const cleaned = phone.replace(/[\s-]/g, "");
+
+  // +62xxx → 0xxx
+  if (cleaned.startsWith("+62")) {
+    phone = "0" + cleaned.slice(3);
+  // 62xxx (without +) → 0xxx
+  } else if (cleaned.startsWith("62") && cleaned.length >= 11) {
+    phone = "0" + cleaned.slice(2);
+  // 8xxx without leading 0 → 08xxx
+  } else if (cleaned.startsWith("8")) {
+    phone = "0" + cleaned;
+  } else {
+    phone = cleaned;
+  }
+
+  return phone;
+};
+
+const normalizeGender = (value: unknown): string => {
+  if (!value || typeof value !== "string") return "";
+  return GENDER_MAP[value.trim().toUpperCase()] ?? value.trim().toLowerCase();
+};
+
+const normalizeEducation = (value: unknown): string => {
+  if (!value || typeof value !== "string") return "";
+  const upper = value.trim().toUpperCase();
+  return EDUCATION_VALUE_MAP[upper] ?? value.trim();
+};
+
+const normalizeOccupation = (value: unknown): string => {
+  if (!value || typeof value !== "string") return "";
+  const upper = value.trim().toUpperCase();
+  return OCCUPATION_VALUE_MAP[upper] ?? value.trim();
+};
+
+/**
+ * Classify a combined "Education or Occupation" value into the correct field.
+ * Checks lookup maps first, then valid values list, then keyword heuristics.
+ */
+const classifyEducationOrOccupation = (
+  value: unknown,
+): { education: string; occupation: string } => {
+  if (!value) return { education: "", occupation: "" };
+  const str = String(value).trim();
+  const upper = str.toUpperCase();
+
+  if (EDUCATION_VALUE_MAP[upper])
+    return { education: EDUCATION_VALUE_MAP[upper], occupation: "" };
+  if (EDUCATION_LEVELS.some((e) => e.value.toUpperCase() === upper))
+    return { education: str, occupation: "" };
+  if (OCCUPATION_VALUE_MAP[upper])
+    return { education: "", occupation: OCCUPATION_VALUE_MAP[upper] };
+  if (OCCUPATION_TYPES.some((o) => o.value.toUpperCase() === upper))
+    return { education: "", occupation: str };
+  if (/school|diploma|bachelor|master|doctoral/i.test(str))
+    return { education: normalizeEducation(str) || str, occupation: "" };
+  return { education: "", occupation: normalizeOccupation(str) || str };
+};
+
+/**
+ * Split a full name string into firstName / middleName / lastName.
+ * Applies Title Case to each part.
+ */
+const splitFullName = (
+  value: unknown,
+): { firstName: string; middleName: string; lastName: string } => {
+  if (!value || typeof value !== "string")
+    return { firstName: "", middleName: "", lastName: "" };
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { firstName: "", middleName: "", lastName: "" };
+  const tc = (s: string) => toTitleCase(s);
+  if (parts.length === 1)
+    return { firstName: tc(parts[0]), middleName: "", lastName: "" };
+  if (parts.length === 2)
+    return { firstName: tc(parts[0]), middleName: "", lastName: tc(parts[1]) };
+  return {
+    firstName: tc(parts[0]),
+    middleName: parts.slice(1, -1).map(tc).join(" "),
+    lastName: tc(parts[parts.length - 1]),
+  };
+};
+
+/**
+ * Parse "PLACE & DATE OF BIRTH" column.
+ * May be "City, DD-MMM-YY" (split), or just "City" (placeOfBirth only).
+ */
+const parsePlaceAndDateOfBirth = (
+  value: unknown,
+): { placeOfBirth: string; dateOfBirth: string } => {
+  if (!value) return { placeOfBirth: "", dateOfBirth: "" };
+  const str = String(value).trim();
+  const datePattern =
+    /(\d{1,2}[-/][A-Za-z]{3}[-/]\d{2,4}|\d{4}[-/]\d{2}[-/]\d{2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4})/;
+  const match = str.match(datePattern);
+  if (match) {
+    const datePart = match[1];
+    const placePart = str
+      .replace(datePart, "")
+      .replace(/^[,\s]+|[,\s]+$/g, "")
+      .trim();
+    return { placeOfBirth: placePart, dateOfBirth: parseExcelDate(datePart) };
+  }
+  return { placeOfBirth: str, dateOfBirth: "" };
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ImportStudentsPage() {
   const resource = "students";
@@ -47,11 +295,8 @@ export default function ImportStudentsPage() {
   };
 
   /**
-   * Normalisasi key dari Excel header ke camelCase:
-   * "First Name"       → "firstName"
-   * "Registration Date"→ "registrationDate"
-   * "first_name"       → "firstName"
-   * "firstName"        → "firstName"  (sudah benar, tidak diubah)
+   * Normalise a generic Excel header to camelCase (fallback for unrecognised headers).
+   * "First Name" → "firstName", "first_name" → "firstName"
    */
   const normalizeKey = (str: string): string => {
     if (!/[\s_]/.test(str)) {
@@ -62,71 +307,6 @@ export default function ImportStudentsPage() {
       .replace(/[\s_]+(.)/g, (_, char: string) => char.toUpperCase());
   };
 
-  /**
-   * Map shorthand education values ke nilai valid EDUCATION_LEVELS.
-   */
-  const EDUCATION_VALUE_MAP: Record<string, string> = {
-    SD: "Elementary School",
-    SMP: "Junior High School",
-    SMA: "Senior High School",
-    SMK: "Senior High School",
-    D1: "Diploma 1",
-    D2: "Diploma 2",
-    D3: "Diploma 3",
-    D4: "Diploma 4",
-    S1: "Bachelor's Degree",
-    S2: "Master's Degree",
-    S3: "Doctoral Degree",
-    "BACHELOR'S DEGREE": "Bachelor's Degree",
-    "MASTER'S DEGREE": "Master's Degree",
-    "DOCTORAL DEGREE": "Doctoral Degree",
-    "ELEMENTARY SCHOOL": "Elementary School",
-    "JUNIOR HIGH SCHOOL": "Junior High School",
-    "SENIOR HIGH SCHOOL": "Senior High School",
-    "DIPLOMA 1": "Diploma 1",
-    "DIPLOMA 2": "Diploma 2",
-    "DIPLOMA 3": "Diploma 3",
-    "DIPLOMA 4": "Diploma 4",
-  };
-
-  const normalizeEducation = (value: unknown): string => {
-    if (!value || typeof value !== "string") return "";
-    const upper = value.trim().toUpperCase();
-    return EDUCATION_VALUE_MAP[upper] ?? value.trim();
-  };
-
-  /**
-   * Map shorthand occupation values ke nilai valid OCCUPATION_TYPES.
-   */
-  const OCCUPATION_VALUE_MAP: Record<string, string> = {
-    STUDENT: "Student (School)",
-    "STUDENT (SCHOOL)": "Student (School)",
-    MAHASISWA: "Student (University)",
-    "STUDENT (UNIVERSITY)": "Student (University)",
-    "KARYAWAN SWASTA": "Private Employee",
-    "PRIVATE EMPLOYEE": "Private Employee",
-    PNS: "Civil Servant",
-    "CIVIL SERVANT": "Civil Servant",
-    WIRASWASTA: "Entrepreneur",
-    ENTREPRENEUR: "Entrepreneur",
-    PROFESSIONAL: "Professional",
-    "IBU RUMAH TANGGA": "Housewife",
-    HOUSEWIFE: "Housewife",
-    FREELANCER: "Freelancer",
-    "TIDAK BEKERJA": "Unemployed",
-    UNEMPLOYED: "Unemployed",
-    PENSIUN: "Retired",
-    RETIRED: "Retired",
-    LAINNYA: "Others",
-    OTHERS: "Others",
-  };
-
-  const normalizeOccupation = (value: unknown): string => {
-    if (!value || typeof value !== "string") return "";
-    const upper = value.trim().toUpperCase();
-    return OCCUPATION_VALUE_MAP[upper] ?? value.trim();
-  };
-
   const parseFile = async (file: File) => {
     setIsParsing(true);
     try {
@@ -134,7 +314,10 @@ export default function ImportStudentsPage() {
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as Record<
+        string,
+        unknown
+      >[];
 
       if (jsonData.length === 0) {
         Toast({
@@ -143,37 +326,96 @@ export default function ImportStudentsPage() {
           color: "warning",
         });
         setPreviewData([]);
-      } else {
-        const dataWithKeys = jsonData.map((row: unknown, index) => {
-          const r = row as Record<string, unknown>;
-
-          // Remap semua key dari format Excel header → camelCase
-          const normalized: Record<string, unknown> = {};
-          for (const [rawKey, value] of Object.entries(r)) {
-            normalized[normalizeKey(rawKey)] = value;
-          }
-
-          // Normalize education & occupation ke nilai valid
-          if ("education" in normalized) {
-            normalized.education = normalizeEducation(normalized.education);
-          }
-          if ("occupation" in normalized) {
-            normalized.occupation = normalizeOccupation(normalized.occupation);
-          }
-
-          return {
-            ...normalized,
-            id: `row-${index}`,
-            key: `row-${index}`,
-          };
-        });
-        setPreviewData(dataWithKeys);
-        Toast({
-          title: "Success",
-          description: `File parsed successfully! Found ${dataWithKeys.length} rows.`,
-          color: "success",
-        });
+        return;
       }
+
+      // Detect whether this file uses the known Excel column format
+      const firstRowHeaders = Object.keys(jsonData[0]).map((h) =>
+        h.trim().toUpperCase(),
+      );
+      const isKnownExcelFormat = firstRowHeaders.some(
+        (h) => h in EXCEL_COLUMN_MAP,
+      );
+
+      // For the known format, skip annotation/note rows (rows where NO is not a positive number)
+      const filteredData = isKnownExcelFormat
+        ? jsonData.filter((row) => {
+            const no = row["NO"];
+            return typeof no === "number" && no > 0;
+          })
+        : jsonData;
+
+      if (filteredData.length === 0) {
+        Toast({
+          title: "Warning",
+          description: "File is empty or could not be parsed",
+          color: "warning",
+        });
+        setPreviewData([]);
+        return;
+      }
+
+      const dataWithKeys = filteredData.map((row, index) => {
+        const normalized: Record<string, unknown> = {};
+
+        for (const [rawKey, value] of Object.entries(row)) {
+          const upperKey = rawKey.trim().toUpperCase();
+
+          if (isKnownExcelFormat && upperKey in EXCEL_COLUMN_MAP) {
+            const mappedKey = EXCEL_COLUMN_MAP[upperKey];
+            if (mappedKey === null) continue; // skip NO, ID
+
+            if (mappedKey === "__fullName") {
+              const { firstName, middleName, lastName } = splitFullName(value);
+              normalized.firstName = firstName;
+              normalized.middleName = middleName;
+              normalized.lastName = lastName;
+            } else if (mappedKey === "__educationOrOccupation") {
+              const { education, occupation } =
+                classifyEducationOrOccupation(value);
+              normalized.education = education;
+              normalized.occupation = occupation;
+            } else if (mappedKey === "registrationDate") {
+              normalized.registrationDate = parseExcelDate(value);
+            } else if (mappedKey === "gender") {
+              normalized.gender = normalizeGender(value);
+            } else if (mappedKey === "phone") {
+              normalized.phone = normalizePhone(value);
+            } else if (mappedKey === "placeOfBirth") {
+              const { placeOfBirth, dateOfBirth } =
+                parsePlaceAndDateOfBirth(value);
+              normalized.placeOfBirth = placeOfBirth;
+              if (dateOfBirth) normalized.dateOfBirth = dateOfBirth;
+            } else if (mappedKey === "nickname") {
+              normalized.nickname =
+                typeof value === "string"
+                  ? toTitleCase(value.trim())
+                  : String(value ?? "").trim();
+            } else {
+              normalized[mappedKey] = value;
+            }
+          } else {
+            // Fallback: generic camelCase normalisation for non-standard headers
+            const camelKey = normalizeKey(rawKey);
+            if (camelKey === "education") {
+              normalized.education = normalizeEducation(value);
+            } else if (camelKey === "occupation") {
+              normalized.occupation = normalizeOccupation(value);
+            } else {
+              normalized[camelKey] = value;
+            }
+          }
+        }
+
+        return { ...normalized, id: `row-${index}`, key: `row-${index}` };
+      });
+
+      setPreviewData(dataWithKeys);
+      Toast({
+        title: "Success",
+        description: `File parsed successfully! Found ${dataWithKeys.length} rows.`,
+        color: "success",
+      });
     } catch (error) {
       console.error("Error parsing file:", error);
       Toast({
@@ -265,15 +507,8 @@ export default function ImportStudentsPage() {
     );
   };
 
-  // Kolom didefinisikan manual — eksplisit & aman, tidak bergantung nama kolom di Excel
+  // Kolom preview — eksplisit & aman, tidak bergantung nama kolom di Excel
   const previewColumns: FormTableColumn[] = [
-    {
-      key: "studentId",
-      label: "Student ID",
-      type: "text",
-      minWidth: 200,
-      placeholder: "Auto-generated if empty",
-    },
     {
       key: "registrationDate",
       label: "Registration Date",
@@ -302,6 +537,12 @@ export default function ImportStudentsPage() {
       minWidth: 160,
     },
     {
+      key: "nickname",
+      label: "Nickname",
+      type: "text",
+      minWidth: 160,
+    },
+    {
       key: "gender",
       label: "Gender",
       type: "select",
@@ -322,10 +563,10 @@ export default function ImportStudentsPage() {
       key: "email",
       label: "Email",
       type: "email",
-      required: true,
+      required: false,
       minWidth: 220,
     },
-    { key: "phone", label: "Phone", type: "text", minWidth: 160 },
+    { key: "phone", label: "Phone", type: "text", required: true, minWidth: 160 },
     { key: "address", label: "Address", type: "text", minWidth: 260 },
     {
       key: "education",
@@ -341,7 +582,6 @@ export default function ImportStudentsPage() {
       minWidth: 200,
       options: OCCUPATION_TYPES,
     },
-    // { key: "password", label: "Password", type: "text", minWidth: 180 },
   ];
 
   const handleReset = () => {

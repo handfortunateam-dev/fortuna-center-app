@@ -20,19 +20,12 @@ import { SkeletonTable } from "@/components/skeletons/SkeletonTable";
 import { useRouter } from "next/navigation";
 
 // Features Imports
-import { 
-  ClassPaymentCard 
-} from "@/features/finance/payment-history/components/ClassPaymentCard";
-import { 
-  PaymentModal 
-} from "@/features/finance/payment-history/components/PaymentModal";
-import { 
-  MONTHS, 
-  YEARS 
-} from "@/features/finance/payment-history/constants";
-import { 
-  ClassSummary, 
-  StudentPaymentInfo 
+import { ClassPaymentCard } from "@/features/finance/payment-history/components/ClassPaymentCard";
+import { PaymentModal } from "@/features/finance/payment-history/components/PaymentModal";
+import { MONTHS, YEARS } from "@/features/finance/payment-history/constants";
+import {
+  ClassSummary,
+  StudentPaymentInfo,
 } from "@/features/finance/payment-history/types";
 
 export default function PaymentCourseHistoryPage() {
@@ -108,10 +101,11 @@ export default function PaymentCourseHistoryPage() {
       });
       onClose();
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       const msg =
-        err.response?.data?.message ||
-        err.message ||
+        (err as { response?: { data?: { message?: string } } }).response?.data
+          ?.message ||
+        (err as { message?: string }).message ||
         "Failed to create payment";
       Toast({
         title: "Error",
@@ -140,13 +134,6 @@ export default function PaymentCourseHistoryPage() {
             Monitor monthly payments per class
           </Text>
         </div>
-        <Button
-          color="primary"
-          startContent={<Icon icon="lucide:plus" />}
-          onPress={() => router.push("/payment-course-history/create")}
-        >
-          Record New Payment
-        </Button>
       </div>
 
       {/* Filters Toolbar */}

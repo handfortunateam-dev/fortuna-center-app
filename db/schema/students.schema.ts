@@ -13,6 +13,7 @@ export const students = pgTable("students", {
     firstName: text("first_name").notNull(),
     middleName: text("middle_name"),
     lastName: text("last_name").notNull(),
+    nickname: text("nickname"), // Nama panggilan
 
     // Jenis kelamin
     gender: text("gender", { enum: ["male", "female"] }), // "male" or "female"
@@ -22,8 +23,8 @@ export const students = pgTable("students", {
     dateOfBirth: date("date_of_birth"), // Tanggal lahir
 
     // Contact & Address
-    email: text("email").notNull().unique(),
-    phone: text("phone"),
+    email: text("email").unique(),
+    phone: text("phone").notNull(),
     address: text("address"),
 
     // Pendidikan/pekerjaan
