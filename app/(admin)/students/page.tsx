@@ -15,6 +15,9 @@ export default function StudentsPage() {
       searchPlaceholder="Search students..."
       enableExport
       enableImport
+      serverSide
+      paginationType="page"
+      pageSize={10}
     />
   );
 }

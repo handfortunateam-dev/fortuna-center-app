@@ -13,13 +13,16 @@ export const columns: Columns<IStudent> = [
   {
     key: "email",
     label: "Email",
+    value: (item) => item.email || "-",
   },
   {
     key: "phone",
     label: "Phone",
+    value: (item) => item.phone || "-",
   },
   {
     key: "address",
     label: "Address",
+    value: (item) => item.address || "-",
   },
 ];

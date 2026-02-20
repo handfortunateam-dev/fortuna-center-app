@@ -3,6 +3,9 @@ import { db } from "@/db";
 import { students } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+
+export const maxDuration = 60; //seconds
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -24,38 +27,60 @@ export async function POST(request: NextRequest) {
 
     for (const row of data) {
       try {
-        // Flexible mapping to support various header formats
-        const studentId = row.studentId || row["Student ID"] || row["Nomor Induk"] || row.studentid;
-        const registrationDate = row.registrationDate || row["Registration Date"] || row["Tanggal Registrasi"] || row.registrationdate;
-        const firstName = row.firstName || row["First Name"] || row["Nama Depan"] || row.firstname;
-        const middleName = row.middleName || row["Middle Name"] || row["Nama Tengah"] || row.middlename || null;
-        const lastName = row.lastName || row["Last Name"] || row["Nama Belakang"] || row.lastname;
-        const gender = row.gender || row["Gender"] || row["Jenis Kelamin"] || row.GENDER || null;
-        const placeOfBirth = row.placeOfBirth || row["Place of Birth"] || row["Tempat Lahir"] || row.placeofbirth || null;
-        const dateOfBirth = row.dateOfBirth || row["Date of Birth"] || row["Tanggal Lahir"] || row.dateofbirth || null;
-        const email = row.email || row["Email"] || row.EMAIL;
-        const phone = row.phone || row["Phone"] || row["No HP"] || row.PHONE || null;
-        const address = row.address || row["Address"] || row["Alamat"] || row.ADDRESS || null;
-        const education = row.education || row["Education"] || row["Pendidikan"] || row.EDUCATION || null;
-        const occupation = row.occupation || row["Occupation"] || row["Pekerjaan"] || row.OCCUPATION || null;
+        // Flexible field mapping (supports camelCase and various header formats)
+        const studentId =
+          row.studentId || row["Student ID"] || row["Nomor Induk"] || row.studentid;
+        const registrationDate =
+          row.registrationDate || row["Registration Date"] || row["Tanggal Registrasi"] || row.registrationdate;
+        const firstName =
+          row.firstName || row["First Name"] || row["Nama Depan"] || row.firstname;
+        const middleName =
+          row.middleName || row["Middle Name"] || row["Nama Tengah"] || row.middlename || null;
+        const lastName =
+          row.lastName || row["Last Name"] || row["Nama Belakang"] || row.lastname || "";
+        const nickname =
+          row.nickname || row["Nickname"] || row["Nama Panggilan"] || null;
+        const gender =
+          row.gender || row["Gender"] || row["Jenis Kelamin"] || row.GENDER || null;
+        const placeOfBirth =
+          row.placeOfBirth || row["Place of Birth"] || row["Tempat Lahir"] || row.placeofbirth || null;
+        const dateOfBirth =
+          row.dateOfBirth || row["Date of Birth"] || row["Tanggal Lahir"] || row.dateofbirth || null;
+        const email =
+          row.email || row["Email"] || row.EMAIL || null;
+        const phone =
+          row.phone || row["Phone"] || row["No HP"] || row["Phone Number"] || row.PHONE || null;
+        const address =
+          row.address || row["Address"] || row["Alamat"] || row.ADDRESS || null;
+        const education =
+          row.education || row["Education"] || row["Pendidikan"] || row.EDUCATION || null;
+        const occupation =
+          row.occupation || row["Occupation"] || row["Pekerjaan"] || row.OCCUPATION || null;
 
-        // Skip if no essential data
-        if (!firstName || !lastName || !email) {
-          results.errors.push(`Row skipped: Missing required fields (firstName, lastName, email)`);
+        // Required: firstName and phone (email is optional)
+        if (!firstName || !phone) {
+          results.errors.push(
+            `Row skipped: Missing required fields (firstName, phone)`
+          );
           results.failed++;
           results.failedRows.push(row);
           continue;
         }
 
-        // Skip example/template data
-        if (email.includes("example.com") || email.includes("@example")) {
+        // Skip example/template rows
+        if (email && (email.includes("example.com") || email.includes("@example"))) {
           continue;
         }
 
         // Generate studentId if not provided
-        const finalStudentId = studentId || `STD-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        const finalStudentId =
+          studentId ||
+          `STD-${new Date().toISOString().split("T")[0].replace(/-/g, "")}-${Math.random()
+            .toString(36)
+            .substring(2, 7)
+            .toUpperCase()}`;
 
-        // Check if studentId already exists
+        // Check studentId uniqueness
         const existingStudentId = await db
           .select()
           .from(students)
@@ -69,36 +94,42 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Check if student already exists by email
-        const existingStudent = await db
-          .select()
-          .from(students)
-          .where(eq(students.email, email))
-          .limit(1);
+        // Check email uniqueness — only if email is provided
+        if (email) {
+          const existingStudent = await db
+            .select()
+            .from(students)
+            .where(eq(students.email, email))
+            .limit(1);
 
-        if (existingStudent.length > 0) {
-          results.errors.push(`Student with email ${email} already exists`);
-          results.failed++;
-          results.failedRows.push(row);
-          continue;
+          if (existingStudent.length > 0) {
+            results.errors.push(`Student with email ${email} already exists`);
+            results.failed++;
+            results.failedRows.push(row);
+            continue;
+          }
         }
 
-        // Normalize gender value
-        const normalizedGender = gender
-          ? gender.toLowerCase() === "male" || gender.toLowerCase() === "laki-laki" || gender.toLowerCase() === "l"
+        // Normalize gender
+        const normalizedGender =
+          gender?.toLowerCase() === "male" ||
+          gender?.toLowerCase() === "laki-laki" ||
+          gender?.toLowerCase() === "l"
             ? "male"
-            : gender.toLowerCase() === "female" || gender.toLowerCase() === "perempuan" || gender.toLowerCase() === "p"
-            ? "female"
-            : null
-          : null;
+            : gender?.toLowerCase() === "female" ||
+                gender?.toLowerCase() === "perempuan" ||
+                gender?.toLowerCase() === "p"
+              ? "female"
+              : null;
 
-        // Save to students table only
         await db.insert(students).values({
           studentId: finalStudentId,
-          registrationDate: registrationDate || new Date().toISOString().split("T")[0],
+          registrationDate:
+            registrationDate || new Date().toISOString().split("T")[0],
           firstName,
           middleName,
           lastName,
+          nickname,
           gender: normalizedGender,
           placeOfBirth,
           dateOfBirth,

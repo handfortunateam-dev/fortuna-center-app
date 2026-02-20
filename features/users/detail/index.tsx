@@ -12,18 +12,11 @@ import {
   Divider,
   Spinner,
 } from "@heroui/react";
-// import {
-//   ArrowLeft,
-//   Mail,
-//   Calendar,
-//   User,
-//   Shield,
-//   Phone,
-//   Globe,
-// } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { useUser } from "@/services/usersService";
 import { format } from "date-fns";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 
 interface UserDetailProps {
   id: string;
@@ -89,12 +82,12 @@ export default function UserDetail({ id }: UserDetailProps) {
           <div className="flex flex-col gap-2 flex-grow">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                <Heading className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {user.fullName}
-                </h2>
-                <p className="text-gray-500 dark:text-gray-400">
+                </Heading>
+                <Text className="text-gray-500 dark:text-gray-400">
                   @{user.username || "username"}
-                </p>
+                </Text>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -113,7 +106,9 @@ export default function UserDetail({ id }: UserDetailProps) {
                   color="success"
                   variant="flat"
                   size="sm"
-                  startContent={<Icon icon="lucide:shield" className="w-3 h-3" />}
+                  startContent={
+                    <Icon icon="lucide:shield" className="w-3 h-3" />
+                  }
                 >
                   Verified
                 </Chip>
@@ -128,41 +123,52 @@ export default function UserDetail({ id }: UserDetailProps) {
         <Divider />
         <CardBody className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Icon icon="lucide:user" className="w-5 h-5 text-blue-500" />
+            <Heading
+              startContent={
+                <Icon icon="lucide:user" className="w-5 h-5 text-blue-500" />
+              }
+              className="text-lg font-semibold flex items-center gap-2"
+            >
               Personal Information
-            </h3>
+            </Heading>
             <div className="space-y-3 pl-7">
               <div>
-                <p className="text-sm text-gray-500">First Name</p>
-                <p className="font-medium">{user.firstName || "-"}</p>
+                <Text className="text-sm text-gray-500">First Name</Text>
+                <Text className="font-medium">{user.firstName || "-"}</Text>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Last Name</p>
-                <p className="font-medium">{user.lastName || "-"}</p>
+                <Text className="text-sm text-gray-500">Last Name</Text>
+                <Text className="font-medium">{user.lastName || "-"}</Text>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Icon icon="lucide:mail" className="w-5 h-5 text-blue-500" />
+            <Heading
+              startContent={
+                <Icon icon="lucide:mail" className="w-5 h-5 text-blue-500" />
+              }
+              className="text-lg font-semibold flex items-center gap-2"
+            >
               Contact Information
-            </h3>
+            </Heading>
             <div className="space-y-3 pl-7">
               <div>
-                <p className="text-sm text-gray-500">Email Address</p>
-                <p className="font-medium">{user.email || "-"}</p>
+                <Text className="text-sm text-gray-500">Email Address</Text>
+                <Text className="font-medium">{user.email || "-"}</Text>
               </div>
               {user.phoneNumbers && user.phoneNumbers.length > 0 && (
                 <div>
-                  <p className="text-sm text-gray-500">Phone</p>
+                  <Text className="text-sm text-gray-500">Phone</Text>
                   <div className="flex flex-col gap-1">
                     {user.phoneNumbers.map((phone, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <span className="font-medium">{phone.phoneNumber}</span>
+                        <Text className="font-medium">{phone.phoneNumber}</Text>
                         {phone.verified && (
-                          <Icon icon="lucide:check-circle-2" className="w-3 h-3 text-green-500" />
+                          <Icon
+                            icon="lucide:check-circle-2"
+                            className="w-3 h-3 text-green-500"
+                          />
                         )}
                       </div>
                     ))}
@@ -173,43 +179,54 @@ export default function UserDetail({ id }: UserDetailProps) {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Icon icon="lucide:calendar" className="w-5 h-5 text-blue-500" />
+            <Heading
+              startContent={
+                <Icon
+                  icon="lucide:calendar"
+                  className="w-5 h-5 text-blue-500"
+                />
+              }
+              className="text-lg font-semibold flex items-center gap-2"
+            >
               Activity
-            </h3>
+            </Heading>
             <div className="space-y-3 pl-7">
               <div>
-                <p className="text-sm text-gray-500">Joined On</p>
-                <p className="font-medium">
+                <Text className="text-sm text-gray-500">Joined On</Text>
+                <Text className="font-medium">
                   {user.createdAt
                     ? format(new Date(user.createdAt), "MMMM dd, yyyy")
                     : "-"}
-                </p>
+                </Text>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Last Sign In</p>
-                <p className="font-medium">
+                <Text className="text-sm text-gray-500">Last Sign In</Text>
+                <Text className="font-medium">
                   {user.lastSignInAt
                     ? format(new Date(user.lastSignInAt), "MMMM dd, yyyy HH:mm")
                     : "Never"}
-                </p>
+                </Text>
               </div>
             </div>
           </div>
 
           {user.externalAccounts && user.externalAccounts.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Icon icon="lucide:globe" className="w-5 h-5 text-blue-500" />
+              <Heading
+                startContent={
+                  <Icon icon="lucide:globe" className="w-5 h-5 text-blue-500" />
+                }
+                className="text-lg font-semibold flex items-center gap-2"
+              >
                 Connected Accounts
-              </h3>
+              </Heading>
               <div className="space-y-3 pl-7">
                 {user.externalAccounts.map((acc, idx) => (
                   <div key={idx}>
-                    <p className="text-sm text-gray-500 capitalize">
+                    <Text className="text-sm text-gray-500 capitalize">
                       {acc.provider}
-                    </p>
-                    <p className="font-medium">{acc.emailAddress}</p>
+                    </Text>
+                    <Text className="font-medium">{acc.emailAddress}</Text>
                   </div>
                 ))}
               </div>

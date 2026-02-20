@@ -405,20 +405,20 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
               <Icon icon="solar:document-add-bold-duotone" {...props} />
             ),
           },
-          {
-            name: "Submissions",
-            href: NAV_URL.ADMIN.LMS.SUBMISSIONS_BY_STUDENT,
-            icon: (props) => (
-              <Icon icon="solar:inbox-line-bold-duotone" {...props} />
-            ),
-          },
-          {
-            name: "Grades",
-            href: NAV_URL.ADMIN.LMS.GRADES,
-            icon: (props) => (
-              <Icon icon="solar:diploma-verified-bold-duotone" {...props} />
-            ),
-          },
+          // {
+          //   name: "Submissions",
+          //   href: NAV_URL.ADMIN.LMS.SUBMISSIONS_BY_STUDENT,
+          //   icon: (props) => (
+          //     <Icon icon="solar:inbox-line-bold-duotone" {...props} />
+          //   ),
+          // },
+          // {
+          //   name: "Grades",
+          //   href: NAV_URL.ADMIN.LMS.GRADES,
+          //   icon: (props) => (
+          //     <Icon icon="solar:diploma-verified-bold-duotone" {...props} />
+          //   ),
+          // },
         ],
       },
     ],
