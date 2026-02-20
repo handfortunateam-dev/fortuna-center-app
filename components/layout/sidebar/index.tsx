@@ -331,7 +331,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
           <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {[1, 2, 3, 4, 5].map((i) => (
+          {[1, 2, 3, 4, 5,6,7,8,9,10].map((i) => (
             <div
               key={i}
               className="h-10 rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse"
