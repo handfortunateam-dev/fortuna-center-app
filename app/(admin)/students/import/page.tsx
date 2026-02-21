@@ -105,7 +105,12 @@ export default function ImportStudentsPage() {
 
       // For the known format, skip annotation/note rows (rows where NO is not a positive number).
       // NO may be an integer (45), a float (16.786), or a string ("16.786") depending on the file.
-      const filteredData = isKnownExcelFormat
+      // Only apply the NO filter if the file actually has a "NO" column — files exported from a
+      // previous failed-rows download use internal camelCase field names (e.g. "gender", "address")
+      // that also happen to match EXCEL_COLUMN_MAP, but have no "NO" column, so without this guard
+      // every row would be filtered out and the user would see the "empty file" error.
+      const hasNoColumn = firstRowHeaders.includes("NO");
+      const filteredData = isKnownExcelFormat && hasNoColumn
         ? jsonData.filter((row) => {
             const no = row["NO"];
             if (typeof no === "number") return no > 0;
@@ -182,6 +187,10 @@ export default function ImportStudentsPage() {
               normalized.education = normalizeEducation(value);
             } else if (camelKey === "occupation") {
               normalized.occupation = normalizeOccupation(value);
+            } else if (camelKey === "dateOfBirth" || camelKey === "registrationDate") {
+              // When re-importing a failed-rows Excel export, xlsx converts ISO date strings
+              // (e.g. "2015-02-23") to Excel serial numbers (e.g. 42058). Parse them back.
+              normalized[camelKey] = parseExcelDate(value);
             } else {
               normalized[camelKey] = value;
             }
