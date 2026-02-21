@@ -55,4 +55,26 @@ export const columns: Columns<ITeacher> = [
         "-"
       ),
   },
+  {
+    key: "isLinkedAccount",
+    label: "LINKED ACCOUNT",
+    value: (teacher) => (
+      <Chip
+        size="sm"
+        variant="flat"
+        color={teacher.isLinkedAccount ? "success" : "warning"}
+        startContent={
+          <Icon
+            icon={
+              teacher.isLinkedAccount
+                ? "solar:check-circle-bold"
+                : "solar:close-circle-bold"
+            }
+          />
+        }
+      >
+        {teacher.isLinkedAccount ? "Linked" : "Unlinked"}
+      </Chip>
+    ),
+  },
 ];

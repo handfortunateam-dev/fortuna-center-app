@@ -6,6 +6,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
 import { students } from "@/db/schema/students.schema";
+import { teachers } from "@/db/schema/teachers.schema";
 import { and, eq, ilike, notInArray, isNotNull } from "drizzle-orm";
 
 // GET - Fetch all users from Clerk
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
         const source = searchParams.get("source");
         const id = searchParams.get("id"); // Database user ID
         const excludeLinkedStudents = searchParams.get("excludeLinkedStudents") === "true" || searchParams.get("unassigned") === "true";
+        const excludeLinkedTeachers = searchParams.get("excludeLinkedTeachers") === "true";
 
         // If id is specified, fetch single user by database ID
         if (id) {
@@ -91,6 +93,19 @@ export async function GET(request: NextRequest) {
                     .where(isNotNull(students.userId));
 
                 const ids = linkedUserIds.map(s => s.userId).filter(Boolean) as string[];
+
+                if (ids.length > 0) {
+                    whereConditions.push(notInArray(users.id, ids));
+                }
+            }
+
+            if (excludeLinkedTeachers) {
+                const linkedUserIds = await db
+                    .select({ userId: teachers.userId })
+                    .from(teachers)
+                    .where(isNotNull(teachers.userId));
+
+                const ids = linkedUserIds.map(t => t.userId).filter(Boolean) as string[];
 
                 if (ids.length > 0) {
                     whereConditions.push(notInArray(users.id, ids));

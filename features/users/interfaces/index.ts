@@ -31,6 +31,7 @@ export interface UsersListParams {
   role?: string;
   source?: string;
   excludeLinkedStudents?: boolean;
+  excludeLinkedTeachers?: boolean;
 }
 
 export interface UsersListResponse {

@@ -1,6 +1,7 @@
 "use client";
 
 import { UserButton, useUser } from "@clerk/nextjs";
+import { Skeleton } from "@heroui/react";
 import { useEffect, useState } from "react";
 import AuthButtonsClient from "./AuthButtonsClient";
 import { useAuthProvider } from "@/hooks/useAuthProvider";
@@ -69,7 +70,12 @@ export default function AuthButtons() {
   const isVisitor = userRole === "VISITOR";
 
   if (isLoading) {
-    return null; // Or a loading skeleton
+    return (
+      <div className="hidden md:flex items-center gap-2">
+        <Skeleton className="h-10 w-28 rounded-xl" />
+        <Skeleton className="h-9 w-9 rounded-full" />
+      </div>
+    );
   }
 
   // If user is logged in and NOT a visitor, show dashboard button

@@ -79,7 +79,12 @@ export const NAV_URL = {
             USAGE: "/youtube-integration/usage"
         },
         SCHEDULER: "/class-scheduler-management",
-        ANALYTICS: "/analytics",
+        ANALYTICS: {
+            ROOT: "/analytics",
+            USERS: "/analytics/users",
+            STUDENT_PERFORMANCE: "/analytics/student-performance",
+            FINANCIAL: "/analytics/financial",
+        },
         USERS: "/users",
         VULTR: {
             ROOT: "/vultr-billing",

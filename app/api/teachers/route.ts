@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { teachers } from "@/db/schema";
 
@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
         const searchParams = request.nextUrl.searchParams;
         const query = searchParams.get("q") || searchParams.get("query") || "";
         const userId = searchParams.get("userId") || "";
+        const limitStr = searchParams.get("limit");
+        const offsetStr = searchParams.get("offset");
 
         const filters = [];
         if (query) {
@@ -27,13 +29,43 @@ export async function GET(request: NextRequest) {
 
         const where = filters.length ? and(...filters) : undefined;
 
-        const data = await db
+        let queryBuilder = db
             .select()
             .from(teachers)
             .where(where)
-            .orderBy(desc(teachers.createdAt));
+            .orderBy(desc(teachers.createdAt))
+            .$dynamic();
 
-        return NextResponse.json({ success: true, data });
+        if (limitStr) {
+            queryBuilder = queryBuilder.limit(parseInt(limitStr, 10));
+        }
+
+        if (offsetStr) {
+            queryBuilder = queryBuilder.offset(parseInt(offsetStr, 10));
+        }
+
+        const data = await queryBuilder;
+
+        // Count total for pagination if needed
+        let totalCount = data.length;
+        if (limitStr || offsetStr) {
+            const [{ count }] = await db
+                .select({ count: sql<number>`count(*)` })
+                .from(teachers)
+                .where(where);
+            totalCount = Number(count);
+        }
+
+        const formattedData = data.map((teacher) => ({
+            ...teacher,
+            isLinkedAccount: !!teacher.userId,
+        }));
+
+        return NextResponse.json({
+            success: true,
+            data: formattedData,
+            totalCount
+        });
     } catch (error) {
         console.error("Error fetching teachers:", error);
         return NextResponse.json(

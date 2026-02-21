@@ -1,6 +1,7 @@
 import { pgTable, text, uuid, integer, date, pgEnum, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { users } from "./users.schema";
+import { students } from "./students.schema";
 import { classes } from "./class.schema";
 import { id, timestamps } from "./columns.helper";
 
@@ -28,7 +29,7 @@ export const coursePayments = pgTable("course_payments", {
 
     // Siswa yang membayar
     studentId: uuid("student_id")
-        .references(() => users.id, { onDelete: "cascade" })
+        .references(() => students.id, { onDelete: "cascade" })
         .notNull(),
 
     // Kelas yang dibayar
@@ -63,9 +64,9 @@ export const coursePayments = pgTable("course_payments", {
 
 // ── Relations ────────────────────────────────────────────────────────────────
 export const coursePaymentsRelations = relations(coursePayments, ({ one }) => ({
-    student: one(users, {
+    student: one(students, {
         fields: [coursePayments.studentId],
-        references: [users.id],
+        references: [students.id],
         relationName: "student_payments",
     }),
     class: one(classes, {

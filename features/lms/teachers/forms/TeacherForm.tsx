@@ -24,6 +24,7 @@ export function TeacherForm({ mode }: TeacherFormProps) {
   const { data: usersData, isLoading: isLoadingUsers } = useUsers({
     limit: 100,
     role: "TEACHER",
+    excludeLinkedTeachers: mode === "create",
   });
 
   const userOptions = useMemo(() => {

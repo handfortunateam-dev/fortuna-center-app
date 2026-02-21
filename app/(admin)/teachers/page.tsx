@@ -17,6 +17,7 @@ export default function TeachersPage() {
       columns={columns}
       resourcePath="/teachers"
       enableSearch
+      serverSide
       searchPlaceholder="Search by name or email..."
       enableCreate
       enableEdit

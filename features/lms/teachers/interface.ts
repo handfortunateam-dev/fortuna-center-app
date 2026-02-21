@@ -13,6 +13,7 @@ export interface ITeacher extends BaseEntity {
     address?: string;
     education?: string;
     userId?: string;
+    isLinkedAccount?: boolean;
 }
 
 export interface TeacherFormValues {
