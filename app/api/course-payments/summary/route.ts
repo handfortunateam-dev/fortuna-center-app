@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
                     with: {
                         student: {
                             with: {
-                                student: true, // Join with detailed student profile
+                                user: true, // Join with detailed user profile if any
                             }
                         },
                     },
@@ -44,36 +44,31 @@ export async function GET(request: NextRequest) {
         const result = activeClasses.map((cls) => {
             // Filter enrollments based on search query (student name)
             const filteredEnrollments = cls.enrollments.filter((enrollment) => {
+                const studentProfile = enrollment.student;
+                if (!studentProfile) return false;
+
                 if (!searchQuery) return true;
-                const user = enrollment.student;
-                const studentProfile = user.student;
 
-                const fullName = studentProfile
-                    ? `${studentProfile.firstName} ${studentProfile.lastName}`
-                    : user.name;
-
+                const fullName = `${studentProfile.firstName} ${studentProfile.lastName}`.trim();
                 return fullName.toLowerCase().includes(searchQuery.toLowerCase());
             });
 
             // Prepare students with payment status
             const students = filteredEnrollments.map((enrollment) => {
-                const user = enrollment.student;
-                const studentProfile = user.student;
+                const studentProfile = enrollment.student;
 
                 // Find existing payment record for this student/class/period
                 const payment = payments.find(
-                    (p) => p.studentId === user.id && p.classId === cls.id,
+                    (p) => p.studentId === studentProfile.id && p.classId === cls.id,
                 );
 
                 return {
-                    id: user.id, // User ID (UUID) linked to payment
-                    studentId: studentProfile?.studentId || "-", // Student Reg ID (e.g. "S2024001")
-                    name: studentProfile
-                        ? `${studentProfile.firstName} ${studentProfile.lastName}`
-                        : user.name,
-                    email: user.email,
-                    phone: studentProfile?.phone || "-",
-                    gender: studentProfile?.gender || "-",
+                    id: studentProfile.id, // Student UUID linked to payment
+                    studentId: studentProfile.studentId || "-", // Student Reg ID (e.g. "S2024001")
+                    name: `${studentProfile.firstName} ${studentProfile.lastName}`.trim(),
+                    email: studentProfile.email || studentProfile.user?.email || "-",
+                    phone: studentProfile.phone || "-",
+                    gender: studentProfile.gender || "-",
                     payment: payment
                         ? {
                             id: payment.id,

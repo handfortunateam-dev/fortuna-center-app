@@ -365,10 +365,10 @@ export function ListGrid<T = unknown>({
   totalCount: externalTotalCount,
   currentPage: externalCurrentPage,
   onPageChange: externalOnPageChange,
-  deleteConfirmTitle = "Konfirmasi Hapus",
+  deleteConfirmTitle = "Confirm Delete",
   deleteConfirmMessage = (item: T) =>
-    `Apakah Anda yakin ingin menghapus "${
-      (item as { name?: string })?.name || "item ini"
+    `Are you sure you want to delete "${
+      (item as { name?: string })?.name || "this item"
     }"?`,
   serverSide = false,
   paginationType = "offset",
@@ -389,9 +389,9 @@ export function ListGrid<T = unknown>({
   onSelectionChange: controlledOnSelectionChange,
   bulkActions = [],
   onBulkDelete,
-  bulkDeleteConfirmTitle = "Konfirmasi Hapus Massal",
+  bulkDeleteConfirmTitle = "Confirm Bulk Delete",
   bulkDeleteConfirmMessage = (count: number) =>
-    `Apakah Anda yakin ingin menghapus ${count} item yang dipilih?`,
+    `Are you sure you want to delete ${count} selected items?`,
   // Column Visibility
   enableColumnVisibility = false,
   defaultVisibleColumns,
@@ -704,8 +704,8 @@ export function ListGrid<T = unknown>({
       }
 
       Toast({
-        title: "Berhasil",
-        description: `${itemToDelete.item.name || "Item"} berhasil dihapus`,
+        title: "Success",
+        description: `${itemToDelete.item.name || "Item"} successfully deleted`,
         color: "success",
       });
 
@@ -715,9 +715,9 @@ export function ListGrid<T = unknown>({
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat menghapus item";
+          : "An error occurred while deleting the item";
       Toast({
-        title: "Gagal Menghapus",
+        title: "Failed to Delete",
         description: errorMessage,
         color: "danger",
       });
@@ -790,17 +790,17 @@ export function ListGrid<T = unknown>({
       }
 
       Toast({
-        title: "Berhasil",
-        description: `Aksi "${action.label}" berhasil dijalankan`,
+        title: "Success",
+        description: `Action "${action.label}" executed successfully`,
         color: "success",
       });
     } catch (error) {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat menjalankan aksi massal";
+          : "An error occurred while executing bulk action";
       Toast({
-        title: "Aksi Gagal",
+        title: "Action Failed",
         description: errorMessage,
         color: "danger",
       });
@@ -844,17 +844,17 @@ export function ListGrid<T = unknown>({
       }
 
       Toast({
-        title: "Berhasil",
-        description: `${selectedIds.length} item berhasil dihapus`,
+        title: "Success",
+        description: `${selectedIds.length} items successfully deleted`,
         color: "success",
       });
     } catch (error) {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat menghapus item-item terpilih";
+          : "An error occurred while deleting selected items";
       Toast({
-        title: "Gagal Menghapus",
+        title: "Failed to Delete",
         description: errorMessage,
         color: "danger",
       });
@@ -1623,15 +1623,15 @@ export function ListGrid<T = unknown>({
       <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         <StateMessage
           type="error"
-          title="Gagal Memuat Data"
-          message={actualErrorObj?.message || "Terjadi kesalahan tak dikenal."}
+          title="Failed to load Data"
+          message={actualErrorObj?.message || "Failed to load data."}
         >
           <Button
             color="danger"
             variant="light"
             onPress={() => window.location.reload()}
           >
-            Coba Lagi
+            Try Again
           </Button>
         </StateMessage>
       </div>
@@ -1687,8 +1687,8 @@ export function ListGrid<T = unknown>({
           // CASE: No data available
           <StateMessage
             type="empty"
-            title="Tidak ada data"
-            message="Belum ada data yang tersedia."
+            title="No data available"
+            message=""
             icon="lucide:file-text"
           />
         ) : filteredRows.length === 0 ? (
@@ -1696,8 +1696,8 @@ export function ListGrid<T = unknown>({
             <>
               <StateMessage
                 type="empty"
-                title="Data kosong"
-                message="Tidak ada data yang ditemukan."
+                title="No data available"
+                message=""
                 icon="lucide:file-text"
               />
             </>
@@ -1804,7 +1804,7 @@ export function ListGrid<T = unknown>({
       </div>
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
-        confirmLabel="Hapus"
+        confirmLabel="Delete"
         isLoading={isDeleting}
         isOpen={isDeleteDialogOpen}
         message={
@@ -1812,7 +1812,7 @@ export function ListGrid<T = unknown>({
             ? deleteConfirmMessage(
                 (itemToDelete.item._originalItem || itemToDelete.item) as T,
               )
-            : "Apakah Anda yakin?"
+            : "Are you sure?"
         }
         title={deleteConfirmTitle}
         onClose={() => {
@@ -1826,13 +1826,13 @@ export function ListGrid<T = unknown>({
 
       {/* Bulk Delete/Action Confirmation Dialog */}
       <ConfirmDialog
-        confirmLabel={pendingBulkAction?.label || "Konfirmasi"}
+        confirmLabel={pendingBulkAction?.label || "Confirm"}
         isLoading={isBulkDeleting}
         isOpen={isBulkDeleteDialogOpen}
         message={
           pendingBulkAction?.confirmMessage
             ? pendingBulkAction.confirmMessage(selectedCount)
-            : bulkDeleteConfirmMessage(selectedCount)
+          : bulkDeleteConfirmMessage(selectedCount)
         }
         title={pendingBulkAction?.confirmTitle || bulkDeleteConfirmTitle}
         onClose={() => {

@@ -11,6 +11,7 @@ export const EDUCATION_LEVELS = [
     { label: "Master's Degree (S2)", value: "Master's Degree" },
     { label: "Doctoral Degree (S3)", value: "Doctoral Degree" },
     { label: "Others", value: "Others" },
+    { label: "Unknown", value: "Unknown" },
 ];
 
 // Occupation types constants
@@ -23,9 +24,12 @@ export const OCCUPATION_TYPES = [
     { label: "Professional", value: "Professional" },
     { label: "Housewife", value: "Housewife" },
     { label: "Freelancer", value: "Freelancer" },
+    { label: "Teacher", value: "Teacher" },
+    { label: "Doctor", value: "Doctor" },
     { label: "Unemployed", value: "Unemployed" },
     { label: "Retired", value: "Retired" },
     { label: "Others", value: "Others" },
+    { label: "Unknown", value: "Unknown" },
 ];
 
 // Export types for TypeScript

@@ -141,21 +141,21 @@ export const publicMenuItems: NavigationItem[] = [
             label: "Overview",
             href: NAV_URL.PUBLIC.PROGRAMS.LMS_OVERVIEW,
             icon: <Icon icon="lucide:layout-dashboard" className="w-4 h-4" />,
-            description: "Ringkasan platform LMS",
+            description: "LMS Platform Summary",
           },
           {
             key: "lms-features",
-            label: "Fitur",
+            label: "Features",
             href: NAV_URL.PUBLIC.PROGRAMS.LMS_FEATURES,
             icon: <Icon icon="lucide:layers" className="w-4 h-4" />,
-            description: "Keunggulan utama LMS",
+            description: "Key LMS Features",
           },
           {
             key: "lms-benefits",
-            label: "Benefit",
+            label: "Benefits",
             href: NAV_URL.PUBLIC.PROGRAMS.LMS_BENEFITS,
             icon: <Icon icon="lucide:award" className="w-4 h-4" />,
-            description: "Manfaat belajar",
+            description: "Learning Benefits",
           },
         ],
       },
@@ -347,9 +347,7 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
       {
         name: "Class Administration",
         href: NAV_URL.ADMIN.LMS.CLASSES,
-        icon: (props) => (
-          <Icon icon="solar:widget-2-bold-duotone" {...props} />
-        ),
+        icon: (props) => <Icon icon="solar:widget-2-bold-duotone" {...props} />,
         children: [
           {
             name: "Classes",
@@ -528,9 +526,30 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
     ],
   },
   {
-    name: "Analytics",
-    href: NAV_URL.ADMIN.ANALYTICS,
+    name: "Analytics & Insights",
+    href: NAV_URL.ADMIN.ANALYTICS.ROOT,
     icon: (props) => <Icon icon="solar:chart-2-bold-duotone" {...props} />,
+    children: [
+      {
+        name: "Users Overview",
+        href: NAV_URL.ADMIN.ANALYTICS.USERS,
+        icon: (props) => (
+          <Icon icon="solar:users-group-rounded-bold-duotone" {...props} />
+        ),
+      },
+      // {
+      //   name: "Student Performance",
+      //   href: NAV_URL.ADMIN.ANALYTICS.STUDENT_PERFORMANCE,
+      //   icon: (props) => <Icon icon="solar:graph-up-bold-duotone" {...props} />,
+      // },
+      {
+        name: "Financial",
+        href: NAV_URL.ADMIN.ANALYTICS.FINANCIAL,
+        icon: (props) => (
+          <Icon icon="solar:dollar-minimalistic-bold-duotone" {...props} />
+        ),
+      },
+    ],
   },
 
   {
@@ -538,8 +557,6 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
     href: NAV_URL.ADMIN.PAYMENT_COURSE_HISTORY,
     icon: (props) => <Icon icon="lucide:file-text" {...props} />,
   },
-
-
 
   {
     name: "Settings",
@@ -627,7 +644,7 @@ export const studentSidebarNavigation: AdminNavigationItem[] = [
     icon: (props) => <Icon icon="solar:book-2-bold-duotone" {...props} />,
   },
   {
-    name: "Materi Pelajaran",
+    name: "My Lessons",
     href: NAV_URL.STUDENT.MY_LESSONS,
     icon: (props) => <Icon icon="solar:notebook-bold-duotone" {...props} />,
   },

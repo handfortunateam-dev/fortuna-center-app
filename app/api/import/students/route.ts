@@ -49,13 +49,13 @@ export async function POST(request: NextRequest) {
         const email =
           row.email || row["Email"] || row.EMAIL || null;
         const phone =
-          row.phone || row["Phone"] || row["No HP"] || row["Phone Number"] || row.PHONE || null;
+          row.phone || row["Phone"] || row["No HP"] || row["Phone Number"] || row["Nama Orang Tua"] || row["Nama Ortu"] || row.PHONE || null;
         const address =
           row.address || row["Address"] || row["Alamat"] || row.ADDRESS || null;
         const education =
-          row.education || row["Education"] || row["Pendidikan"] || row.EDUCATION || null;
+          row.education || row["Education"] || row["Pendidikan"] || row.EDUCATION || "Unknown";
         const occupation =
-          row.occupation || row["Occupation"] || row["Pekerjaan"] || row.OCCUPATION || null;
+          row.occupation || row["Occupation"] || row["Pekerjaan"] || row.OCCUPATION || "Unknown";
 
         // Required: firstName and phone (email is optional)
         if (!firstName || !phone) {
@@ -72,27 +72,25 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Generate studentId if not provided
-        const finalStudentId =
-          studentId ||
-          `STD-${new Date().toISOString().split("T")[0].replace(/-/g, "")}-${Math.random()
-            .toString(36)
-            .substring(2, 7)
-            .toUpperCase()}`;
+        // If studentId is manually provided, check for uniqueness
+        if (studentId) {
+          const existingStudentId = await db
+            .select()
+            .from(students)
+            .where(eq(students.studentId, studentId))
+            .limit(1);
 
-        // Check studentId uniqueness
-        const existingStudentId = await db
-          .select()
-          .from(students)
-          .where(eq(students.studentId, finalStudentId))
-          .limit(1);
-
-        if (existingStudentId.length > 0) {
-          results.errors.push(`Student ID ${finalStudentId} already exists`);
-          results.failed++;
-          results.failedRows.push(row);
-          continue;
+          if (existingStudentId.length > 0) {
+            results.errors.push(`Student ID ${studentId} already exists`);
+            results.failed++;
+            results.failedRows.push(row);
+            continue;
+          }
         }
+
+        // Use a temp ID when none is provided; will be replaced after insert
+        // with the proper format: ${year}${studentNumber.padStart(4, "0")}
+        const tempId = studentId || `TEMP-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
         // Check email uniqueness — only if email is provided
         if (email) {
@@ -113,23 +111,23 @@ export async function POST(request: NextRequest) {
         // Normalize gender
         const normalizedGender =
           gender?.toLowerCase() === "male" ||
-          gender?.toLowerCase() === "laki-laki" ||
-          gender?.toLowerCase() === "l"
+            gender?.toLowerCase() === "laki-laki" ||
+            gender?.toLowerCase() === "l"
             ? "male"
             : gender?.toLowerCase() === "female" ||
-                gender?.toLowerCase() === "perempuan" ||
-                gender?.toLowerCase() === "p"
+              gender?.toLowerCase() === "perempuan" ||
+              gender?.toLowerCase() === "p"
               ? "female"
               : null;
 
-        await db.insert(students).values({
-          studentId: finalStudentId,
+        const [inserted] = await db.insert(students).values({
+          studentId: tempId,
           registrationDate:
             registrationDate || new Date().toISOString().split("T")[0],
           firstName,
           middleName,
           lastName,
-          nickname,
+          nickname: nickname || firstName,
           gender: normalizedGender,
           placeOfBirth,
           dateOfBirth,
@@ -139,7 +137,17 @@ export async function POST(request: NextRequest) {
           education,
           occupation,
           userId: null,
-        });
+        }).returning();
+
+        // Replace temp ID with the proper format: ${year}${studentNumber padded to 4}
+        if (!studentId) {
+          const year = new Date().getFullYear();
+          const sequence = String(inserted.studentNumber).padStart(4, "0");
+          await db
+            .update(students)
+            .set({ studentId: `${year}${sequence}` })
+            .where(eq(students.id, inserted.id));
+        }
 
         results.success++;
       } catch (rowError) {

@@ -84,8 +84,8 @@ export default function SettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       onClose(); // Close modal on success for generic wrapper
     },
-    onError: (err: any) => {
-      Toast({ title: "Error", description: err.message, color: "danger" });
+    onError: (err: unknown) => {
+      Toast({ title: "Error", description: (err as Error).message, color: "danger" });
     },
   });
 
@@ -192,14 +192,25 @@ export default function SettingsPage() {
   );
   const [authProvider, setAuthProvider] = useState("clerk");
 
-  useEffect(() => {
+  const originalAuthProvider = useMemo(() => {
     const val = unwrapValue(authSetting?.value);
-    if (val) setAuthProvider(String(val));
+    return val ? String(val) : "clerk";
   }, [authSetting]);
+
+  useEffect(() => {
+    setAuthProvider(originalAuthProvider);
+  }, [originalAuthProvider]);
 
   const handleAuthChange = (val: string) => {
     setAuthProvider(val);
-    updateMutation.mutate({ key: "auth_provider", value: val });
+  };
+
+  const saveAuthStrategy = () => {
+    updateMutation.mutate({ key: "auth_provider", value: authProvider });
+  };
+
+  const revertAuthStrategy = () => {
+    setAuthProvider(originalAuthProvider);
   };
   // ------------------
 
@@ -399,6 +410,28 @@ export default function SettingsPage() {
                     Disabled / Public
                   </Radio>
                 </RadioGroup>
+
+                <div className="flex gap-2 mt-6">
+                  <Button
+                    color="primary"
+                    onPress={saveAuthStrategy}
+                    isLoading={updateMutation.isPending}
+                    isDisabled={authProvider === originalAuthProvider}
+                  >
+                    Save Changes
+                  </Button>
+                  <Button
+                    variant="flat"
+                    color="danger"
+                    onPress={revertAuthStrategy}
+                    isDisabled={
+                      authProvider === originalAuthProvider ||
+                      updateMutation.isPending
+                    }
+                  >
+                    Revert
+                  </Button>
+                </div>
               </CardBody>
             </Card>
           </div>

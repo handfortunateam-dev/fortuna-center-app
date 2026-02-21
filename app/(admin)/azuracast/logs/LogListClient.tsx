@@ -119,7 +119,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
 
     const endpoint = getLogEndpoint(log);
     if (!endpoint) {
-      setContentError("Endpoint untuk log ini belum dikonfigurasi.");
+      setContentError("Endpoint for this log has not been configured.");
       setIsLoadingContent(false);
       return;
     }
@@ -131,7 +131,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
       const res = await fetch(url, { cache: "no-store" });
       const text = await res.text();
       if (!res.ok) {
-        throw new Error(text || `Gagal mengambil log (${res.status})`);
+        throw new Error(text || `Failed to fetch log (${res.status})`);
       }
 
       // Try to parse as JSON first, as AzuraCast API often returns { contents: "..." }
@@ -143,11 +143,11 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
           setLogContent(text);
         }
       } catch {
-        setLogContent(text || "(kosong)");
+        setLogContent(text || "(empty)");
       }
     } catch (err) {
       setContentError(
-        err instanceof Error ? err.message : "Gagal mengambil konten log.",
+        err instanceof Error ? err.message : "Failed to fetch log content.",
       );
     } finally {
       setIsLoadingContent(false);
@@ -167,8 +167,8 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
     if (!logContent) return;
     navigator.clipboard.writeText(logContent);
     Toast({
-      title: "Berhasil",
-      description: "Log berhasil disalin ke clipboard",
+      title: "Success",
+      description: "Log successfully copied to clipboard",
       color: "success",
     });
   };
@@ -189,7 +189,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
     () => [
       {
         key: "name",
-        label: "Nama",
+        label: "Name",
         value: (log: LogRow) => (
           <div className="font-medium text-gray-900 dark:text-gray-100">
             {log.name}
@@ -198,7 +198,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
       },
       {
         key: "path",
-        label: "Lokasi",
+        label: "Location",
         value: (log: LogRow) => (
           <code className="block max-w-xl truncate rounded bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-200">
             {log.path}
@@ -207,17 +207,17 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
       },
       {
         key: "sizeFormatted",
-        label: "Ukuran",
+        label: "Size",
         value: (log: LogRow) => log.sizeFormatted,
       },
       {
         key: "updatedAtFormatted",
-        label: "Diperbarui",
+        label: "Updated At",
         value: (log: LogRow) => log.updatedAtFormatted,
       },
       {
         key: "view",
-        label: "Aksi",
+        label: "Action",
         align: "center" as const,
         value: (log: LogRow) => (
           <Button
@@ -226,7 +226,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
             variant="flat"
             onPress={() => handleOpenLog(log)}
           >
-            Lihat
+            View
           </Button>
         ),
       },
@@ -242,7 +242,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
     if (lines.length === 0) {
       return (
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
-          (kosong)
+          (empty)
         </div>
       );
     }
@@ -288,13 +288,13 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
     <div className="space-y-6">
       {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700 shadow-sm dark:border-red-800 dark:bg-red-900/30 dark:text-red-100">
-          <p className="font-semibold">Tidak dapat memuat log</p>
+          <p className="font-semibold">Cannot load logs</p>
           <p className="text-sm text-red-700 dark:text-red-100">{error}</p>
         </div>
       ) : (
         <ListGrid
           title=" AzuraCast Logs"
-          description="Daftar file log yang tersedia dari AzuraCast Admin API."
+          description="List of available log files from AzuraCast Admin API."
           data={rows}
           keyField="name"
           idField="name"
@@ -304,7 +304,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
           showPagination
           empty={
             <div className="rounded-lg border border-gray-200 bg-white px-4 py-6 text-gray-600 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
-              Belum ada data log yang tersedia.
+              No log data available yet.
             </div>
           }
         />
@@ -372,7 +372,7 @@ export default function LogListClient({ logs, error }: LogListClientProps) {
                 </Button>
                 <div className="flex gap-2">
                   <Button variant="light" onPress={() => onClose()}>
-                    Tutup
+                    Close
                   </Button>
                   <Button
                     color="primary"

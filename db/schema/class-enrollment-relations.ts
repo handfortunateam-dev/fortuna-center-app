@@ -1,12 +1,12 @@
 import { relations } from 'drizzle-orm';
 import { classEnrollments } from './class-enrollment.schema';
-import { users } from './users.schema';
+import { students } from './students.schema';
 import { classes } from './class.schema';
 
 export const classEnrollmentsRelations = relations(classEnrollments, ({ one }) => ({
-    student: one(users, {
+    student: one(students, {
         fields: [classEnrollments.studentId],
-        references: [users.id],
+        references: [students.id],
         relationName: 'enrollmentStudent',
     }),
     class: one(classes, {

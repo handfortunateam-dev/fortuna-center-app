@@ -17,9 +17,9 @@ interface FormActionsProps {
 export default function FormActions({
   onReset,
   isSubmitting = false,
-  submitLabel = "Simpan",
+  submitLabel = "Save",
   resetLabel = "Reset",
-  backLabel = "Kembali",
+  backLabel = "Back",
   showBackButton = true,
   backHref,
   extraActions,

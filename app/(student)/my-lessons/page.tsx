@@ -29,7 +29,9 @@ import {
 
 export default function MyLessonsPage() {
   const [selectedClassId, setSelectedClassId] = useState<string>("all");
-  const [previewMaterial, setPreviewMaterial] = useState<LessonMaterial | null>(null);
+  const [previewMaterial, setPreviewMaterial] = useState<LessonMaterial | null>(
+    null,
+  );
 
   const {
     isOpen: isPreviewOpen,
@@ -38,8 +40,10 @@ export default function MyLessonsPage() {
   } = useDisclosure();
 
   // Fetch all lessons grouped by class
-  const { data: lessonsResponse, isLoading: isLessonsLoading } = useStudentLessons();
-  const { data: classesResponse, isLoading: isClassesLoading } = useStudentClasses();
+  const { data: lessonsResponse, isLoading: isLessonsLoading } =
+    useStudentLessons();
+  const { data: classesResponse, isLoading: isClassesLoading } =
+    useStudentClasses();
 
   const lessonsData = lessonsResponse?.data || [];
   const classesData = classesResponse?.data || [];
@@ -60,15 +64,24 @@ export default function MyLessonsPage() {
       case "video":
         return <Icon icon="logos:youtube-icon" className="text-xl" />;
       case "pdf":
-        return <Icon icon="lucide:file-text" className="text-xl text-red-500" />;
+        return (
+          <Icon icon="lucide:file-text" className="text-xl text-red-500" />
+        );
       case "ppt":
-        return <Icon icon="lucide:presentation" className="text-xl text-orange-500" />;
+        return (
+          <Icon
+            icon="lucide:presentation"
+            className="text-xl text-orange-500"
+          />
+        );
       case "audio":
         return <Icon icon="lucide:mic" className="text-xl text-purple-500" />;
       case "link":
         return <Icon icon="lucide:link" className="text-xl text-blue-500" />;
       case "text":
-        return <Icon icon="lucide:align-left" className="text-xl text-gray-500" />;
+        return (
+          <Icon icon="lucide:align-left" className="text-xl text-gray-500" />
+        );
       default:
         return <Icon icon="lucide:file" className="text-xl text-gray-400" />;
     }
@@ -81,7 +94,7 @@ export default function MyLessonsPage() {
       ppt: "Slides",
       audio: "Audio",
       link: "Link",
-      text: "Teks",
+      text: "Text",
       file: "File",
     };
     return labels[type] || "File";
@@ -100,27 +113,23 @@ export default function MyLessonsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Materi Pelajaran</h1>
+          <h1 className="text-2xl font-bold text-gray-900">My Lessons</h1>
           <p className="text-gray-500">
-            Akses materi pembelajaran dari kelas yang kamu ikuti.
+            Access learning materials from your enrolled classes.
           </p>
         </div>
 
         <Select
-          label="Filter Kelas"
-          placeholder="Semua Kelas"
+          label="Filter Class"
+          placeholder="All Classes"
           className="max-w-xs min-w-[200px]"
           selectedKeys={[selectedClassId]}
           onChange={(e) => setSelectedClassId(e.target.value || "all")}
         >
           {[
-            <SelectItem key="all" value="all">
-              Semua Kelas
-            </SelectItem>,
+            <SelectItem key="all">All Classes</SelectItem>,
             ...classesData.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
+              <SelectItem key={c.id}>{c.name}</SelectItem>
             )),
           ]}
         </Select>
@@ -134,10 +143,10 @@ export default function MyLessonsPage() {
             className="w-16 h-16 mx-auto mb-4 opacity-50 text-gray-400"
           />
           <h3 className="text-lg font-medium text-gray-900">
-            Belum Ada Materi
+            No Materials Yet
           </h3>
           <p className="mt-1 text-sm text-gray-500">
-            Guru belum menambahkan materi untuk kelasmu.
+            Teacher has not added any materials for your class.
           </p>
         </div>
       ) : (
@@ -152,7 +161,7 @@ export default function MyLessonsPage() {
                   <div>
                     <h2 className="text-lg font-semibold">{classData.name}</h2>
                     <p className="text-sm text-white/80">
-                      {classData.lessons.length} Materi
+                      {classData.lessons.length} Materials
                     </p>
                   </div>
                 </div>
@@ -161,8 +170,11 @@ export default function MyLessonsPage() {
               <CardBody className="p-0">
                 {classData.lessons.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    <Icon icon="lucide:inbox" className="text-4xl mx-auto mb-2 opacity-50" />
-                    <p>Belum ada materi untuk kelas ini.</p>
+                    <Icon
+                      icon="lucide:inbox"
+                      className="text-4xl mx-auto mb-2 opacity-50"
+                    />
+                    <p>No materials available for this class.</p>
                   </div>
                 ) : (
                   <Accordion variant="light" className="px-0">
@@ -176,14 +188,21 @@ export default function MyLessonsPage() {
                               {index + 1}
                             </div>
                             <div>
-                              <span className="font-medium">{lesson.title}</span>
+                              <span className="font-medium">
+                                {lesson.title}
+                              </span>
                               {lesson.description && (
                                 <p className="text-xs text-gray-500 mt-0.5">
                                   {lesson.description}
                                 </p>
                               )}
                             </div>
-                            <Chip size="sm" variant="flat" color="default" className="ml-auto">
+                            <Chip
+                              size="sm"
+                              variant="flat"
+                              color="default"
+                              className="ml-auto"
+                            >
                               {lesson.materials.length} item
                             </Chip>
                           </div>
@@ -192,7 +211,7 @@ export default function MyLessonsPage() {
                         <div className="pb-4 px-2">
                           {lesson.materials.length === 0 ? (
                             <p className="text-center text-gray-400 py-4">
-                              Tidak ada materi dalam lesson ini.
+                              No materials in this lesson.
                             </p>
                           ) : (
                             <div className="grid gap-3">
@@ -235,43 +254,55 @@ export default function MyLessonsPage() {
                                   </div>
 
                                   <div className="flex items-center gap-2">
-                                    {material.type === "link" && material.content && (
-                                      <Button
-                                        size="sm"
-                                        color="primary"
-                                        variant="flat"
-                                        as="a"
-                                        href={material.content}
-                                        target="_blank"
-                                        startContent={<Icon icon="lucide:external-link" />}
-                                      >
-                                        Buka
-                                      </Button>
-                                    )}
-                                    {material.type === "file" && material.content && (
-                                      <Button
-                                        size="sm"
-                                        color="primary"
-                                        variant="flat"
-                                        as="a"
-                                        href={material.content}
-                                        target="_blank"
-                                        startContent={<Icon icon="lucide:download" />}
-                                      >
-                                        Download
-                                      </Button>
-                                    )}
-                                    {["video", "pdf", "ppt", "audio", "text"].includes(
-                                      material.type
-                                    ) && (
+                                    {material.type === "link" &&
+                                      material.content && (
+                                        <Button
+                                          size="sm"
+                                          color="primary"
+                                          variant="flat"
+                                          as="a"
+                                          href={material.content}
+                                          target="_blank"
+                                          startContent={
+                                            <Icon icon="lucide:external-link" />
+                                          }
+                                        >
+                                          Open
+                                        </Button>
+                                      )}
+                                    {material.type === "file" &&
+                                      material.content && (
+                                        <Button
+                                          size="sm"
+                                          color="primary"
+                                          variant="flat"
+                                          as="a"
+                                          href={material.content}
+                                          target="_blank"
+                                          startContent={
+                                            <Icon icon="lucide:download" />
+                                          }
+                                        >
+                                          Download
+                                        </Button>
+                                      )}
+                                    {[
+                                      "video",
+                                      "pdf",
+                                      "ppt",
+                                      "audio",
+                                      "text",
+                                    ].includes(material.type) && (
                                       <Button
                                         size="sm"
                                         color="primary"
                                         variant="solid"
                                         onPress={() => handlePreview(material)}
-                                        startContent={<Icon icon="lucide:play" />}
+                                        startContent={
+                                          <Icon icon="lucide:play" />
+                                        }
                                       >
-                                        Lihat
+                                        View
                                       </Button>
                                     )}
                                   </div>
@@ -336,103 +367,110 @@ export default function MyLessonsPage() {
                         className="w-full max-h-[500px]"
                         src={previewMaterial.content}
                       >
-                        Browser tidak support video.
+                        Browser does not support video.
                       </video>
                     ))}
 
                   {/* PDF */}
-                  {previewMaterial?.type === "pdf" && previewMaterial.content && (
-                    <iframe
-                      src={previewMaterial.content}
-                      className="w-full h-[600px]"
-                      title="PDF Preview"
-                    ></iframe>
-                  )}
+                  {previewMaterial?.type === "pdf" &&
+                    previewMaterial.content && (
+                      <iframe
+                        src={previewMaterial.content}
+                        className="w-full h-[600px]"
+                        title="PDF Preview"
+                      ></iframe>
+                    )}
 
                   {/* PPT / Office Documents */}
-                  {previewMaterial?.type === "ppt" && previewMaterial.content && (
-                    <iframe
-                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewMaterial.content)}&embedded=true`}
-                      className="w-full h-[600px]"
-                      frameBorder="0"
-                      title="Slides Preview"
-                    ></iframe>
-                  )}
+                  {previewMaterial?.type === "ppt" &&
+                    previewMaterial.content && (
+                      <iframe
+                        src={`https://docs.google.com/viewer?url=${encodeURIComponent(previewMaterial.content)}&embedded=true`}
+                        className="w-full h-[600px]"
+                        frameBorder="0"
+                        title="Slides Preview"
+                      ></iframe>
+                    )}
 
                   {/* Audio */}
-                  {previewMaterial?.type === "audio" && previewMaterial.content && (
-                    <div className="p-10 w-full text-center">
-                      <Icon
-                        icon="lucide:headphones"
-                        className="text-6xl mx-auto text-purple-500 mb-4"
-                      />
-                      <p className="mb-4 text-gray-600">
-                        {previewMaterial.title}
-                      </p>
-                      <audio controls className="w-full max-w-md mx-auto">
-                        <source src={previewMaterial.content} />
-                        Browser tidak support audio.
-                      </audio>
-                    </div>
-                  )}
+                  {previewMaterial?.type === "audio" &&
+                    previewMaterial.content && (
+                      <div className="p-10 w-full text-center">
+                        <Icon
+                          icon="lucide:headphones"
+                          className="text-6xl mx-auto text-purple-500 mb-4"
+                        />
+                        <p className="mb-4 text-gray-600">
+                          {previewMaterial.title}
+                        </p>
+                        <audio controls className="w-full max-w-md mx-auto">
+                          <source src={previewMaterial.content} />
+                          Browser does not support audio.
+                        </audio>
+                      </div>
+                    )}
 
                   {/* Text */}
-                  {previewMaterial?.type === "text" && previewMaterial.content && (
-                    <div className="p-6 w-full bg-white text-left whitespace-pre-wrap text-gray-700">
-                      {previewMaterial.content}
-                    </div>
-                  )}
+                  {previewMaterial?.type === "text" &&
+                    previewMaterial.content && (
+                      <div className="p-6 w-full bg-white text-left whitespace-pre-wrap text-gray-700">
+                        {previewMaterial.content}
+                      </div>
+                    )}
 
                   {/* Link (fallback) */}
-                  {previewMaterial?.type === "link" && previewMaterial.content && (
-                    <div className="text-center p-8 w-full">
-                      <Icon
-                        icon="lucide:link"
-                        className="text-6xl mx-auto text-blue-500 mb-4"
-                      />
-                      <p className="mb-6 text-lg break-all text-gray-600">
-                        {previewMaterial.content}
-                      </p>
-                      <Button
-                        as="a"
-                        href={previewMaterial.content}
-                        target="_blank"
-                        color="primary"
-                        size="lg"
-                      >
-                        Buka Link <Icon icon="lucide:external-link" className="ml-2" />
-                      </Button>
-                    </div>
-                  )}
+                  {previewMaterial?.type === "link" &&
+                    previewMaterial.content && (
+                      <div className="text-center p-8 w-full">
+                        <Icon
+                          icon="lucide:link"
+                          className="text-6xl mx-auto text-blue-500 mb-4"
+                        />
+                        <p className="mb-6 text-lg break-all text-gray-600">
+                          {previewMaterial.content}
+                        </p>
+                        <Button
+                          as="a"
+                          href={previewMaterial.content}
+                          target="_blank"
+                          color="primary"
+                          size="lg"
+                        >
+                          Open Link{" "}
+                          <Icon icon="lucide:external-link" className="ml-2" />
+                        </Button>
+                      </div>
+                    )}
 
                   {/* File (fallback) */}
-                  {previewMaterial?.type === "file" && previewMaterial.content && (
-                    <div className="text-center p-8">
-                      <Icon
-                        icon="lucide:file"
-                        className="text-6xl mx-auto text-gray-400 mb-4"
-                      />
-                      <p className="mb-4 text-gray-500">
-                        File ini tidak dapat di-preview langsung.
-                      </p>
-                      <Button
-                        as="a"
-                        href={previewMaterial.content}
-                        target="_blank"
-                        color="primary"
-                        variant="flat"
-                        startContent={<Icon icon="lucide:download" />}
-                      >
-                        Download File
-                      </Button>
-                    </div>
-                  )}
+                  {previewMaterial?.type === "file" &&
+                    previewMaterial.content && (
+                      <div className="text-center p-8">
+                        <Icon
+                          icon="lucide:file"
+                          className="text-6xl mx-auto text-gray-400 mb-4"
+                        />
+                        <p className="mb-4 text-gray-500">
+                          This file cannot be previewed directly.
+                        </p>
+                        <Button
+                          as="a"
+                          href={previewMaterial.content}
+                          target="_blank"
+                          color="primary"
+                          variant="flat"
+                          startContent={<Icon icon="lucide:download" />}
+                        >
+                          Download File
+                        </Button>
+                      </div>
+                    )}
                 </div>
               </ModalBody>
               <ModalFooter>
                 {previewMaterial?.content &&
                   ["pdf", "ppt", "file", "audio", "video"].includes(
-                    previewMaterial.type
+                    previewMaterial.type,
                   ) && (
                     <Button
                       as="a"
@@ -445,7 +483,7 @@ export default function MyLessonsPage() {
                     </Button>
                   )}
                 <Button color="primary" onPress={onClose}>
-                  Tutup
+                  Close
                 </Button>
               </ModalFooter>
             </>

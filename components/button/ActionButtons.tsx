@@ -601,11 +601,11 @@ export const createActionButtons = (
     // Delete button
     if (config.delete) {
       buttons.push(
-        <Tooltip content={config.delete.label || "Hapus"}>
+        <Tooltip content={config.delete.label || "Delete"}>
           <button
             key="delete"
             className="text-red-600 hover:text-red-700 transition-colors p-3 rounded-md hover:bg-red-50"
-            title={config.delete.label || "Hapus"}
+            title={config.delete.label || "Delete"}
             onClick={() => openDeleteDialog(item.id, item)}
           >
             {config.delete.icon || (
@@ -640,7 +640,7 @@ export const createAddButtonFromConfig = (config: ActionButtonConfig) => {
       }
       variant={config.add.variant || "solid"}
     >
-      {config.add.label || "Tambah"}
+      {config.add.label || "Add"}
     </LinkButton>
   );
 };
@@ -660,7 +660,7 @@ export const createAddButton = (config: AddButtonConfig) => {
       }
       variant={config.variant || "solid"}
     >
-      {config.label || "Tambah"}
+      {config.label || "Add"}
     </LinkButton>
   );
 };
