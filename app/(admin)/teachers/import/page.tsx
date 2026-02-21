@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Icon } from "@iconify/react";
+import { Heading } from "@/components/heading";
+import { FormTable } from "@/components/table/FormTable";
+import { Text } from "@/components/text";
+import { Toast } from "@/components/toast";
+import { previewColumnsTeachers } from "@/features/lms/teachers/import/previewColumnsTeachers";
 import {
   Button,
   Card,
@@ -10,12 +13,9 @@ import {
   Checkbox,
   ScrollShadow,
 } from "@heroui/react";
+import { Icon } from "@iconify/react";
+import { useState } from "react";
 import * as XLSX from "xlsx";
-import { Toast } from "@/components/toast";
-import { Heading } from "@/components/heading";
-import { FormTable, FormTableColumn } from "@/components/table/FormTable";
-import { Text } from "@/components/text";
-import { EDUCATION_LEVELS } from "@/features/lms/students/constants";
 
 interface ImportResult {
   success: boolean;
@@ -24,7 +24,7 @@ interface ImportResult {
     success: number;
     failed: number;
     errors: string[];
-    failedRows?: any[];
+    failedRows?: unknown[];
   };
 }
 
@@ -232,65 +232,6 @@ export default function ImportTeachersPage() {
     );
   };
 
-  // Kolom didefinisikan manual — eksplisit & aman, tidak bergantung nama kolom di Excel
-  const previewColumns: FormTableColumn[] = [
-    {
-      key: "firstName",
-      label: "First Name",
-      type: "text",
-      required: true,
-      minWidth: 160,
-    },
-    {
-      key: "middleName",
-      label: "Middle Name",
-      type: "text",
-      required: false,
-      minWidth: 150,
-    },
-    {
-      key: "lastName",
-      label: "Last Name",
-      type: "text",
-      required: true,
-      minWidth: 160,
-    },
-    {
-      key: "gender",
-      label: "Gender",
-      type: "select",
-      minWidth: 140,
-      options: [
-        { label: "Male", value: "male" },
-        { label: "Female", value: "female" },
-      ],
-    },
-    {
-      key: "placeOfBirth",
-      label: "Place of Birth",
-      type: "text",
-      minWidth: 180,
-    },
-    { key: "dateOfBirth", label: "Date of Birth", type: "date", minWidth: 200 },
-    {
-      key: "email",
-      label: "Email",
-      type: "email",
-      required: true,
-      minWidth: 220,
-    },
-    { key: "phone", label: "Phone", type: "text", minWidth: 160 },
-    { key: "address", label: "Address", type: "text", minWidth: 260 },
-    {
-      key: "education",
-      label: "Education",
-      type: "select",
-      minWidth: 160,
-      options: EDUCATION_LEVELS,
-    },
-    { key: "password", label: "Password", type: "text", minWidth: 180 },
-  ];
-
   const handleReset = () => {
     setFile(null);
     setPreviewData([]);
@@ -477,9 +418,9 @@ export default function ImportTeachersPage() {
               ) : isParsing ? (
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm font-medium text-gray-500">
+                  <Text className="text-sm font-medium text-gray-500">
                     Processing file...
-                  </p>
+                  </Text>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2 text-center">
@@ -487,12 +428,12 @@ export default function ImportTeachersPage() {
                     <Icon icon="lucide:file-up" className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Click to upload or drag & drop
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    </Text>
+                    <Text className="text-xs text-gray-500 mt-1">
                       XLSX, CSV (Max. 10MB)
-                    </p>
+                    </Text>
                   </div>
                   <Button
                     as="label"
@@ -547,8 +488,8 @@ export default function ImportTeachersPage() {
 
           <FormTable
             title="Data Preview"
-            description={`Preview & edit data sebelum import dari ${file?.name}`}
-            columns={previewColumns}
+            description={`Preview & edit data before import from ${file?.name}`}
+            columns={previewColumnsTeachers}
             data={previewData as Record<string, unknown>[]}
             onChange={(updated) =>
               setPreviewData(updated as Record<string, unknown>[])
@@ -565,7 +506,8 @@ export default function ImportTeachersPage() {
               color="primary"
             >
               <span className="text-sm font-medium">
-                Buat akun user juga (untuk login sistem) - password wajib diisi
+                Create user accounts as well (for system login) - password is
+                required
               </span>
             </Checkbox>
             <div className="flex gap-3 ml-auto">
@@ -593,13 +535,16 @@ export default function ImportTeachersPage() {
           <CardBody className="flex flex-row items-start gap-4 p-4">
             <Icon icon="lucide:info" className="w-5 h-5 text-blue-500 mt-0.5" />
             <div className="flex flex-col gap-1">
-              <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+              <Heading
+                size="2xl"
+                className="text-sm font-semibold text-blue-700 dark:text-blue-300"
+              >
                 Need a Template?
-              </h4>
-              <p className="text-sm text-blue-600/80 dark:text-blue-400/80">
+              </Heading>
+              <Text className="text-sm text-blue-600/80 dark:text-blue-400/80">
                 Ensure your file format is correct. You can download an import
                 template for {resource} below.
-              </p>
+              </Text>
               <Button
                 size="sm"
                 variant="light"

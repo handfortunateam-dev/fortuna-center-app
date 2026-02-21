@@ -12,7 +12,7 @@ import {
   ScrollShadow,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import * as XLSX from "xlsx";
 
 interface ImportResult {
@@ -39,6 +39,7 @@ import {
   toTitleCase,
 } from "@/features/lms/students/imports/utils";
 import { previewColumns } from "./columnsPreview";
+import SearchBar from "@/components/search-bar";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -49,6 +50,7 @@ export default function ImportStudentsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const resourceLabel = "Students";
 
@@ -110,17 +112,18 @@ export default function ImportStudentsPage() {
       // that also happen to match EXCEL_COLUMN_MAP, but have no "NO" column, so without this guard
       // every row would be filtered out and the user would see the "empty file" error.
       const hasNoColumn = firstRowHeaders.includes("NO");
-      const filteredData = isKnownExcelFormat && hasNoColumn
-        ? jsonData.filter((row) => {
-            const no = row["NO"];
-            if (typeof no === "number") return no > 0;
-            if (typeof no === "string" && no.trim()) {
-              const num = parseFloat(no.replace(/,/g, ""));
-              return !isNaN(num) && num > 0;
-            }
-            return false;
-          })
-        : jsonData;
+      const filteredData =
+        isKnownExcelFormat && hasNoColumn
+          ? jsonData.filter((row) => {
+              const no = row["NO"];
+              if (typeof no === "number") return no > 0;
+              if (typeof no === "string" && no.trim()) {
+                const num = parseFloat(no.replace(/,/g, ""));
+                return !isNaN(num) && num > 0;
+              }
+              return false;
+            })
+          : jsonData;
 
       if (filteredData.length === 0) {
         Toast({
@@ -187,7 +190,10 @@ export default function ImportStudentsPage() {
               normalized.education = normalizeEducation(value);
             } else if (camelKey === "occupation") {
               normalized.occupation = normalizeOccupation(value);
-            } else if (camelKey === "dateOfBirth" || camelKey === "registrationDate") {
+            } else if (
+              camelKey === "dateOfBirth" ||
+              camelKey === "registrationDate"
+            ) {
               // When re-importing a failed-rows Excel export, xlsx converts ISO date strings
               // (e.g. "2015-02-23") to Excel serial numbers (e.g. 42058). Parse them back.
               normalized[camelKey] = parseExcelDate(value);
@@ -233,6 +239,69 @@ export default function ImportStudentsPage() {
     } finally {
       setIsParsing(false);
     }
+  };
+
+  const filteredData = useMemo(() => {
+    if (!searchQuery) return previewData;
+    const lowerQuery = searchQuery.toLowerCase();
+    return previewData.filter((row) =>
+      Object.values(row).some((val) =>
+        String(val ?? "")
+          .toLowerCase()
+          .includes(lowerQuery),
+      ),
+    );
+  }, [previewData, searchQuery]);
+
+  const handlePreviewDataChange = (updated: Record<string, unknown>[]) => {
+    if (!searchQuery) {
+      setPreviewData(updated);
+      return;
+    }
+
+    // Merge changes back to main previewData
+    // We use the 'key' field to identify rows
+    const newPreviewData = [...previewData];
+
+    // 1. Identify which rows were in the filtered view BEFORE the change
+    const filteredKeysBefore = new Set(filteredData.map((r) => r.key));
+
+    // 2. Identify which rows are in the updated filtered view AFTER the change
+    const updatedKeysAfter = new Set(updated.map((r) => r.key));
+
+    // 3. Rows that were deleted (in before but not in after)
+    const deletedKeys = [...filteredKeysBefore].filter(
+      (k) => !updatedKeysAfter.has(k),
+    );
+
+    // 4. Rows that are new or updated
+    // Create a map for faster lookup
+    const updatedMap = new Map(updated.map((r) => [r.key, r]));
+
+    let resultData = newPreviewData;
+
+    // Apply deletions
+    if (deletedKeys.length > 0) {
+      const keysToRemove = new Set(deletedKeys);
+      resultData = resultData.filter((r) => !keysToRemove.has(r.key));
+    }
+
+    // Apply updates and additions
+    const finalData = resultData.map((r) => {
+      if (updatedMap.has(r.key)) {
+        const updatedRow = updatedMap.get(r.key)!;
+        updatedMap.delete(r.key); // mark as handled
+        return updatedRow;
+      }
+      return r;
+    });
+
+    // Add remaining items from updatedMap (these are new rows added during search)
+    updatedMap.forEach((newRow) => {
+      finalData.push(newRow);
+    });
+
+    setPreviewData(finalData);
   };
 
   const handleUpload = async () => {
@@ -430,10 +499,12 @@ export default function ImportStudentsPage() {
               <Icon icon="lucide:upload-cloud" className="w-6 h-6" />
             </div>
             <div className="flex flex-col">
-              <p className="text-md font-semibold">Upload File</p>
-              <p className="text-small text-default-500">
+              <Heading size="2xl" className="text-md font-semibold">
+                Upload File
+              </Heading>
+              <Text className="text-small text-default-500">
                 Choose a file from your computer to preview
-              </p>
+              </Text>
             </div>
           </CardHeader>
           <CardBody className="px-6 py-8">
@@ -507,12 +578,12 @@ export default function ImportStudentsPage() {
                     <Icon icon="lucide:file-up" className="w-6 h-6" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Click to upload or drag & drop
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    </Text>
+                    <Text className="text-xs text-gray-500 mt-1">
                       XLSX, CSV (Max. 10MB)
-                    </p>
+                    </Text>
                   </div>
                   <Button
                     as="label"
@@ -565,13 +636,27 @@ export default function ImportStudentsPage() {
             </CardBody>
           </Card>
 
+          <div className="flex justify-between items-center gap-4">
+            <div className="flex-1 max-w-md">
+              <SearchBar
+                placeholder="Search preview data..."
+                onSearch={setSearchQuery}
+              />
+            </div>
+            {searchQuery && (
+              <Text className="text-sm text-default-500">
+                Found {filteredData.length} of {previewData.length} records
+              </Text>
+            )}
+          </div>
+
           <FormTable
             title="Data Preview"
-            description={`Preview & edit data sebelum import dari ${file?.name}`}
+            description={`Preview & edit data before import from ${file?.name}`}
             columns={previewColumns}
-            data={previewData as Record<string, unknown>[]}
+            data={filteredData as Record<string, unknown>[]}
             onChange={(updated) =>
-              setPreviewData(updated as Record<string, unknown>[])
+              handlePreviewDataChange(updated as Record<string, unknown>[])
             }
             enableDelete={true}
             enableAdd={true}
@@ -604,13 +689,16 @@ export default function ImportStudentsPage() {
           <CardBody className="flex flex-row items-start gap-4 p-4">
             <Icon icon="lucide:info" className="w-5 h-5 text-blue-500 mt-0.5" />
             <div className="flex flex-col gap-1">
-              <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+              <Heading
+                size="2xl"
+                className="text-sm font-semibold text-blue-700 dark:text-blue-300"
+              >
                 Need a Template?
-              </h4>
-              <p className="text-sm text-blue-600/80 dark:text-blue-400/80">
+              </Heading>
+              <Text className="text-sm text-blue-600/80 dark:text-blue-400/80">
                 Ensure your file format is correct. You can download an import
                 template for {resource} below.
-              </p>
+              </Text>
               <Button
                 size="sm"
                 variant="light"

@@ -124,12 +124,12 @@ export function FormTable<T extends Record<string, unknown>>({
   const handleAddRow = useCallback(() => {
     const newRow = {
       ...(emptyRowTemplate ?? {}),
-      _rowKey: `new-${Date.now()}`,
+      [keyField]: `new-${Date.now()}`,
     } as T;
     onChange([...data, newRow]);
     const newTotal = data.length + 1;
     setCurrentPage(Math.ceil(newTotal / pageSize));
-  }, [data, onChange, emptyRowTemplate, pageSize]);
+  }, [data, onChange, emptyRowTemplate, pageSize, keyField]);
 
   // ==================== COLUMNS ====================
 
@@ -209,11 +209,7 @@ export function FormTable<T extends Record<string, unknown>>({
             granularity="day"
             value={dateValue ?? undefined}
             onChange={(d) =>
-              handleCellChange(
-                globalIndex,
-                column.key,
-                d ? toIsoDate(d) : "",
-              )
+              handleCellChange(globalIndex, column.key, d ? toIsoDate(d) : "")
             }
             isRequired={column.required}
             classNames={{ base: "w-full" }}
@@ -273,13 +269,16 @@ export function FormTable<T extends Record<string, unknown>>({
           )}
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <Chip size="sm" variant="flat" color="default">
             {data.length} baris
           </Chip>
           {editedRows.size > 0 && (
             <Chip size="sm" variant="flat" color="warning">
-              <Icon icon="lucide:pencil" className="w-3 h-3 inline-block mr-1" />
+              <Icon
+                icon="lucide:pencil"
+                className="w-3 h-3 inline-block mr-1"
+              />
               {editedRows.size} diubah
             </Chip>
           )}
@@ -355,9 +354,7 @@ export function FormTable<T extends Record<string, unknown>>({
                   const col = columnMap[String(columnKey)];
                   return (
                     <TableCell>
-                      {col
-                        ? renderCell(item.row, item.globalIndex, col)
-                        : null}
+                      {col ? renderCell(item.row, item.globalIndex, col) : null}
                     </TableCell>
                   );
                 }}
