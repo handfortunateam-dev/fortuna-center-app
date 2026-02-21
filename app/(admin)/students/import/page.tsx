@@ -54,7 +54,9 @@ export default function ImportStudentsPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      parseFile(selectedFile);
     }
   };
 
@@ -203,12 +205,19 @@ export default function ImportStudentsPage() {
         description: `File parsed successfully! Found ${dataWithKeys.length} rows.`,
         color: "success",
       });
-    } catch (error) {
-      console.error("Error parsing file:", error);
+    } catch (err: unknown) {
+      console.error("Error parsing file:", err);
+      let errorMessage =
+        "Failed to parse file. Please ensure it is a valid Excel or CSV file.";
+
+      if (err instanceof Error && err.name === "NotReadableError") {
+        errorMessage =
+          "File tidak dapat dibaca. Pastikan file tidak sedang dibuka di aplikasi lain (seperti Excel) dan belum dipindahkan/dihapus.";
+      }
+
       Toast({
         title: "Error",
-        description:
-          "Failed to parse file. Please ensure it is a valid Excel or CSV file.",
+        description: errorMessage,
         color: "danger",
       });
       setPreviewData([]);
@@ -293,8 +302,6 @@ export default function ImportStudentsPage() {
       `failed_students_import_${new Date().toISOString().slice(0, 10)}.xlsx`,
     );
   };
-
-
 
   const handleReset = () => {
     setFile(null);
