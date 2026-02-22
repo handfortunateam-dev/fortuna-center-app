@@ -39,10 +39,10 @@ export function useDashboardStats() {
 
     const isLoading = classesLoading || studentsLoading || ytLoading;
 
-    const totalClasses = classesResponse?.total || classesResponse?.data?.length || 0;
+    const totalClasses = classesResponse?.totalCount ?? classesResponse?.data?.length ?? 0;
     const activeClasses = classesResponse?.data?.filter(c => c.isActive).length || 0;
 
-    const totalStudents = (studentsResponse as any)?.total || (studentsResponse as any)?.data?.length || 0;
+    const totalStudents = studentsResponse?.totalCount ?? studentsResponse?.data?.length ?? 0;
 
     return {
         lms: {

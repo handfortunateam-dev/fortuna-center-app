@@ -41,4 +41,6 @@ export interface StudentFormValues {
 
 export interface StudentListParams {
     q?: string;
+    limit?: number;
+    page?: number;
 }

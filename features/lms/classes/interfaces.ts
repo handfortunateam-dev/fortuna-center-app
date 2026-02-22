@@ -25,7 +25,7 @@ export interface TeacherClassItem {
   teacherName?: string | null;
   classId: string;
   className?: string | null;
-  assignedAt: string ;
+  assignedAt: string;
   assignedBy?: string | null;
   assignedByName?: string | null;
 }
@@ -55,6 +55,8 @@ export interface ClassListParams {
   q?: string;
   isActive?: boolean;
   createdBy?: string;
+  limit?: number;
+  page?: number;
 }
 
 export interface TeacherClassFilters {

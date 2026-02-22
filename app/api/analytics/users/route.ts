@@ -10,6 +10,7 @@ export async function GET() {
         // 1. Get total counts
         const [{ usersCount }] = await db.select({ usersCount: sql<number>`count(*)` }).from(users);
         const [{ studentsCount }] = await db.select({ studentsCount: sql<number>`count(*)` }).from(students);
+        const [{ activeStudentsCount }] = await db.select({ activeStudentsCount: sql<number>`count(*)` }).from(students).where(sql`${students.status} = 'active'`);
         const [{ teachersCount }] = await db.select({ teachersCount: sql<number>`count(*)` }).from(teachers);
 
         // 2. Get users grouped by role
@@ -59,6 +60,14 @@ export async function GET() {
             .from(students)
             .where(isNotNull(students.occupation))
             .groupBy(students.occupation);
+
+        const studentStatusData = await db
+            .select({
+                name: students.status,
+                value: sql<number>`count(*)`
+            })
+            .from(students)
+            .groupBy(students.status);
 
         // Calculate average age from dateOfBirth
         const [{ studentAvgAge }] = await db
@@ -152,6 +161,7 @@ export async function GET() {
                 summary: {
                     totalUsers: Number(usersCount),
                     totalStudents: Number(studentsCount),
+                    activeStudents: Number(activeStudentsCount),
                     totalTeachers: Number(teachersCount),
                 },
                 usersByRole: rolesData.map(r => ({ ...r, value: Number(r.value) })),
@@ -160,6 +170,7 @@ export async function GET() {
                     gender: studentGenderData.map(r => ({ ...r, value: Number(r.value) })),
                     education: studentEducationData.map(r => ({ ...r, value: Number(r.value) })),
                     occupation: studentOccupationData.map(r => ({ ...r, value: Number(r.value) })),
+                    status: studentStatusData.map(r => ({ ...r, value: Number(r.value) })),
                     ages: studentAgeData.map(r => ({ ...r, value: Number(r.value) })),
                     avgAge: Math.round(Number(studentAvgAge) || 0)
                 },

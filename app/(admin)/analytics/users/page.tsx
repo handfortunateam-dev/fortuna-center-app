@@ -43,13 +43,19 @@ const COLORS = [
 ];
 
 type AnalyticsData = {
-  summary: { totalUsers: number; totalStudents: number; totalTeachers: number };
+  summary: {
+    totalUsers: number;
+    totalStudents: number;
+    activeStudents: number;
+    totalTeachers: number;
+  };
   usersByRole: { role: string; value: number }[];
   registrations: { name: string; users: number }[];
   students: {
     gender: { name: string; value: number }[];
     education: { name: string; value: number }[];
     occupation: { name: string; value: number }[];
+    status: { name: string; value: number }[];
     ages: { name: string; value: number }[];
     avgAge: number;
   };
@@ -300,15 +306,21 @@ export default function AnalyticsUsersPage() {
           textColor="text-blue-500"
           delay={0.1}
         />
-        <StatCard
-          title="Active Students"
-          value={data.summary.totalStudents}
-          change="+18%"
-          icon="solar:user-id-bold-duotone"
-          bgColor="bg-emerald-500/10"
-          textColor="text-emerald-500"
-          delay={0.2}
-        />
+        <HeroTooltip
+          content={`Out of ${data.summary.totalStudents} total students`}
+        >
+          <div className="flex-1">
+            <StatCard
+              title="Active Students"
+              value={data.summary.activeStudents}
+              change="+18%"
+              icon="solar:user-id-bold-duotone"
+              bgColor="bg-emerald-500/10"
+              textColor="text-emerald-500"
+              delay={0.2}
+            />
+          </div>
+        </HeroTooltip>
         <StatCard
           title="Verified Teachers"
           value={data.summary.totalTeachers}
@@ -741,6 +753,80 @@ export default function AnalyticsUsersPage() {
                     animationDuration={1600}
                   />
                 </BarChart>
+              </ResponsiveContainer>
+            </CardBody>
+          </Card>
+
+          {/* Status Distribution */}
+          <Card className="border-divider shadow-sm hover:shadow-xl transition-all duration-500 bg-background/60 backdrop-blur-xl group relative">
+            <CardHeader className="px-6 py-4 border-b border-divider/50 flex flex-row items-center justify-between">
+              <h4 className="text-md font-bold flex items-center gap-2">
+                <Icon
+                  icon="solar:shield-user-bold-duotone"
+                  className="text-danger"
+                />
+                Status Distribution
+              </h4>
+              <div className="print:hidden">
+                <HeroTooltip content="Download PNG">
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    onPress={() =>
+                      handleExportChart(
+                        "chart-student-status",
+                        "Student Status Distribution",
+                      )
+                    }
+                  >
+                    <Icon
+                      icon="solar:download-bold-duotone"
+                      className="text-default-400 text-lg"
+                    />
+                  </Button>
+                </HeroTooltip>
+              </div>
+            </CardHeader>
+            <CardBody className="p-6 h-[350px]" id="chart-student-status">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data.students.status}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={8}
+                    dataKey="value"
+                    animationDuration={1800}
+                  >
+                    {data.students.status.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          [
+                            "#10B981", // active - green
+                            "#EF4444", // inactive - red
+                            "#F59E0B", // on_leave - orange
+                          ][index % 3]
+                        }
+                        className="outline-none"
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    iconType="circle"
+                    formatter={(value) => (
+                      <span className="text-sm font-semibold capitalize text-default-600">
+                        {value.replace("_", " ")}
+                      </span>
+                    )}
+                  />
+                </PieChart>
               </ResponsiveContainer>
             </CardBody>
           </Card>
