@@ -39,7 +39,11 @@ export async function GET(request: NextRequest) {
       .where(where)
       .orderBy(desc(classes.createdAt));
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({
+      success: true,
+      data,
+      totalCount: data.length,
+    });
   } catch (error) {
     console.error("Error fetching classes:", error);
     return NextResponse.json(
