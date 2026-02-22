@@ -64,13 +64,6 @@ export const env = {
         secretKey: getEnvVar('CLERK_SECRET_KEY'),
     },
 
-    // LiveKit (Optional)
-    livekit: {
-        apiKey: getEnvVarOptional('LIVEKIT_API_KEY'),
-        apiSecret: getEnvVarOptional('LIVEKIT_API_SECRET'),
-        wsUrl: getEnvVarOptional('NEXT_PUBLIC_LIVEKIT_WS_URL'),
-    },
-
     // API Configuration
     api: {
         url: getEnvVarOptional('NEXT_PUBLIC_API_URL', 'http://localhost:3000'),
