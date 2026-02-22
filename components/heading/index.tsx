@@ -59,7 +59,7 @@ export const Heading = React.forwardRef<HTMLHeadingElement, HeadingProps>(
           weightClasses[weight],
           alignClasses[align],
           gradient &&
-            "bg-gradient-to-r from-blue-700 via-blue-600 to-blue-800 bg-clip-text text-transparent",
+            "bg-linear-to-r from-red-700 via-red-600 to-red-800 bg-clip-text text-transparent",
           className,
         )}
         {...props}

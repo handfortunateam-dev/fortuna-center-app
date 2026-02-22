@@ -34,7 +34,7 @@ const weightClasses = {
 
 const colorClasses = {
   default: "text-gray-900 dark:text-gray-100",
-  primary: "text-blue-600 dark:text-blue-400",
+  primary: "text-red-600 dark:text-red-400",
   secondary: "text-gray-600 dark:text-gray-400",
   success: "text-green-600 dark:text-green-400",
   warning: "text-yellow-600 dark:text-yellow-400",
@@ -62,7 +62,7 @@ export const Text = React.forwardRef<HTMLParagraphElement, TextProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <Component
@@ -72,14 +72,14 @@ export const Text = React.forwardRef<HTMLParagraphElement, TextProps>(
           weightClasses[weight],
           colorClasses[color],
           alignClasses[align],
-          className
+          className,
         )}
         {...props}
       >
         {children}
-      </Component>  
+      </Component>
     );
-  }
+  },
 );
 
 Text.displayName = "Text";

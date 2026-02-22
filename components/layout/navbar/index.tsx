@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Image from "next/image";
 import { Button, Skeleton } from "@heroui/react";
 import { UserButton, useUser, SignedIn } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import NextLink from "next/link";
 import {
   NavigationItem,
@@ -54,6 +54,7 @@ export default function Navbar({
   showAuth = true,
 }: NavbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const { authProvider } = useAuthProvider();
   const { user, isLoaded, isSignedIn } = useUser();
   const { user: localUser, loading: localLoading } = useGetIdentity();
@@ -61,13 +62,26 @@ export default function Navbar({
   const { theme, setTheme } = useTheme();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href) && href !== "/";
+  };
+
+  const isChildActive = (items?: NavigationItem[]): boolean => {
+    return !!items?.some((item) => {
+      if (isActive(item.href)) return true;
+      if (item.children) return isChildActive(item.children);
+      return false;
+    });
+  };
+
   // Close mobile menu when route changes
-  React.useEffect(() => {
+  useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [router]);
 
   // Prevent scrolling when mobile menu is open
-  React.useEffect(() => {
+  useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -149,6 +163,7 @@ export default function Navbar({
       const indentClass = depth === 0 ? "" : depth === 1 ? "pl-4" : "pl-8";
       const hasChildren = item.children && item.children.length > 0;
       const isExpanded = expandedKeys.has(item.key);
+      const active = isActive(item.href) || isChildActive(item.children);
 
       const entry = (
         <div key={`mobile-${item.key}-${depth}`} className="w-full">
@@ -156,23 +171,31 @@ export default function Navbar({
             <div className="flex flex-col">
               <button
                 onClick={() => toggleExpanded(item.key)}
-                className={`flex items-center justify-between w-full py-3 ${indentClass} text-default-600 font-medium hover:text-primary transition-colors`}
+                className={`flex items-center justify-between w-full py-3 ${indentClass} ${
+                  active
+                    ? "text-primary font-bold"
+                    : "text-default-600 font-medium"
+                } hover:text-primary transition-colors`}
               >
                 <div className="flex items-center gap-3">
-                  {item.icon}
+                  <div className={active ? "text-primary" : ""}>
+                    {item.icon}
+                  </div>
                   <span>{item.label}</span>
                 </div>
                 <Icon
                   icon="lucide:chevron-down"
                   className={`w-4 h-4 transition-transform duration-200 ${
                     isExpanded ? "rotate-180" : ""
-                  }`}
+                  } ${active ? "text-primary" : ""}`}
                 />
               </button>
 
               {/* Animated/Conditional Children */}
               <div
-                className={`flex flex-col border-l-2 border-default-100 ml-4 overflow-hidden transition-all duration-300 ease-in-out ${
+                className={`flex flex-col border-l-2 ${
+                  active ? "border-primary/40" : "border-default-100"
+                } ml-4 overflow-hidden transition-all duration-300 ease-in-out ${
                   isExpanded
                     ? "max-h-[1000px] opacity-100"
                     : "max-h-0 opacity-0"
@@ -187,9 +210,13 @@ export default function Navbar({
                 handleNavigate(item.href);
                 setIsMobileMenuOpen(false);
               }}
-              className={`w-full flex items-center gap-3 py-3 ${indentClass} text-default-600 hover:text-primary transition-colors`}
+              className={`w-full flex items-center gap-3 py-3 ${indentClass} ${
+                active
+                  ? "text-primary font-bold bg-primary/5 rounded-xl px-3"
+                  : "text-default-600"
+              } hover:text-primary transition-colors`}
             >
-              {item.icon}
+              <div className={active ? "text-primary" : ""}>{item.icon}</div>
               <span className="font-medium text-lg">{item.label}</span>
             </button>
           )}
@@ -349,7 +376,9 @@ export default function Navbar({
               {/* Navigation Links - Desktop */}
               <div className="hidden xl:flex items-center gap-2">
                 {menuItems.map((item) => {
-                  // ... (keep existing desktop menu rendering logic: lines 266-407)
+                  const active =
+                    isActive(item.href) || isChildActive(item.children);
+
                   // Handle items with children (Dropdown)
                   if (item.children && item.children.length > 0) {
                     const isMenuOpen = openMenuKey === item.key;
@@ -363,18 +392,24 @@ export default function Navbar({
                       >
                         <Button
                           variant="light"
-                          className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-secondary dark:hover:text-secondary hover:bg-secondary/10 dark:hover:bg-secondary/20 transition-all px-4 py-2 h-auto rounded-full"
+                          className={`text-sm font-medium transition-all px-4 py-2 h-auto rounded-full ${
+                            active
+                              ? "text-primary bg-primary/10 hover:bg-primary/20"
+                              : "text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800"
+                          }`}
                           endContent={
                             <Icon
                               icon="lucide:chevron-down"
                               className={`w-4 h-4 transition-transform duration-200 ${
-                                isMenuOpen ? "rotate-180 text-secondary" : ""
-                              }`}
+                                isMenuOpen ? "rotate-180" : ""
+                              } ${active ? "text-primary" : ""}`}
                             />
                           }
                         >
                           <div className="flex items-center gap-2">
-                            {item.icon}
+                            <div className={active ? "text-primary" : ""}>
+                              {item.icon}
+                            </div>
                             {item.label}
                           </div>
                         </Button>
@@ -389,6 +424,9 @@ export default function Navbar({
                               const hasGrandchildren = !!child.children?.length;
                               const showSubmenu =
                                 hasGrandchildren && activeSubmenu === child.key;
+                              const childActive =
+                                isActive(child.href) ||
+                                isChildActive(child.children);
 
                               return (
                                 <div
@@ -409,15 +447,29 @@ export default function Navbar({
                                         handleNavigate(child.href);
                                       }
                                     }}
-                                    className={`w-full flex items-start gap-3 px-3 py-2 rounded-xl text-left hover:bg-secondary/10 dark:hover:bg-secondary/20 transition-colors ${
+                                    className={`w-full flex items-start gap-3 px-3 py-2 rounded-xl text-left hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors ${
+                                      childActive ? "bg-primary/5" : ""
+                                    } ${
                                       hasGrandchildren
                                         ? "cursor-default"
                                         : "cursor-pointer"
                                     }`}
                                   >
-                                    {child.icon}
+                                    <div
+                                      className={
+                                        childActive ? "text-primary" : ""
+                                      }
+                                    >
+                                      {child.icon}
+                                    </div>
                                     <div className="flex-1">
-                                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                      <p
+                                        className={`text-sm font-semibold ${
+                                          childActive
+                                            ? "text-primary"
+                                            : "text-gray-900 dark:text-white"
+                                        }`}
+                                      >
                                         {child.label}
                                       </p>
                                       {child.description && (
@@ -430,8 +482,8 @@ export default function Navbar({
                                       <Icon
                                         icon="lucide:chevron-right"
                                         className={`w-4 h-4 transition-colors ${
-                                          showSubmenu
-                                            ? "text-secondary"
+                                          showSubmenu || childActive
+                                            ? "text-primary"
                                             : "text-gray-400"
                                         }`}
                                       />
@@ -447,29 +499,50 @@ export default function Navbar({
                                       }}
                                       onMouseLeave={scheduleMenuClose}
                                     >
-                                      {child.children?.map((grand) => (
-                                        <button
-                                          key={grand.key}
-                                          type="button"
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            handleNavigate(grand.href);
-                                          }}
-                                          className="w-full flex items-start gap-3 px-3 py-2 rounded-xl text-left text-sm hover:bg-secondary/10 dark:hover:bg-secondary/20 hover:text-secondary transition-colors"
-                                        >
-                                          {grand.icon}
-                                          <div>
-                                            <p className="font-medium text-gray-900 dark:text-white">
-                                              {grand.label}
-                                            </p>
-                                            {grand.description && (
-                                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                {grand.description}
+                                      {child.children?.map((grand) => {
+                                        const grandActive = isActive(
+                                          grand.href,
+                                        );
+                                        return (
+                                          <button
+                                            key={grand.key}
+                                            type="button"
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+                                              handleNavigate(grand.href);
+                                            }}
+                                            className={`w-full flex items-start gap-3 px-3 py-2 rounded-xl text-left text-sm hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors ${
+                                              grandActive ? "bg-primary/5" : ""
+                                            }`}
+                                          >
+                                            <div
+                                              className={
+                                                grandActive
+                                                  ? "text-primary"
+                                                  : ""
+                                              }
+                                            >
+                                              {grand.icon}
+                                            </div>
+                                            <div>
+                                              <p
+                                                className={`font-medium ${
+                                                  grandActive
+                                                    ? "text-primary"
+                                                    : "text-gray-900 dark:text-white"
+                                                }`}
+                                              >
+                                                {grand.label}
                                               </p>
-                                            )}
-                                          </div>
-                                        </button>
-                                      ))}
+                                              {grand.description && (
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                  {grand.description}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -486,9 +559,15 @@ export default function Navbar({
                     <NextLink
                       key={item.key}
                       href={item.href}
-                      className="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-secondary dark:hover:text-secondary hover:bg-secondary/10 dark:hover:bg-secondary/20 transition-all flex items-center gap-2 px-4 py-2 rounded-full"
+                      className={`text-sm font-medium transition-all flex items-center gap-2 px-4 py-2 rounded-full ${
+                        active
+                          ? "text-primary bg-primary/10 hover:bg-primary/20 font-bold"
+                          : "text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
                     >
-                      {item.icon}
+                      <div className={active ? "text-primary" : ""}>
+                        {item.icon}
+                      </div>
                       {item.label}
                     </NextLink>
                   );

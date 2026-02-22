@@ -26,6 +26,7 @@ export default function LandingPage() {
     <main className="min-h-screen bg-white">
       <HeroSection />
       <AboutSection />
+
       <ProgramsSection />
       <GallerySection />
       <LocationSection />

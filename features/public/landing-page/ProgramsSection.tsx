@@ -4,9 +4,10 @@ import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-
 import PatternBackground from "@/components/backgrounds/PatternBackground";
-
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
+ 
 export default function ProgramsSection() {
   return (
     <section
@@ -17,15 +18,18 @@ export default function ProgramsSection() {
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-between mb-16 gap-8">
           <div className="max-w-xl">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <Heading
+              as="h2"
+              className="text-3xl md:text-4xl font-bold text-foreground mb-4"
+            >
               Our Core Programs
-            </h2>
-            <p className="text-muted-foreground text-lg">
+            </Heading>
+            <Text className="text-muted-foreground text-lg">
               Specialized training designed to equip you with modern skills for
               the digital age.
-            </p>
+            </Text>
           </div>
-          <button className="px-6 py-3 rounded-lg border border-border text-foreground font-medium hover:bg-muted transition-colors">
+          <button className="px-6 py-3 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-all duration-300">
             View All Programs
           </button>
         </div>
@@ -47,14 +51,17 @@ export default function ProgramsSection() {
                 />
                 Live On Air
               </div>
-              <h3 className="text-3xl font-bold text-foreground mb-6">
+              <Heading
+                as="h3"
+                className="text-3xl font-bold text-foreground mb-6"
+              >
                 Broadcast Live Audio & Video
-              </h3>
-              <p className="text-muted-foreground text-lg leading-relaxed mb-8">
+              </Heading>
+              <Text className="text-muted-foreground text-lg leading-relaxed mb-8">
                 Master the art of broadcasting with our comprehensive training
                 program. Learn to operate professional equipment, manage live
                 streams, and produce high-quality audio and video content.
-              </p>
+              </Text>
 
               <ul className="space-y-4 mb-8">
                 {[
@@ -63,15 +70,14 @@ export default function ProgramsSection() {
                   "Live Streaming Management",
                   "Content Production Workflow",
                 ].map((item, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-center gap-3 text-foreground"
-                  >
+                  <li key={idx} className="flex items-center gap-3">
                     <Icon
                       icon="solar:check-circle-bold"
                       className="text-primary text-xl"
                     />
-                    {item}
+                    <Text weight="medium" className="text-foreground">
+                      {item}
+                    </Text>
                   </li>
                 ))}
               </ul>
@@ -93,8 +99,7 @@ export default function ProgramsSection() {
               transition={{ duration: 0.6 }}
               className="order-1 lg:order-2 relative"
             >
-              <div className="aspect-video rounded-2xl overflow-hidden bg-muted shadow-lg">
-                {/* Placeholder for broadcast studio */}
+              <div className="aspect-video rounded-2xl overflow-hidden bg-muted shadow-2xl border border-white/20">
                 <Image
                   src="/images/90860f20ca.webp"
                   alt="Broadcast Studio"
@@ -115,8 +120,7 @@ export default function ProgramsSection() {
               transition={{ duration: 0.6 }}
               className="relative"
             >
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-muted shadow-lg">
-                {/* Placeholder for classroom */}
+              <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-muted shadow-2xl border border-white/20">
                 <Image
                   src="/images/9ec276cda4.webp"
                   alt="English Classroom"
@@ -136,14 +140,17 @@ export default function ProgramsSection() {
                 <Icon icon="solar:global-bold" />
                 Global Communication
               </div>
-              <h3 className="text-3xl font-bold text-foreground mb-6">
+              <Heading
+                as="h3"
+                className="text-3xl font-bold text-foreground mb-6"
+              >
                 English Proficiency
-              </h3>
-              <p className="text-muted-foreground text-lg leading-relaxed mb-8">
+              </Heading>
+              <Text className="text-muted-foreground text-lg leading-relaxed mb-8">
                 Elevate your communication skills with our structured English
                 courses. From public speaking to business English, we prepare
                 you for global opportunities.
-              </p>
+              </Text>
 
               <ul className="space-y-4 mb-8">
                 {[
@@ -152,15 +159,14 @@ export default function ProgramsSection() {
                   "TOEFL & IELTS Preparation",
                   "Interactive Learning Environment",
                 ].map((item, idx) => (
-                  <li
-                    key={idx}
-                    className="flex items-center gap-3 text-foreground"
-                  >
+                  <li key={idx} className="flex items-center gap-3">
                     <Icon
                       icon="solar:check-circle-bold"
                       className="text-primary text-xl"
                     />
-                    {item}
+                    <Text weight="medium" className="text-foreground">
+                      {item}
+                    </Text>
                   </li>
                 ))}
               </ul>
