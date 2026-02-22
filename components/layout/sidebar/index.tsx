@@ -14,6 +14,7 @@ import {
   DropdownMenu,
   DropdownItem,
 } from "@heroui/react";
+import { LoadingScreen } from "@/components/loading/LoadingScreen";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -270,7 +271,15 @@ const MenuItem = ({
 
 export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
   const pathname = usePathname();
-  const { menuItems, isLoading } = useAccessControl();
+  const {
+    menuItems,
+    isLoading,
+    user,
+    role,
+    currentView,
+    toggleView,
+    isSwitching,
+  } = useAccessControl();
   const [isMobile, setIsMobile] = useState(false);
 
   React.useEffect(() => {
@@ -331,7 +340,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
           <div className="w-12 h-12 rounded-xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
         </div>
         <nav className="flex-1 px-4 py-6 space-y-2">
-          {[1, 2, 3, 4, 5,6,7,8,9,10].map((i) => (
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
             <div
               key={i}
               className="h-10 rounded-lg bg-gray-200 dark:bg-gray-800 animate-pulse"
@@ -344,6 +353,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
 
   return (
     <>
+      <LoadingScreen isLoading={isSwitching} />
       {/* Mobile sidebar backdrop */}
       {isOpen && (
         <div
@@ -434,6 +444,36 @@ export function Sidebar({ isOpen, onClose, isCollapsed }: SidebarProps) {
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-gray-200/50 dark:border-gray-800/50 shrink-0">
+          {role === "TEACHER" && user?.isAdminEmployeeAlso && (
+            <div className="mb-2">
+              <button
+                onClick={toggleView}
+                className={`flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 ${
+                  effectiveCollapsed ? "justify-center" : "justify-start"
+                }`}
+              >
+                <Icon
+                  icon="solar:transfer-horizontal-bold-duotone"
+                  className="w-5 h-5 shrink-0"
+                />
+                <AnimatePresence>
+                  {!effectiveCollapsed && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="whitespace-nowrap overflow-hidden"
+                    >
+                      {currentView === "teacher"
+                        ? "Switch to Admin Employee"
+                        : "Switch to Teacher"}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
+          )}
           <Link
             href="/"
             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100/50 dark:hover:bg-gray-800/50 hover:text-primary dark:hover:text-primary transition-all duration-200 ${

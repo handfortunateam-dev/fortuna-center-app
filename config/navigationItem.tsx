@@ -694,39 +694,150 @@ export const administrativeEmployeeSidebarNavigation: AdminNavigationItem[] = [
     icon: (props) => <Icon icon="solar:home-2-bold-duotone" {...props} />,
   },
   {
-    name: "Users",
-    href: NAV_URL.ADMINISTRATIVE.USERS,
-    icon: (props) => <Icon icon="lucide:users" {...props} />,
-  },
-  {
-    name: "Reports",
-    href: NAV_URL.ADMINISTRATIVE.REPORTS,
+    name: "Articles",
+    href: NAV_URL.ADMINISTRATIVE.POST_ARTICLES,
     icon: (props) => (
       <Icon icon="solar:document-text-bold-duotone" {...props} />
     ),
   },
   {
-    name: "Attendance",
-    href: NAV_URL.ADMINISTRATIVE.ATTENDANCE,
+    name: "User Management",
+    href: NAV_URL.ADMINISTRATIVE.USERS,
     icon: (props) => (
-      <Icon icon="solar:calendar-mark-bold-duotone" {...props} />
+      <Icon icon="solar:users-group-rounded-bold-duotone" {...props} />
     ),
+    children: [
+      {
+        name: "Students",
+        href: NAV_URL.ADMINISTRATIVE.STUDENTS,
+        icon: (props) => <Icon icon="solar:user-id-bold-duotone" {...props} />,
+      },
+      {
+        name: "Teachers",
+        href: NAV_URL.ADMINISTRATIVE.TEACHERS,
+        icon: (props) => (
+          <Icon icon="solar:user-speak-bold-duotone" {...props} />
+        ),
+      },
+      {
+        name: "Accounts",
+        href: NAV_URL.ADMINISTRATIVE.USERS,
+        icon: (props) => <Icon icon="lucide:users" {...props} />,
+      },
+    ],
   },
   {
-    name: "Settings",
-    href: NAV_URL.ADMINISTRATIVE.SETTINGS,
-    icon: (props) => <Icon icon="solar:settings-bold-duotone" {...props} />,
+    name: "Class Administration",
+    href: NAV_URL.ADMINISTRATIVE.CLASSES,
+    icon: (props) => (
+      <Icon icon="solar:book-bookmark-bold-duotone" {...props} />
+    ),
+    children: [
+      {
+        name: "Classes",
+        href: NAV_URL.ADMINISTRATIVE.CLASSES,
+        icon: (props) => (
+          <Icon icon="solar:book-bookmark-bold-duotone" {...props} />
+        ),
+      },
+      {
+        name: "Teacher Allocations",
+        href: NAV_URL.ADMINISTRATIVE.TEACHER_CLASSES,
+        icon: (props) => (
+          <Icon icon="solar:users-group-rounded-bold-duotone" {...props} />
+        ),
+      },
+      {
+        name: "Enrollments",
+        href: NAV_URL.ADMINISTRATIVE.ENROLLMENTS,
+        icon: (props) => (
+          <Icon icon="solar:layers-minimalistic-bold-duotone" {...props} />
+        ),
+      },
+      {
+        name: "Scheduler",
+        href: NAV_URL.ADMINISTRATIVE.SCHEDULER,
+        icon: (props) => (
+          <Icon icon="solar:calendar-date-bold-duotone" {...props} />
+        ),
+      },
+      {
+        name: "Attendance Recaps",
+        href: NAV_URL.ADMINISTRATIVE.ATTENDANCE,
+        icon: (props) => (
+          <Icon icon="solar:calendar-mark-bold-duotone" {...props} />
+        ),
+      },
+    ],
   },
+  {
+    name: "Finance",
+    href: NAV_URL.ADMINISTRATIVE.PAYMENTS,
+    icon: (props) => <Icon icon="lucide:credit-card" {...props} />,
+    children: [
+      {
+        name: "Payment History",
+        href: NAV_URL.ADMINISTRATIVE.PAYMENTS,
+        icon: (props) => <Icon icon="lucide:file-text" {...props} />,
+      },
+      {
+        name: "Financial Reports",
+        href: NAV_URL.ADMINISTRATIVE.FINANCIAL,
+        icon: (props) => (
+          <Icon icon="solar:dollar-minimalistic-bold-duotone" {...props} />
+        ),
+      },
+    ],
+  },
+  {
+    name: "Analytics & Insights",
+    href: NAV_URL.ADMINISTRATIVE.ANALYTICS.ROOT,
+    icon: (props) => <Icon icon="solar:chart-2-bold-duotone" {...props} />,
+    children: [
+      {
+        name: "Users Overview",
+        href: NAV_URL.ADMINISTRATIVE.ANALYTICS.USERS,
+        icon: (props) => (
+          <Icon icon="solar:users-group-rounded-bold-duotone" {...props} />
+        ),
+      },
+      {
+        name: "Financial",
+        href: NAV_URL.ADMINISTRATIVE.ANALYTICS.FINANCIAL,
+        icon: (props) => (
+          <Icon icon="solar:dollar-minimalistic-bold-duotone" {...props} />
+        ),
+      },
+    ],
+  },
+  // {
+  //   name: "Settings",
+  //   href: NAV_URL.ADMINISTRATIVE.SETTINGS,
+  //   icon: (props) => <Icon icon="solar:settings-bold-duotone" {...props} />,
+  // },
 ];
 
 /**
  * Get navigation items by role
+ * Note: If future support is added for reading multiple roles from the backend
+ * (e.g. isTeacherAlso: boolean), we can merge teacherSidebarNavigation here.
  */
-export const getNavigationByRole = (role: string): AdminNavigationItem[] => {
+export const getNavigationByRole = (
+  role: string,
+  isAdminEmployeeAlso?: boolean,
+  currentView?: "admin" | "teacher",
+): AdminNavigationItem[] => {
   switch (role) {
     case "ADMIN":
       return adminSidebarNavigation;
     case "TEACHER":
+      if (isAdminEmployeeAlso) {
+        // Teacher has dual roles. Use the toggle state.
+        if (currentView === "admin") {
+          return administrativeEmployeeSidebarNavigation;
+        }
+        return teacherSidebarNavigation;
+      }
       return teacherSidebarNavigation;
     case "STUDENT":
       return studentSidebarNavigation;

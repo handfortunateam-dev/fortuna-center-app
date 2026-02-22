@@ -133,6 +133,8 @@ export async function GET(request: NextRequest) {
                 updatedAt: user.updatedAt?.getTime() || Date.now(),
                 lastSignInAt: null,
                 emailVerified: true, // Assuming DB users are verified or we don't track it same way
+                role: user.role,
+                isAdminEmployeeAlso: user.isAdminEmployeeAlso,
             }));
 
             // Get count if needed, but for now just return data

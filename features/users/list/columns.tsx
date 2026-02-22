@@ -38,6 +38,38 @@ export const columnsUsers = [
     ),
   },
   {
+    key: "role",
+    label: "Role",
+    value: (user: ClerkUser) => (
+      <div>
+        {user.role ? (
+          <Chip
+            size="sm"
+            color={
+              user.role === "ADMIN"
+                ? "danger"
+                : user.role === "TEACHER"
+                  ? "primary"
+                  : user.role === "ADMINISTRATIVE_EMPLOYEE"
+                    ? "warning"
+                    : "default"
+            }
+            variant="flat"
+          >
+            {user.role}
+          </Chip>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )}
+        {user.isAdminEmployeeAlso && user.role === "TEACHER" && (
+          <Chip size="sm" color="warning" variant="dot" className="mt-1 block">
+            + Admin
+          </Chip>
+        )}
+      </div>
+    ),
+  },
+  {
     key: "createdAt",
     label: "Created At",
     value: (user: ClerkUser) =>

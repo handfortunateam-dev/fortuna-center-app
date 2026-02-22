@@ -9,7 +9,7 @@ import { ReactNode } from "react";
 interface StatCardProps {
   title: string;
   value: string | ReactNode;
-  change: string;
+  change?: string;
   icon: string;
   bgColor: string;
   textColor: string;
@@ -36,9 +36,11 @@ export default function StatCard({
         <div className={`p-3 rounded-xl ${bgColor}`}>
           <Icon icon={icon} className={`text-2xl ${textColor}`} />
         </div>
-        <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-400/10 px-2 py-1 rounded-lg">
-          {change}
-        </span>
+        {change && (
+          <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-400/10 px-2 py-1 rounded-lg">
+            {change}
+          </span>
+        )}
       </div>
       <Text size="sm" color="muted" weight="medium" className="mb-1">
         {title}

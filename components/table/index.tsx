@@ -13,6 +13,10 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+  DropdownSection,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
   Button,
   Checkbox,
   Chip,
@@ -331,6 +335,21 @@ interface ListGridProps<T = unknown> {
   onImport?: () => void;
   exportResourcePath?: string;
   customOptions?: OptionsMenuItem[];
+
+  // NEW! Rows per page options
+  rowsPerPageOptions?: number[];
+  onPageSizeChange?: (size: number) => void;
+
+  // NEW! Filtering
+  filters?: Array<{
+    key: string;
+    label: string;
+    type: "select" | "text";
+    options?: Array<{ label: string; value: string }>;
+    placeholder?: string;
+  }>;
+  onFilterChange?: (filters: Record<string, string>) => void;
+  filterValues?: Record<string, string>;
 }
 
 export function ListGrid<T = unknown>({
@@ -404,6 +423,11 @@ export function ListGrid<T = unknown>({
   onImport,
   exportResourcePath,
   customOptions = [],
+  rowsPerPageOptions = [10, 20, 50, 100],
+  onPageSizeChange,
+  filters: filterConfigs = [],
+  onFilterChange: externalOnFilterChange,
+  filterValues: externalFilterValues,
 }: ListGridProps<T>) {
   // Apply defaults based on resourcePath if available, otherwise fall back to standard defaults
   const resourceDefaults =
@@ -425,6 +449,23 @@ export function ListGrid<T = unknown>({
   const [sortKey, setSortKey] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [internalCurrentPage, setInternalCurrentPage] = useState(1);
+  const [internalPageSize, setInternalPageSize] = useState(pageSize);
+  const [internalFilterValues, setInternalFilterValues] = useState<
+    Record<string, string>
+  >({});
+
+  const activeFilters = externalFilterValues ?? internalFilterValues;
+  const onFilterChange = (key: string, value: string) => {
+    const newFilters = { ...activeFilters, [key]: value };
+    if (!externalFilterValues) {
+      setInternalFilterValues(newFilters);
+    }
+    externalOnFilterChange?.(newFilters);
+    onPageChange(1); // Reset to first page on filter change
+  };
+  useEffect(() => {
+    setInternalPageSize(pageSize);
+  }, [pageSize]);
 
   // Selection state (for bulk actions)
   const [internalSelectedKeys, setInternalSelectedKeys] = useState<Selection>(
@@ -525,7 +566,12 @@ export function ListGrid<T = unknown>({
       resourcePath,
       apiBaseURL,
       serverSide
-        ? { page: currentPage, size: pageSize, q: debouncedSearchQuery }
+        ? {
+            page: currentPage,
+            size: internalPageSize,
+            q: debouncedSearchQuery,
+            filters: activeFilters,
+          }
         : null,
     ],
     queryFn: async () => {
@@ -542,13 +588,20 @@ export function ListGrid<T = unknown>({
           params[searchParamName] = debouncedSearchQuery;
         }
 
-        params[limitParamName] = pageSize;
+        params[limitParamName] = internalPageSize;
 
         if (paginationType === "page") {
           params[pageParamName] = currentPage;
         } else {
-          params[offsetParamName] = (currentPage - 1) * pageSize;
+          params[offsetParamName] = (currentPage - 1) * internalPageSize;
         }
+
+        // Add filters to params
+        Object.entries(activeFilters).forEach(([key, value]) => {
+          if (value && value !== "all") {
+            params[key] = value;
+          }
+        });
       }
 
       const { data } = await apiClient.get<ApiResponse<T[]>>(fullURL, {
@@ -1199,8 +1252,10 @@ export function ListGrid<T = unknown>({
 
   const totalPages =
     (externalTotalCount ?? fetchedTotalCount)
-      ? Math.ceil((externalTotalCount ?? fetchedTotalCount ?? 0) / pageSize)
-      : Math.ceil(filteredRows.length / pageSize);
+      ? Math.ceil(
+          (externalTotalCount ?? fetchedTotalCount ?? 0) / internalPageSize,
+        )
+      : Math.ceil(filteredRows.length / internalPageSize);
 
   const paginatedRows = useMemo(() => {
     // If using external pagination (server-side) or serverSide prop is true, don't slice - data is already paginated
@@ -1209,9 +1264,15 @@ export function ListGrid<T = unknown>({
     }
 
     // Client-side pagination
-    const startIndex = (currentPage - 1) * pageSize;
-    return filteredRows.slice(startIndex, startIndex + pageSize);
-  }, [filteredRows, currentPage, pageSize, externalTotalCount, serverSide]);
+    const startIndex = (currentPage - 1) * internalPageSize;
+    return filteredRows.slice(startIndex, startIndex + internalPageSize);
+  }, [
+    filteredRows,
+    currentPage,
+    internalPageSize,
+    externalTotalCount,
+    serverSide,
+  ]);
 
   useEffect(() => {
     // Only reset page if not externally controlled and not server-side
@@ -1221,7 +1282,7 @@ export function ListGrid<T = unknown>({
     }
   }, [searchQuery, rows, externalOnPageChange, serverSide]);
 
-  const renderMobileCard = (item: Row, _index: number) => {
+  const renderMobileCard = (item: Row) => {
     const mobileColumns = filteredColumns.filter(
       (col) => col.key !== "actions",
     );
@@ -1291,7 +1352,7 @@ export function ListGrid<T = unknown>({
 
     return (
       <div className="space-y-4">
-        {Array.from({ length: pageSize }).map((_, index) => (
+        {Array.from({ length: internalPageSize }).map((_, index) => (
           <div
             key={index}
             className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden"
@@ -1448,6 +1509,104 @@ export function ListGrid<T = unknown>({
     );
   };
 
+  // ==================== FILTERS RENDERER ====================
+  const renderFilters = () => {
+    if (filterConfigs.length === 0) return null;
+
+    const activeFilterCount = Object.values(activeFilters).filter(
+      (v) => v && v !== "" && v !== "all",
+    ).length;
+
+    const handleClearAllFilters = () => {
+      const cleared: Record<string, string> = {};
+      filterConfigs.forEach((f) => (cleared[f.key] = ""));
+      if (!externalFilterValues) {
+        setInternalFilterValues(cleared);
+      }
+      externalOnFilterChange?.(cleared);
+      onPageChange(1);
+    };
+
+    return (
+      <Popover placement="bottom-end">
+        <PopoverTrigger>
+          <Button
+            isIconOnly
+            size="lg"
+            variant="light"
+            className="relative overflow-visible"
+          >
+            <Icon icon="lucide:filter" className="w-6 h-6" />
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center pointer-events-none">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-52">
+          <div className="max-h-64 overflow-y-auto w-full">
+            {activeFilterCount > 0 && (
+              <div className="sticky top-0 bg-white dark:bg-default-100 border-b border-default-200 z-10">
+                <button
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors"
+                  onClick={handleClearAllFilters}
+                >
+                  <Icon icon="lucide:x" className="w-3.5 h-3.5" />
+                  Clear all filters
+                </button>
+              </div>
+            )}
+            {filterConfigs.map((filter, index) => (
+              <div
+                key={filter.key}
+                className={
+                  index < filterConfigs.length - 1
+                    ? "border-b border-default-200"
+                    : ""
+                }
+              >
+                <div className="px-3 pt-2.5 pb-1 text-[11px] font-semibold text-default-500 uppercase tracking-wider">
+                  {filter.label}
+                </div>
+                {[
+                  { label: "All", value: "" },
+                  ...(filter.options || []),
+                ].map((opt) => {
+                  const isActive =
+                    opt.value === ""
+                      ? !activeFilters[filter.key] ||
+                        activeFilters[filter.key] === ""
+                      : activeFilters[filter.key] === opt.value;
+                  return (
+                    <button
+                      key={opt.value || "__all__"}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
+                        isActive
+                          ? "text-primary bg-primary-50 dark:bg-primary-900/20"
+                          : "text-default-700 hover:bg-default-100 dark:hover:bg-default-800"
+                      }`}
+                      onClick={() => onFilterChange(filter.key, opt.value)}
+                    >
+                      {opt.label}
+                      {isActive && (
+                        <Icon
+                          icon="lucide:check"
+                          className="w-3.5 h-3.5 text-primary shrink-0"
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+                <div className="pb-1" />
+              </div>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
   // ==================== COLUMN VISIBILITY DROPDOWN ====================
   const renderColumnVisibilityDropdown = () => {
     if (!enableColumnVisibility || hideableColumns.length === 0) return null;
@@ -1507,6 +1666,41 @@ export function ListGrid<T = unknown>({
           ))}
         </DropdownMenu>
       </Dropdown>
+    );
+  };
+
+  // ==================== ROWS PER PAGE SELECTOR ====================
+  const renderRowsPerPageSelector = () => {
+    if (!rowsPerPageOptions || rowsPerPageOptions.length === 0) return null;
+
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500 whitespace-nowrap">Rows:</span>
+        <Dropdown>
+          <DropdownTrigger>
+            <Button variant="flat" size="md" className="min-w-[80px]">
+              {internalPageSize}
+              <Icon icon="lucide:chevron-down" className="w-4 h-4 ml-1" />
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu
+            aria-label="Rows per page"
+            disallowEmptySelection
+            selectionMode="single"
+            selectedKeys={new Set([internalPageSize.toString()])}
+            onSelectionChange={(keys) => {
+              const size = Number(Array.from(keys)[0]);
+              setInternalPageSize(size);
+              onPageSizeChange?.(size);
+              onPageChange(1);
+            }}
+          >
+            {rowsPerPageOptions.map((option) => (
+              <DropdownItem key={option.toString()}>{option}</DropdownItem>
+            ))}
+          </DropdownMenu>
+        </Dropdown>
+      </div>
     );
   };
 
@@ -1644,7 +1838,7 @@ export function ListGrid<T = unknown>({
       <div className="p-4 md:p-6 space-y-4 md:space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-linear-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
               {title}
             </h1>
             {description && (
@@ -1656,6 +1850,7 @@ export function ListGrid<T = unknown>({
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
             {!isMobile && renderColumnVisibilityDropdown()}
+            {renderFilters()}
             {renderOptionsMenu()}
             {renderAddButton || customActions}
           </div>
@@ -1665,14 +1860,16 @@ export function ListGrid<T = unknown>({
         {renderBulkActionsBar()}
 
         {enableSearch && (
-          <SearchBar
-            placeholder={searchPlaceholder}
-            onSearch={(val) => {
-              setSearchQuery(val);
-              onSearch?.(val);
-            }}
-            defaultValue={searchQuery}
-          />
+          <div className="flex-1 max-w-md">
+            <SearchBar
+              placeholder={searchPlaceholder}
+              onSearch={(val) => {
+                setSearchQuery(val);
+                onSearch?.(val);
+              }}
+              defaultValue={searchQuery}
+            />
+          </div>
         )}
 
         {actualLoading ? (
@@ -1680,7 +1877,10 @@ export function ListGrid<T = unknown>({
             renderMobileSkeleton()
           ) : (
             <>
-              <SkeletonTable columns={filteredColumns.length} rows={pageSize} />
+              <SkeletonTable
+                columns={filteredColumns.length}
+                rows={internalPageSize}
+              />
             </>
           )
         ) : rows.length === 0 ? (
@@ -1706,26 +1906,31 @@ export function ListGrid<T = unknown>({
           <div className="space-y-4">
             {/* Responsive grid: 1 column on mobile, 2 columns on tablet */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {paginatedRows.map((item, index) =>
-                renderMobileCard(item as Row, index),
-              )}
+              {paginatedRows.map((item) => renderMobileCard(item as Row))}
             </div>
 
-            {showPagination && totalPages > 1 && (
-              <div className="flex justify-center pt-4">
-                <Pagination
-                  showControls
-                  showShadow
-                  classNames={{
-                    wrapper: "gap-1",
-                    item: "w-8 h-8 text-small",
-                    cursor: "font-bold",
-                  }}
-                  color="primary"
-                  page={currentPage}
-                  total={totalPages}
-                  onChange={onPageChange}
-                />
+            {showPagination && (
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
+                <div className="flex-1 w-full flex justify-center sm:justify-start overflow-auto">
+                  {totalPages > 1 && (
+                    <Pagination
+                      showControls
+                      showShadow
+                      classNames={{
+                        wrapper: "gap-1",
+                        item: "w-8 h-8 text-small",
+                        cursor: "font-bold",
+                      }}
+                      color="primary"
+                      page={currentPage}
+                      total={totalPages}
+                      onChange={onPageChange}
+                    />
+                  )}
+                </div>
+                <div className="flex justify-end">
+                  {renderRowsPerPageSelector()}
+                </div>
               </div>
             )}
           </div>
@@ -1782,21 +1987,29 @@ export function ListGrid<T = unknown>({
               </TableBody>
             </Table>
 
-            {showPagination && totalPages > 1 && (
-              <div className="flex justify-center pt-4">
-                <Pagination
-                  showControls
-                  showShadow
-                  classNames={{
-                    wrapper: "gap-2",
-                    item: "w-8 h-8 text-small",
-                    cursor: "font-bold",
-                  }}
-                  color="primary"
-                  page={currentPage}
-                  total={totalPages}
-                  onChange={onPageChange}
-                />
+            {showPagination && (
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
+                <div className="flex-1" />
+                <div className="flex justify-center">
+                  {totalPages > 1 && (
+                    <Pagination
+                      showControls
+                      showShadow
+                      classNames={{
+                        wrapper: "gap-2",
+                        item: "w-8 h-8 text-small",
+                        cursor: "font-bold",
+                      }}
+                      color="primary"
+                      page={currentPage}
+                      total={totalPages}
+                      onChange={onPageChange}
+                    />
+                  )}
+                </div>
+                <div className="flex-1 flex justify-end">
+                  {renderRowsPerPageSelector()}
+                </div>
               </div>
             )}
           </div>
@@ -1832,7 +2045,7 @@ export function ListGrid<T = unknown>({
         message={
           pendingBulkAction?.confirmMessage
             ? pendingBulkAction.confirmMessage(selectedCount)
-          : bulkDeleteConfirmMessage(selectedCount)
+            : bulkDeleteConfirmMessage(selectedCount)
         }
         title={pendingBulkAction?.confirmTitle || bulkDeleteConfirmTitle}
         onClose={() => {

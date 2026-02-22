@@ -169,6 +169,20 @@
       "when": 1771660536502,
       "tag": "0023_watery_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1771725200026,
+      "tag": "0024_far_devos",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1771754167614,
+      "tag": "0025_steady_wild_child",
+      "breakpoints": true
     }
   ]
 }

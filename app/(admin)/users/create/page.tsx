@@ -72,7 +72,8 @@ export default function CreateUserPage() {
     lastName: "",
     password: "",
     confirmPassword: "",
-    role: UserRole.STUDENT,
+    // role: '
+    // role: UserRole.STUDENT,
   };
 
   const handleCreateUser = async (formData: UserFormData) => {
@@ -142,7 +143,7 @@ export default function CreateUserPage() {
         <CardHeader className="flex flex-col items-start px-4 py-4">
           <h1 className="text-2xl font-bold">Create New User</h1>
           <p className="text-sm text-gray-500">
-            Add a new user account with role assignment dsf
+            Add a new user account with role assignment
           </p>
         </CardHeader>
         <CardBody>

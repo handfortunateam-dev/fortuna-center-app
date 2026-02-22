@@ -2,12 +2,13 @@ import React from "react";
 import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { UserRole } from "@/enums/common";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import DashboardAdmin from "./admin/DashboardAdmin";
 import DashboardTeacher from "./DashboardTeacher";
-import DashboardEmployee from "./DashboardEmployee";
 import DashboardStudent from "./student/DashboardStudent";
 import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
+import DashboardEmployee from "./employee/DashboardEmployee";
 
 export default async function DashboardGrid() {
   // Fetch user data on the server
@@ -20,12 +21,20 @@ export default async function DashboardGrid() {
     redirect("/auth/login");
   }
 
+  // Read the toggled view preference set by useAccessControl on the client
+  const cookieStore = await cookies();
+  const currentView = cookieStore.get("multiRoleView")?.value;
+
   // Render dashboard based on user role
   switch (user.role) {
     case UserRole.ADMIN:
       return <DashboardAdmin user={user} />;
 
     case UserRole.TEACHER:
+      // If this teacher also has admin-employee duties and has toggled to that view, show the employee dashboard
+      if (user.isAdminEmployeeAlso && currentView === "admin") {
+        return <DashboardEmployee user={user} />;
+      }
       return <DashboardTeacher user={user} />;
 
     case UserRole.STUDENT:

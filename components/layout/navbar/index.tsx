@@ -615,30 +615,32 @@ export default function Navbar({
 
                 {renderMobileMenuItems(menuItems)}
 
-                {(authProvider === "clerk" ? isSignedIn : !!localUser) && systemMenuItems.length > 0 && (
-                  <>
-                    <div className="my-2 border-t border-gray-100 dark:border-gray-800" />
-                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      System
-                    </div>
-                    {renderMobileMenuItems(systemMenuItems)}
-                  </>
-                )}
+                {(authProvider === "clerk" ? isSignedIn : !!localUser) &&
+                  systemMenuItems.length > 0 && (
+                    <>
+                      <div className="my-2 border-t border-gray-100 dark:border-gray-800" />
+                      <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        System
+                      </div>
+                      {renderMobileMenuItems(systemMenuItems)}
+                    </>
+                  )}
 
                 {/* Auth Buttons Mobile */}
-                {showAuth && !(authProvider === "clerk" ? isSignedIn : !!localUser) && (
-                  <div className="mt-4 flex flex-col gap-3">
-                    <Button
-                      fullWidth
-                      variant="bordered"
-                      onPress={() => {
-                        router.push("/auth/login");
-                        setIsMobileMenuOpen(false);
-                      }}
-                    >
-                      Login
-                    </Button>
-                    <Button
+                {showAuth &&
+                  !(authProvider === "clerk" ? isSignedIn : !!localUser) && (
+                    <div className="mt-4 flex flex-col gap-3">
+                      <Button
+                        fullWidth
+                        variant="bordered"
+                        onPress={() => {
+                          router.push("/auth/login");
+                          setIsMobileMenuOpen(false);
+                        }}
+                      >
+                        Login
+                      </Button>
+                      {/* <Button
                       fullWidth
                       color="primary"
                       onPress={() => {
@@ -647,9 +649,9 @@ export default function Navbar({
                       }}
                     >
                       Sign Up
-                    </Button>
-                  </div>
-                )}
+                    </Button> */}
+                    </div>
+                  )}
               </div>
             </motion.div>
           </>

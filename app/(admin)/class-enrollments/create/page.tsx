@@ -9,10 +9,15 @@ import { Toast } from "@/components/toast/index";
 import { CreateOrEditFormWrapper } from "@/components/form/CreateOrEditFormWrapper";
 import { EnrollmentForm } from "@/features/lms/enrollments/forms/EnrollmentForm";
 import { ClassEnrollmentFormValues } from "@/features/lms/enrollments/interfaces";
-import { createClassEnrollment } from "@/services/classesService";
+import {
+  createClassEnrollment,
+  classEnrollmentKeys,
+} from "@/services/classesService";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CreateEnrollmentPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
   const defaultValues: Partial<ClassEnrollmentFormValues> = {
@@ -35,14 +40,18 @@ export default function CreateEnrollmentPage() {
         color: "success",
       });
 
+      // Invalidate queries to refresh list
+      await queryClient.invalidateQueries({
+        queryKey: classEnrollmentKeys.all,
+      });
+
       // Redirect after short delay
       setTimeout(() => {
         router.push("/class-enrollments");
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Create failed:", err);
-      const message =
-        err.response?.data?.message || err.message || "An error occurred";
+      const message = err instanceof Error ? err.message : "An error occurred";
       setError(message);
 
       Toast({

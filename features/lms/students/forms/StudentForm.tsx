@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { useFormContext } from "react-hook-form";
 import {
   TextInput,
@@ -9,9 +9,7 @@ import {
   DatePickerInput,
 } from "@/components/inputs";
 import { StudentFormValues } from "@/features/lms/students/interface";
-import { useUsers } from "@/services/usersService";
 import { EDUCATION_LEVELS, OCCUPATION_TYPES } from "../constants";
-import { Heading } from "@/components/heading";
 
 interface StudentFormProps {
   mode?: "create" | "edit";
@@ -21,20 +19,6 @@ export function StudentForm({ mode }: StudentFormProps) {
   const {
     // watch
   } = useFormContext<StudentFormValues>();
-
-  const { data: usersData, isLoading: isLoadingUsers } = useUsers({
-    limit: 100,
-    role: "STUDENT",
-    excludeLinkedStudents: true,
-  });
-
-  const userOptions = useMemo(() => {
-    if (!usersData?.data) return [];
-    return usersData.data.map((user) => ({
-      label: user.fullName || user.email || "Unknown",
-      value: user.id,
-    }));
-  }, [usersData]);
 
   const genderOptions = [
     { label: "Male", value: "male" },
@@ -96,6 +80,14 @@ export function StudentForm({ mode }: StudentFormProps) {
             }}
           />
         </div>
+        <div className="grid grid-cols-1 gap-4">
+          <TextInput
+            label="Nickname"
+            name="nickname"
+            placeholder="e.g., Johnny"
+            required={false}
+          />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <AutocompleteInput
@@ -131,8 +123,8 @@ export function StudentForm({ mode }: StudentFormProps) {
             name="email"
             type="email"
             placeholder="e.g., john.doe@example.com"
+            required={false}
             validation={{
-              required: "Email is required",
               pattern: {
                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
                 message: "Invalid email address",
@@ -143,7 +135,10 @@ export function StudentForm({ mode }: StudentFormProps) {
             label="Phone Number"
             name="phone"
             placeholder="e.g., +1234567890"
-            required={false}
+            required={true}
+            validation={{
+              required: "Phone number is required",
+            }}
           />
         </div>
 
@@ -196,6 +191,26 @@ export function StudentForm({ mode }: StudentFormProps) {
           isClearable
         />
       </div> */}
+
+      {/* Configuration */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Configuration
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <AutocompleteInput
+            label="Status"
+            name="status"
+            placeholder="Select status"
+            options={[
+              { label: "Active", value: "active" },
+              { label: "Inactive", value: "inactive" },
+              { label: "On Leave", value: "on_leave" },
+            ]}
+            required={true}
+          />
+        </div>
+      </div>
     </div>
   );
 }

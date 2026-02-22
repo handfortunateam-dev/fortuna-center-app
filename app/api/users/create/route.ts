@@ -12,6 +12,7 @@ interface CreateUserRequest {
   lastName: string;
   password: string;
   role: "ADMIN" | "VISITOR";
+  isAdminEmployeeAlso?: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -120,6 +121,7 @@ export async function POST(request: NextRequest) {
         image: clerkUser.imageUrl,
         role: body.role as UserRole,
         password: hashedPassword, // Save hashed password
+        isAdminEmployeeAlso: body.isAdminEmployeeAlso || false,
       })
       .returning();
 

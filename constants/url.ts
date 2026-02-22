@@ -116,10 +116,23 @@ export const NAV_URL = {
         SETTINGS: "/student-settings",
     },
     ADMINISTRATIVE: {
-        DASHBOARD: "/administrative/dashboard",
-        USERS: "/administrative/users",
-        REPORTS: "/administrative/reports",
-        ATTENDANCE: "/administrative/attendance",
-        SETTINGS: "/administrative/settings",
+        DASHBOARD: "/dashboard",
+        USERS: "/users",
+        STUDENTS: "/students",
+        TEACHERS: "/teachers",
+        TEACHER_CLASSES: "/teacher-classes",
+        CLASSES: "/classes",
+        ENROLLMENTS: "/class-enrollments",
+        SCHEDULER: "/class-scheduler-management",
+        ATTENDANCE: "/attendance-management",
+        PAYMENTS: "/payment-course-history",
+        FINANCIAL: "/financial",
+        SETTINGS: "/settings",
+        POST_ARTICLES: "/post-articles",
+        ANALYTICS: {
+            ROOT: "/analytics",
+            USERS: "/analytics/users",
+            FINANCIAL: "/analytics/financial",
+        },
     }
 };
