@@ -3,6 +3,9 @@
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import AbstractWaves from "@/components/backgrounds/AbstractWaves";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
+import { BROADCAST_PROGRAM_DATA } from "@/constants/programsData";
 
 export default function BroadcastProgramPage() {
   return (
@@ -21,13 +24,21 @@ export default function BroadcastProgramPage() {
               <Icon icon="solar:microphone-3-bold" />
               <span>Professional Training</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight">
+            <Heading
+              as="h1"
+              size="4xl"
+              align="center"
+              className="text-4xl md:text-6xl font-bold text-foreground mb-6 leading-tight"
+            >
               Broadcast <span className="text-primary">Video & Audio</span>
-            </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8">
+            </Heading>
+            <Text
+              align="center"
+              className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8"
+            >
               Master the art of live broadcasting, audio engineering, and
               digital media production in our state-of-the-art studio.
-            </p>
+            </Text>
             <div className="flex flex-wrap justify-center gap-4">
               <button className="px-8 py-3 bg-primary text-white rounded-full font-semibold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20">
                 Join Program
@@ -44,79 +55,66 @@ export default function BroadcastProgramPage() {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Studio Equipment",
-                description:
-                  "Hands-on experience with professional cameras, lighting, and audio gear.",
-                icon: "solar:camera-bold-duotone",
-              },
-              {
-                title: "Live Streaming",
-                description:
-                  "Learn the technicalities of streaming to YouTube, Twitch, and other platforms.",
-                icon: "solar:monitor-camera-bold-duotone",
-              },
-              {
-                title: "Audio Engineering",
-                description:
-                  "Master mixing, mastering, and sound design for broadcast and podcasts.",
-                icon: "solar:music-note-slider-bold-duotone",
-              },
-            ].map((item, idx) => (
+            {BROADCAST_PROGRAM_DATA.features.map((item, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1, duration: 0.5 }}
-                className="p-8 rounded-2xl border border-border bg-background shadow-sm hover:shadow-md transition-all duration-300 hover:border-secondary/50 group"
+                className="p-8 rounded-3xl border border-border bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md shadow-sm hover:shadow-xl transition-all duration-300 hover:border-primary/30 group"
               >
-                <div className="w-14 h-14 rounded-xl bg-red-50 flex items-center justify-center text-primary mb-6 group-hover:bg-secondary/10 group-hover:text-secondary transition-colors duration-300">
+                <div className="w-14 h-14 rounded-2xl bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                   <Icon icon={item.icon} className="text-3xl" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">
+                <Heading
+                  as="h3"
+                  className="text-xl font-bold text-foreground mb-3"
+                >
                   {item.title}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                </Heading>
+                <Text className="text-muted-foreground leading-relaxed">
                   {item.description}
-                </p>
+                </Text>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Content Placeholder */}
+      {/* Experience Section */}
       <section className="py-20 bg-muted">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="w-full md:w-1/2">
-              <div className="aspect-video bg-muted rounded-2xl flex items-center justify-center text-muted-foreground">
-                <Icon icon="solar:gallery-wide-bold" className="text-6xl" />
+              <div className="aspect-video bg-background/50 backdrop-blur-sm border border-border rounded-2xl flex items-center justify-center text-muted-foreground shadow-xl">
+                <Icon
+                  icon="solar:gallery-wide-bold"
+                  className="text-6xl text-primary/20"
+                />
               </div>
             </div>
             <div className="w-full md:w-1/2">
-              <h2 className="text-3xl font-bold text-foreground mb-6">
+              <Heading
+                as="h2"
+                className="text-3xl font-bold text-foreground mb-6"
+              >
                 Real-World Experience
-              </h2>
-              <p className="text-muted-foreground leading-relaxed mb-6">
+              </Heading>
+              <Text className="text-muted-foreground leading-relaxed mb-6">
                 Our students don&apos;t just learn theory; they produce real
                 content. From news segments to talk shows, you&apos;ll build a
                 portfolio that stands out.
-              </p>
+              </Text>
               <ul className="space-y-4">
-                {[
-                  "Weekly Live Shows",
-                  "Podcast Production",
-                  "Event Coverage",
-                  "Technical Direction",
-                ].map((item, idx) => (
+                {BROADCAST_PROGRAM_DATA.highlights.map((item, idx) => (
                   <li key={idx} className="flex items-center gap-3">
                     <div className="w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center text-secondary">
                       <Icon icon="solar:check-read-bold" className="text-sm" />
                     </div>
-                    <span className="text-foreground font-medium">{item}</span>
+                    <Text weight="medium" className="text-foreground">
+                      {item}
+                    </Text>
                   </li>
                 ))}
               </ul>

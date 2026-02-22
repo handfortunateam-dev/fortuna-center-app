@@ -5,7 +5,10 @@ import LocationBackground from "@/components/backgrounds/LocationBackground";
 
 export default function LocationSection() {
   return (
-    <section className="py-24 bg-background relative overflow-hidden">
+    <section
+      id="contact"
+      className="py-24 bg-background relative overflow-hidden"
+    >
       <LocationBackground />
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col lg:flex-row gap-12">
