@@ -10,6 +10,8 @@ export interface ClerkUser {
   updatedAt: number;
   lastSignInAt: number | null;
   emailVerified: boolean;
+  role?: string;
+  isAdminEmployeeAlso?: boolean;
 }
 
 export interface ClerkUserDetail extends ClerkUser {

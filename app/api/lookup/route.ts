@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, or, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { users, classes, students } from "@/db/schema";
 
@@ -42,37 +42,26 @@ export async function GET(request: NextRequest) {
                         middleName: students.middleName,
                         lastName: students.lastName,
                         studentId: students.studentId,
-                        phone: students.phone,
-                        address: students.address,
-                        placeOfBirth: students.placeOfBirth,
-                        dateOfBirth: students.dateOfBirth,
-                        gender: students.gender,
-                        education: students.education,
                     })
-                    .from(students);
+                    .from(students)
+                    .leftJoin(users, eq(students.userId, users.id))
+                    .where(
+                        or(
+                            isNull(students.userId),
+                            eq(users.role, "STUDENT")
+                        )
+                    );
 
                 data = studentList.map((s) => {
-                    const isComplete =
-                        !!s.phone &&
-                        !!s.address &&
-                        !!s.placeOfBirth &&
-                        !!s.dateOfBirth &&
-                        !!s.gender &&
-                        !!s.education;
-
                     const fullName = [s.firstName, s.middleName, s.lastName]
                         .filter(Boolean)
                         .join(" ");
 
-                    const label = isComplete
-                        ? `${fullName} (${s.studentId})`
-                        : `${fullName} (${s.studentId}) - lengkapi data terlebih dahulu`;
-
                     return {
-                        text: label,
+                        text: `${fullName} (${s.studentId})`,
                         key: s.id,
                         value: s.id,
-                        disabled: !isComplete,
+                        disabled: false,
                     };
                 });
                 break;

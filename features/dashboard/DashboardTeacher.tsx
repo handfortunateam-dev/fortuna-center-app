@@ -4,10 +4,11 @@ import { Icon } from "@iconify/react";
 import { AuthUser } from "@/lib/auth/getAuthUser";
 import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
-import { Card, CardBody, Chip, Button, Spinner } from "@heroui/react";
+import { Card, CardBody, Chip, Button, Skeleton } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import { getTeacherDashboard } from "@/services/attendanceService";
 import { useRouter } from "next/navigation";
+import StatCard from "@/components/ui/StatCard";
 
 interface DashboardTeacherProps {
   user: AuthUser | null;
@@ -23,8 +24,89 @@ export default function DashboardTeacher({ user }: DashboardTeacherProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner size="lg" />
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-64 rounded-lg" />
+            <Skeleton className="h-5 w-80 rounded-lg" />
+          </div>
+          <Skeleton className="h-12 w-32 rounded-xl" />
+        </div>
+
+        {/* Overview Stats Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="rounded-2xl p-6 border border-default-200 dark:border-white/10"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-12 w-12 rounded-xl" />
+                <Skeleton className="h-6 w-16 rounded-lg" />
+              </div>
+              <Skeleton className="h-4 w-24 rounded-lg mb-2" />
+              <Skeleton className="h-8 w-16 rounded-lg" />
+            </div>
+          ))}
+        </div>
+
+        {/* Attendance Stats Skeleton */}
+        <Card className="border border-default-200">
+          <CardBody className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <Skeleton className="h-7 w-48 rounded-lg" />
+              <Skeleton className="h-6 w-24 rounded-full" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-20 rounded-lg" />
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Today's Sessions & Quick Actions Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border border-default-200">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <Skeleton className="h-7 w-40 rounded-lg" />
+                <Skeleton className="h-8 w-20 rounded-lg" />
+              </div>
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+          <Card className="border border-default-200">
+            <CardBody className="p-6">
+              <Skeleton className="h-7 w-32 rounded-lg mb-4" />
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                ))}
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* My Classes Skeleton */}
+        <Card className="border border-default-200">
+          <CardBody className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <Skeleton className="h-7 w-32 rounded-lg" />
+              <Skeleton className="h-8 w-20 rounded-lg" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-20 w-full rounded-lg" />
+              ))}
+            </div>
+          </CardBody>
+        </Card>
       </div>
     );
   }
@@ -55,104 +137,47 @@ export default function DashboardTeacher({ user }: DashboardTeacherProps) {
             Teacher Dashboard
           </Heading>
           <Text color="muted" className="mt-1">
-            Welcome back{user?.name ? `, ${user.name}` : ""}! Here's what's
-            happening today.
+            Welcome back{user?.name ? `, ${user.name}` : ""}! Here&apos;s
+            what&apos;s happening today.
           </Text>
-        </div>
-        <div className="glass-panel px-4 py-3 rounded-xl border border-default-200">
-          <div className="flex items-center gap-2 text-default-500">
-            <Icon icon="solar:user-bold-duotone" className="text-xl" />
-            <span className="text-sm font-medium">Teacher</span>
-          </div>
         </div>
       </div>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-default-200">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text color="muted" className="text-sm">
-                  Total Classes
-                </Text>
-                <Heading as="h3" size="2xl" weight="bold" className="mt-1">
-                  {overview.totalClasses}
-                </Heading>
-              </div>
-              <div className="bg-primary-50 p-3 rounded-lg">
-                <Icon
-                  icon="solar:book-2-bold-duotone"
-                  className="w-6 h-6 text-primary"
-                />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="border border-default-200">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text color="muted" className="text-sm">
-                  Total Students
-                </Text>
-                <Heading as="h3" size="2xl" weight="bold" className="mt-1">
-                  {overview.totalStudents}
-                </Heading>
-              </div>
-              <div className="bg-success-50 p-3 rounded-lg">
-                <Icon
-                  icon="solar:users-group-rounded-bold-duotone"
-                  className="w-6 h-6 text-success"
-                />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="border border-default-200">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text color="muted" className="text-sm">
-                  Today's Sessions
-                </Text>
-                <Heading as="h3" size="2xl" weight="bold" className="mt-1">
-                  {overview.todaySessionsCount}
-                </Heading>
-              </div>
-              <div className="bg-warning-50 p-3 rounded-lg">
-                <Icon
-                  icon="solar:calendar-mark-bold-duotone"
-                  className="w-6 h-6 text-warning"
-                />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="border border-default-200">
-          <CardBody className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Text color="muted" className="text-sm">
-                  This Week
-                </Text>
-                <Heading as="h3" size="2xl" weight="bold" className="mt-1">
-                  {overview.weekSessionsCount}
-                </Heading>
-                <Text className="text-xs text-default-400">sessions</Text>
-              </div>
-              <div className="bg-secondary-50 p-3 rounded-lg">
-                <Icon
-                  icon="solar:calendar-bold-duotone"
-                  className="w-6 h-6 text-secondary"
-                />
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+        <StatCard
+          title="Total Classes"
+          value={overview.totalClasses.toString()}
+          icon="solar:book-2-bold-duotone"
+          bgColor="bg-primary-50 dark:bg-primary-500/10"
+          textColor="text-primary"
+          delay={0.1}
+        />
+        <StatCard
+          title="Total Students"
+          value={overview.totalStudents.toString()}
+          icon="solar:users-group-rounded-bold-duotone"
+          bgColor="bg-success-50 dark:bg-success-500/10"
+          textColor="text-success"
+          delay={0.2}
+        />
+        <StatCard
+          title="Today's Sessions"
+          value={overview.todaySessionsCount.toString()}
+          icon="solar:calendar-mark-bold-duotone"
+          bgColor="bg-warning-50 dark:bg-warning-500/10"
+          textColor="text-warning"
+          delay={0.3}
+        />
+        <StatCard
+          title="This Week"
+          value={overview.weekSessionsCount.toString()}
+          icon="solar:calendar-bold-duotone"
+          bgColor="bg-secondary-50 dark:bg-secondary-500/10"
+          textColor="text-secondary"
+          change="sessions"
+          delay={0.4}
+        />
       </div>
 
       {/* Attendance Stats */}
@@ -160,7 +185,7 @@ export default function DashboardTeacher({ user }: DashboardTeacherProps) {
         <CardBody className="p-6">
           <div className="flex items-center justify-between mb-4">
             <Heading as="h3" size="lg" weight="semibold">
-              This Week's Attendance
+              This Week&apos;s Attendance
             </Heading>
             <Chip
               color={
@@ -215,7 +240,7 @@ export default function DashboardTeacher({ user }: DashboardTeacherProps) {
           <CardBody className="p-6">
             <div className="flex items-center justify-between mb-4">
               <Heading as="h3" size="lg" weight="semibold">
-                Today's Sessions
+                Today&apos;s Sessions
               </Heading>
               <Button
                 size="sm"

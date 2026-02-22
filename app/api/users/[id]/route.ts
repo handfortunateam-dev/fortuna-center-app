@@ -11,6 +11,7 @@ import { assignmentSubmissions } from "@/db/schema/assignment-submission.schema"
 import { posts } from "@/db/schema/posts.schema";
 import { postComments } from "@/db/schema/post-comment.schema";
 import { eq } from "drizzle-orm";
+import { UserRole } from "@/enums/common";
 
 export async function GET(
     request: NextRequest,
@@ -60,7 +61,10 @@ export async function GET(
                         id: userData.id,
                         email: userData.email,
                         name: userData.name,
+                        firstName: userData.name.split(" ")[0] || "",
+                        lastName: userData.name.split(" ").slice(1).join(" ") || "",
                         role: userData.role,
+                        isAdminEmployeeAlso: userData.isAdminEmployeeAlso,
                         clerkId: userData.clerkId,
                         image: userData.image,
                         createdAt: userData.createdAt,
@@ -235,9 +239,11 @@ export async function PATCH(
 
         if (isUUID) {
             // Update database user directly
-            const updateData: { name?: string; email?: string } = {};
+            const updateData: { name?: string; email?: string; role?: UserRole; isAdminEmployeeAlso?: boolean } = {};
             if (body.name) updateData.name = body.name;
             if (body.email) updateData.email = body.email;
+            if (body.role !== undefined) updateData.role = body.role;
+            if (body.isAdminEmployeeAlso !== undefined) updateData.isAdminEmployeeAlso = body.isAdminEmployeeAlso;
 
             const updatedUser = await db.update(users)
                 .set(updateData)
@@ -266,8 +272,14 @@ export async function PATCH(
 
         const updatedClerkUser = await client.users.updateUser(id, updateParams);
 
-        // Update DB User (if name or password changed)
-        if (body.firstName || body.lastName || body.password) {
+        // Update DB User (if name or password or roles changed)
+        if (
+            body.firstName ||
+            body.lastName ||
+            body.password ||
+            body.role !== undefined ||
+            body.isAdminEmployeeAlso !== undefined
+        ) {
             const dbUpdateData: any = {};
 
             if (body.firstName || body.lastName) {
@@ -277,6 +289,14 @@ export async function PATCH(
             if (body.password) {
                 const bcrypt = await import("bcryptjs");
                 dbUpdateData.password = await bcrypt.hash(body.password, 10);
+            }
+
+            if (body.role !== undefined) {
+                dbUpdateData.role = body.role;
+            }
+
+            if (body.isAdminEmployeeAlso !== undefined) {
+                dbUpdateData.isAdminEmployeeAlso = body.isAdminEmployeeAlso;
             }
 
             await db.update(users)

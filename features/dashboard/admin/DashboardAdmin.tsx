@@ -9,6 +9,7 @@ import RecentSessions from "./RecentSessions";
 import StatisticGeneral from "./StatisticGeneral";
 import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
+import { RecentActivity } from "../components/RecentActivity";
 
 interface DashboardAdminProps {
   user: AuthUser | null;
@@ -59,14 +60,17 @@ export default function DashboardAdmin({ user }: DashboardAdminProps) {
             <StatisticGeneral />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Quick Actions - Takes up 1 column */}
-              <div className="lg:col-span-1">
-                <QuickActions />
+              {/* Left Column: Stats & Actions */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-6">
+                  <QuickActions />
+                  <RecentSessions limit={5} />
+                </div>
               </div>
 
-              {/* Recent Sessions List - Takes up 2 columns */}
-              <div className="lg:col-span-2">
-                <RecentSessions limit={5} />
+              {/* Right Column: Recent Activity */}
+              <div className="lg:col-span-1">
+                <RecentActivity />
               </div>
             </div>
           </div>

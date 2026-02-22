@@ -10,8 +10,8 @@ import {
   CardHeader,
   Spinner,
 } from "@heroui/react";
-// import { AlertCircle, CheckCircle2, Save } from "lucide-react";
 import { Icon } from "@iconify/react";
+import { UserRole } from "@/enums/common";
 import { useUser } from "@/services/usersService";
 import { useQueryClient } from "@tanstack/react-query";
 import { usersKeys } from "@/services/usersService";
@@ -28,6 +28,8 @@ interface EditUserFormData {
   lastName: string;
   password?: string;
   confirmPassword?: string;
+  role?: UserRole | string;
+  isAdminEmployeeAlso?: boolean;
 }
 
 export default function EditUser({ id }: EditUserProps) {
@@ -45,6 +47,8 @@ export default function EditUser({ id }: EditUserProps) {
       lastName: "",
       password: "",
       confirmPassword: "",
+      role: "",
+      isAdminEmployeeAlso: false,
     },
   });
 
@@ -61,11 +65,17 @@ export default function EditUser({ id }: EditUserProps) {
   const [success, setSuccess] = useState(false);
 
   const password = watch("password");
+  const selectedRole = watch("role");
 
   useEffect(() => {
     if (userData?.data) {
       setValue("firstName", userData.data.firstName || "");
       setValue("lastName", userData.data.lastName || "");
+      if (userData.data.role) setValue("role", userData.data.role);
+      setValue(
+        "isAdminEmployeeAlso",
+        userData.data.isAdminEmployeeAlso || false,
+      );
     }
   }, [userData, setValue]);
 
@@ -177,6 +187,44 @@ export default function EditUser({ id }: EditUserProps) {
                   label="Last Name"
                   placeholder="Doe"
                 />
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">User Role</label>
+                  <select
+                    {...methods.register("role")}
+                    disabled={loading || isSubmitting}
+                    className="px-3 py-2 border border-gray-300 dark:border-default-200 rounded-lg bg-white dark:bg-default-100 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="" disabled>
+                      Select Role
+                    </option>
+                    {Object.values(UserRole).map((roleVal) => (
+                      <option key={roleVal} value={roleVal}>
+                        {roleVal.replace("_", " ")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedRole === UserRole.TEACHER && (
+                  <div className="bg-primary/10 border border-primary/20 p-4 rounded-lg flex flex-col gap-1">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        {...methods.register("isAdminEmployeeAlso")}
+                        disabled={loading || isSubmitting}
+                        className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary"
+                      />
+                      <span className="text-sm font-medium">
+                        Is this Teacher also an Administrative Employee?
+                      </span>
+                    </label>
+                    <p className="text-xs text-default-500 pl-6">
+                      Checking this will grant the teacher access to the
+                      Administrative Dashboard and its tools.
+                    </p>
+                  </div>
+                )}
 
                 <div className="border-t border-divider my-2 pt-2">
                   <p className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">

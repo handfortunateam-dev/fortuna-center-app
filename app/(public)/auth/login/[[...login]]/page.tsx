@@ -48,8 +48,12 @@ export default function SignInCatchAll() {
             <SignIn
               routing="path"
               path="/auth/login"
-              signUpUrl="/auth/signup"
               afterSignInUrl="/dashboard"
+              appearance={{
+                elements: {
+                  footerAction: { display: "none" },
+                },
+              }}
             />
           ) : (
             <LocalSignIn />

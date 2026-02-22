@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { and, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { students } from "@/db/schema";
 
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
-        const query  = searchParams.get("q") || searchParams.get("query") || "";
-        const limit  = Math.max(1, Number(searchParams.get("limit")  || 10));
-        const page   = Math.max(1, Number(searchParams.get("page")   || 1));
+        const query = searchParams.get("q") || searchParams.get("query") || "";
+        const limit = Math.max(1, Number(searchParams.get("limit") || 10));
+        const page = Math.max(1, Number(searchParams.get("page") || 1));
         const offset = searchParams.get("offset")
             ? Number(searchParams.get("offset"))
             : (page - 1) * limit;
@@ -20,13 +20,29 @@ export async function GET(request: NextRequest) {
             filters.push(
                 or(
                     ilike(students.firstName, dbQuery),
-                    ilike(students.lastName,  dbQuery),
-                    ilike(students.email,     dbQuery),
-                    ilike(students.nickname,  dbQuery),
-                    ilike(students.phone,     dbQuery),
+                    ilike(students.lastName, dbQuery),
+                    ilike(students.email, dbQuery),
+                    ilike(students.nickname, dbQuery),
+                    ilike(students.phone, dbQuery),
                 )
             );
         }
+
+        // Add dynamic filters from query params (e.g., ?gender=male)
+        searchParams.forEach((value, key) => {
+            if (!["q", "query", "limit", "page", "offset"].includes(key) && value) {
+                if (key === "year") {
+                    // Special handling for registration year
+                    filters.push(sql`EXTRACT(YEAR FROM ${students.registrationDate}) = ${parseInt(value)}`);
+                    return;
+                }
+
+                const column = (students as unknown as Record<string, unknown>)[key];
+                if (column) {
+                    filters.push(eq(column, value));
+                }
+            }
+        });
 
         const where = filters.length ? and(...filters) : undefined;
 
@@ -164,18 +180,18 @@ export async function POST(request: NextRequest) {
                 studentId: finalStudentId,
                 registrationDate: registrationDate || new Date().toISOString().split("T")[0],
                 firstName,
-                middleName:   middleName  || null,
-                lastName:     lastName   || "",
-                nickname:     nickname   || null,
-                gender:       gender     || null,
+                middleName: middleName || null,
+                lastName: lastName || "",
+                nickname: nickname || null,
+                gender: gender || null,
                 placeOfBirth: placeOfBirth || null,
-                dateOfBirth:  dateOfBirth  || null,
-                email:        email      || null,
+                dateOfBirth: dateOfBirth || null,
+                email: email || null,
                 phone,
-                address:      address    || null,
-                education:    education  || null,
-                occupation:   occupation || null,
-                userId:       userId     || null,
+                address: address || null,
+                education: education || null,
+                occupation: occupation || null,
+                userId: userId || null,
             })
             .returning();
 
@@ -183,7 +199,7 @@ export async function POST(request: NextRequest) {
 
         // Replace temp ID with a proper one based on the auto-increment studentNumber
         if (!studentId && insertedStudent.studentId === tempId) {
-            const year     = new Date().getFullYear();
+            const year = new Date().getFullYear();
             const sequence = String(insertedStudent.studentNumber).padStart(4, "0");
             const generatedId = `${year}${sequence}`;
 

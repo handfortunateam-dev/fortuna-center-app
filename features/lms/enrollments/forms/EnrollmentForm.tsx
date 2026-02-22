@@ -18,10 +18,6 @@ export function EnrollmentForm({}: EnrollmentFormProps) {
     useStudentsLookup();
   const { data: classes = [], isLoading: loadingClasses } = useClassesLookup();
 
-  const disabledStudentKeys = students
-    .filter((s) => s.disabled)
-    .map((s) => s.value);
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -32,7 +28,6 @@ export function EnrollmentForm({}: EnrollmentFormProps) {
           options={students.map((s) => ({ label: s.text, value: s.value }))}
           isLoading={loadingStudents}
           required={true}
-          disabledKeys={disabledStudentKeys}
         />
 
         <AutocompleteInput

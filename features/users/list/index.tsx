@@ -12,7 +12,7 @@ export default function UserList() {
       title={"User Management"}
       description={"Manage users from Clerk authentication"}
       // Resource configuration for auto-fetching and CRUD
-      resourcePath="/users"
+      resourcePath="/users?source=db"
       serverSide={true}
       paginationType="offset"
       // Auto-generated actions (enabled by default when resourcePath is set)

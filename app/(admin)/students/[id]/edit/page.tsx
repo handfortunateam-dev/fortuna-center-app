@@ -41,11 +41,21 @@ export default function EditStudentPage({ params }: EditStudentPageProps) {
     if (studentResponse?.data) {
       const student = studentResponse.data;
       reset({
+        studentId: student.studentId,
+        registrationDate: student.registrationDate,
         firstName: student.firstName,
+        middleName: student.middleName || "",
         lastName: student.lastName,
-        email: student.email,
+        nickname: student.nickname || "",
+        gender: student.gender,
+        placeOfBirth: student.placeOfBirth || "",
+        dateOfBirth: student.dateOfBirth || "",
+        email: student.email || "",
         phone: student.phone || "",
         address: student.address || "",
+        education: student.education || "",
+        occupation: student.occupation || "",
+        status: student.status,
         userId: student.userId || undefined,
       });
     }

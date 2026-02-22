@@ -7,6 +7,8 @@ import TextShow from "@/components/text-show";
 import { format } from "date-fns";
 import { SkeletonCard } from "@/components/skeletons/SkeletonCard";
 import { StateMessage } from "@/components/state-message";
+import { StudentStatusChip } from "@/components/student-status-chip";
+import { StatusChip } from "@/components/status-chip";
 
 interface StudentDetailPageProps {
   params: Promise<{ id: string }>;
@@ -29,7 +31,9 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
   }
 
   const s = data.data;
-  const fullName = [s.firstName, s.middleName, s.lastName].filter(Boolean).join(" ");
+  const fullName = [s.firstName, s.middleName, s.lastName]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -50,7 +54,10 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
 
           {/* Personal Info */}
           <TextShow label="Full Name" value={fullName} />
-          <TextShow label="Gender" value={s.gender ? (s.gender === "male" ? "Male" : "Female") : "-"} />
+          <TextShow
+            label="Gender"
+            value={s.gender ? (s.gender === "male" ? "Male" : "Female") : "-"}
+          />
           <TextShow label="Place of Birth" value={s.placeOfBirth || "-"} />
           <TextShow
             label="Date of Birth"
@@ -86,6 +93,17 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
               val ? format(new Date(val as string), "PPP p") : "-"
             }
           />
+          <div className="flex flex-col gap-1">
+            <StatusChip
+              status="active"
+              defaultLabel="Status"
+              options={{
+                active: { color: "success", label: "Active" },
+                inactive: { color: "danger", label: "Inactive" },
+                on_leave: { color: "warning", label: "On Leave" },
+              }}
+            />
+          </div>
         </dl>
       </CardWrapper>
     </div>

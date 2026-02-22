@@ -3,6 +3,10 @@ import { IStudent } from "./interface";
 
 export const columns: Columns<IStudent> = [
   {
+    key: "studentId",
+    label: "ID",
+  },
+  {
     key: "firstName",
     label: "Full Name",
     value: (item) =>
@@ -11,9 +15,10 @@ export const columns: Columns<IStudent> = [
         .join(" "),
   },
   {
-    key: "email",
-    label: "Email",
-    value: (item) => item.email || "-",
+    key: "gender",
+    label: "Gender",
+    align: "center",
+    value: (item) => <span className="capitalize">{item.gender || "-"}</span>,
   },
   {
     key: "phone",
@@ -21,8 +26,16 @@ export const columns: Columns<IStudent> = [
     value: (item) => item.phone || "-",
   },
   {
-    key: "address",
-    label: "Address",
-    value: (item) => item.address || "-",
+    key: "email",
+    label: "Email",
+    value: (item) => item.email || "-",
+  },
+  {
+    key: "registrationDate",
+    label: "Joined",
+    value: (item) =>
+      item.registrationDate
+        ? new Date(item.registrationDate).toLocaleDateString()
+        : "-",
   },
 ];

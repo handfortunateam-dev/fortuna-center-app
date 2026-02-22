@@ -21,6 +21,7 @@ interface CreateUserFormData {
   password: string;
   confirmPassword: string;
   role: UserRole;
+  isAdminEmployeeAlso: boolean;
 }
 
 export default function CreateUser() {
@@ -32,6 +33,7 @@ export default function CreateUser() {
     password: "",
     confirmPassword: "",
     role: UserRole.STUDENT,
+    isAdminEmployeeAlso: false,
   });
 
   const [quickRegistration, setQuickRegistration] = useState(true);
@@ -87,9 +89,21 @@ export default function CreateUser() {
   };
 
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newRole = e.target.value as UserRole;
     setFormData((prev) => ({
       ...prev,
-      role: e.target.value as UserRole,
+      role: newRole,
+      // Reset the flag if the new role is not TEACHER
+      isAdminEmployeeAlso:
+        newRole === UserRole.TEACHER ? prev.isAdminEmployeeAlso : false,
+    }));
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: checked,
     }));
   };
 
@@ -115,6 +129,7 @@ export default function CreateUser() {
           lastName: formData.lastName,
           password: formData.password,
           role: formData.role,
+          isAdminEmployeeAlso: formData.isAdminEmployeeAlso,
         }),
       });
 
@@ -145,6 +160,7 @@ export default function CreateUser() {
         password: "",
         confirmPassword: "",
         role: UserRole.STUDENT,
+        isAdminEmployeeAlso: false,
       });
 
       // Redirect based on role and quickRegistration
@@ -305,6 +321,28 @@ export default function CreateUser() {
                   ))}
                 </select>
               </div>
+
+              {formData.role === UserRole.TEACHER && (
+                <div className="bg-primary-50 border border-primary-100 p-4 rounded-lg mt-2 flex flex-col gap-1">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isAdminEmployeeAlso"
+                      checked={formData.isAdminEmployeeAlso}
+                      onChange={handleCheckboxChange}
+                      disabled={loading}
+                      className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium">
+                      Is this Teacher also an Administrative Employee?
+                    </span>
+                  </label>
+                  <p className="text-xs text-default-500 pl-6">
+                    Checking this will grant the teacher access to the
+                    Administrative Dashboard and its tools.
+                  </p>
+                </div>
+              )}
 
               {/* Quick Registration Checkbox */}
               {["STUDENT", "TEACHER"].includes(formData.role) && (

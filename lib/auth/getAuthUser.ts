@@ -9,6 +9,7 @@ export interface AuthUser {
   name: string;
   image: string | null;
   role: UserRole;
+  isAdminEmployeeAlso: boolean;
 }
 
 /**
@@ -63,6 +64,7 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     name: dbUser.name,
     image: dbUser.image,
     role: dbUser.role as UserRole,
+    isAdminEmployeeAlso: dbUser.isAdminEmployeeAlso,
   };
 }
 
