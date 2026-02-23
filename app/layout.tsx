@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-//@ts-expect-error import React from "react";
 import "./globals.css";
 import Providers from "@/providers";
 import { ClerkProviderWrapper } from "@/lib/ClerkProviderWrapper";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
+import { LoadingBar } from "@/components/loading/LoadingBar";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -115,6 +116,9 @@ export default async function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <Providers>
+            <Suspense fallback={null}>
+              <LoadingBar />
+            </Suspense>
             {children}
             <GlobalAudioPlayer />
           </Providers>
