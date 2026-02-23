@@ -44,7 +44,7 @@ export default function HeroSection() {
               as="h1"
               className="text-5xl lg:text-7xl font-extrabold text-foreground leading-tight mb-6 tracking-tight"
             >
-              Fortuna Center <span className="text-primary italic">Kupang</span>
+              Fortuna Center <span className="text-primary">Kupang</span>
             </Heading>
 
             <Text className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-xl">
