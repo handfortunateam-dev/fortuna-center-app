@@ -10,9 +10,9 @@ export default function UserList() {
       idField="id"
       nameField="fullName"
       title={"User Management"}
-      description={"Manage users from Clerk authentication"}
+      description={"Manage users from local database"}
       // Resource configuration for auto-fetching and CRUD
-      resourcePath="/users?source=db"
+      resourcePath="/users"
       serverSide={true}
       paginationType="offset"
       // Auto-generated actions (enabled by default when resourcePath is set)

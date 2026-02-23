@@ -7,7 +7,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
 import { students } from "@/db/schema/students.schema";
 import { teachers } from "@/db/schema/teachers.schema";
-import { and, eq, ilike, notInArray, isNotNull } from "drizzle-orm";
+import { and, eq, ilike, notInArray, isNotNull, count } from "drizzle-orm";
 
 // GET - Fetch all users from Clerk
 export async function GET(request: NextRequest) {
@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // If role is specified or source is db, fetch from local DB
-        if (role || source === "db") {
+        // If role is specified or source is explicitly "db" (or default), fetch from local DB
+        if (role || source !== "clerk") {
             // Build where clause
             const whereConditions = [];
             if (role) {
@@ -137,12 +137,19 @@ export async function GET(request: NextRequest) {
                 isAdminEmployeeAlso: user.isAdminEmployeeAlso,
             }));
 
-            // Get count if needed, but for now just return data
+            // Get total count for pagination
+            const totalCountResult = await db
+                .select({ count: count() })
+                .from(users)
+                .where(where);
+
+            const totalCount = totalCountResult[0].count;
+
             return NextResponse.json(
                 {
                     success: true,
                     data: usersDataDB,
-                    totalCount: usersDataDB.length, // Placeholder, usually requires separate count query
+                    totalCount,
                     message: "Users fetched successfully from DB",
                 },
                 { status: 200 }
