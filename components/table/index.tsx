@@ -13,7 +13,6 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  DropdownSection,
   Popover,
   PopoverTrigger,
   PopoverContent,
@@ -375,7 +374,6 @@ export function ListGrid<T = unknown>({
   rows: manualRows,
   loading = false,
   empty,
-  onOptionsClick,
   onDelete,
   optionsMenu = [],
   pageSize = 10,
@@ -558,7 +556,8 @@ export function ListGrid<T = unknown>({
   // NEW! Auto-fetch data if resourcePath is provided
   const {
     data: fetchedData,
-    isLoading: isFetching,
+    isLoading,
+    isFetching,
     isError: isFetchError,
     error: fetchError,
   } = useQuery({
@@ -612,54 +611,57 @@ export function ListGrid<T = unknown>({
     enabled: !!resourcePath && !data, // Only fetch if resourcePath provided and no data prop
     staleTime: 1000 * 60 * 5, // 5 minutes cache
     gcTime: 10 * 60 * 1000, // 10 minutes
-    placeholderData: (previousData) => previousData, // Keep previous data while fetching
+    // placeholderData: (previousData) => previousData, // Removed to ensure skeleton shows on transition
   });
 
   // Use fetched data if available, otherwise use provided data
   const actualData = data || fetchedData;
-  const actualLoading = loading || isFetching;
+  const actualLoading = loading || isLoading || isFetching;
   const actualError = isError || isFetchError;
   const actualErrorObj = error || fetchError;
 
   // Helper: Extract array from API response
-  const extractDataArray = (input: DataExtractor<T> | undefined): T[] => {
-    if (!input) return [];
+  const extractDataArray = useCallback(
+    (input: DataExtractor<T> | undefined): T[] => {
+      if (!input) return [];
 
-    // Case 1: Already an array
-    if (Array.isArray(input)) {
-      return input;
-    }
-
-    // Case 2: { data: T[] } or { data?: T[] } or { data: { data: T[] } }
-    if ("data" in input) {
-      const nested = input.data;
-
-      // Case 2a: data is undefined or null
-      if (!nested) {
-        return [];
+      // Case 1: Already an array
+      if (Array.isArray(input)) {
+        return input;
       }
 
-      // Case 2b: { data: T[] }
-      if (Array.isArray(nested)) {
-        return nested;
-      }
+      // Case 2: { data: T[] } or { data?: T[] } or { data: { data: T[] } }
+      if ("data" in input) {
+        const nested = input.data;
 
-      // Case 2c: { data: { data: T[] } } or { data: { data?: T[] } }
-      if (typeof nested === "object" && "data" in nested) {
-        const deepNested = (nested as { data?: unknown }).data;
-
-        if (!deepNested) {
+        // Case 2a: data is undefined or null
+        if (!nested) {
           return [];
         }
 
-        if (Array.isArray(deepNested)) {
-          return deepNested as T[];
+        // Case 2b: { data: T[] }
+        if (Array.isArray(nested)) {
+          return nested;
+        }
+
+        // Case 2c: { data: { data: T[] } } or { data: { data?: T[] } }
+        if (typeof nested === "object" && "data" in nested) {
+          const deepNested = (nested as { data?: unknown }).data;
+
+          if (!deepNested) {
+            return [];
+          }
+
+          if (Array.isArray(deepNested)) {
+            return deepNested as T[];
+          }
         }
       }
-    }
 
-    return [];
-  };
+      return [];
+    },
+    [],
+  );
 
   // Auto-transform data to rows if data prop is provided
   // Using TypedRow<T> for better type safety
@@ -709,7 +711,7 @@ export function ListGrid<T = unknown>({
 
     // Use manually provided rows (legacy support)
     return manualRows ?? [];
-  }, [actualData, manualRows, keyField, idField, nameField]);
+  }, [actualData, manualRows, keyField, idField, nameField, extractDataArray]);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -946,21 +948,6 @@ export function ListGrid<T = unknown>({
 
       return newSet;
     });
-  };
-
-  // Show all columns
-  const showAllColumns = () => {
-    const allColumns = new Set(columns.map((col) => col.key));
-    setVisibleColumns(allColumns);
-
-    if (columnVisibilityStorageKey && typeof window !== "undefined") {
-      localStorage.setItem(
-        columnVisibilityStorageKey,
-        JSON.stringify(Array.from(allColumns)),
-      );
-    }
-
-    onVisibleColumnsChange?.(Array.from(allColumns));
   };
 
   // Filter columns by visibility and auto-inject actions column if needed
@@ -1569,35 +1556,34 @@ export function ListGrid<T = unknown>({
                 <div className="px-3 pt-2.5 pb-1 text-[11px] font-semibold text-default-500 uppercase tracking-wider">
                   {filter.label}
                 </div>
-                {[
-                  { label: "All", value: "" },
-                  ...(filter.options || []),
-                ].map((opt) => {
-                  const isActive =
-                    opt.value === ""
-                      ? !activeFilters[filter.key] ||
-                        activeFilters[filter.key] === ""
-                      : activeFilters[filter.key] === opt.value;
-                  return (
-                    <button
-                      key={opt.value || "__all__"}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
-                        isActive
-                          ? "text-primary bg-primary-50 dark:bg-primary-900/20"
-                          : "text-default-700 hover:bg-default-100 dark:hover:bg-default-800"
-                      }`}
-                      onClick={() => onFilterChange(filter.key, opt.value)}
-                    >
-                      {opt.label}
-                      {isActive && (
-                        <Icon
-                          icon="lucide:check"
-                          className="w-3.5 h-3.5 text-primary shrink-0"
-                        />
-                      )}
-                    </button>
-                  );
-                })}
+                {[{ label: "All", value: "" }, ...(filter.options || [])].map(
+                  (opt) => {
+                    const isActive =
+                      opt.value === ""
+                        ? !activeFilters[filter.key] ||
+                          activeFilters[filter.key] === ""
+                        : activeFilters[filter.key] === opt.value;
+                    return (
+                      <button
+                        key={opt.value || "__all__"}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
+                          isActive
+                            ? "text-primary bg-primary-50 dark:bg-primary-900/20"
+                            : "text-default-700 hover:bg-default-100 dark:hover:bg-default-800"
+                        }`}
+                        onClick={() => onFilterChange(filter.key, opt.value)}
+                      >
+                        {opt.label}
+                        {isActive && (
+                          <Icon
+                            icon="lucide:check"
+                            className="w-3.5 h-3.5 text-primary shrink-0"
+                          />
+                        )}
+                      </button>
+                    );
+                  },
+                )}
                 <div className="pb-1" />
               </div>
             ))}
