@@ -33,10 +33,7 @@ export function RecentActivity() {
           Recent Activity
         </Heading>
       </div>
-      <Card
-        shadow="sm"
-        className="border border-default-100 flex-1 min-h-[500px] flex flex-col"
-      >
+      <Card shadow="sm" className="border border-default-100 flex flex-col">
         <CardHeader className="px-5 pt-5 pb-3 flex flex-col items-start gap-3 shrink-0">
           <span className="text-xs font-semibold uppercase tracking-wider text-default-400">
             Filter by Category
@@ -64,7 +61,7 @@ export function RecentActivity() {
           </div>
         </CardHeader>
         <Divider />
-        <CardBody className="px-5 py-4 gap-4 overflow-y-auto h-[450px]">
+        <CardBody className="px-5 py-4 gap-4 overflow-y-auto max-h-[480px] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-default-100 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-default-300">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex gap-3">
