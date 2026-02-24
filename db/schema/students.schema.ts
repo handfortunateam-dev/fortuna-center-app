@@ -24,7 +24,7 @@ export const students = pgTable("students", {
 
     // Contact & Address
     email: text("email").unique(),
-    phone: text("phone").notNull(),
+    phone: text("phone"),
     address: text("address"),
 
     // Pendidikan/pekerjaan

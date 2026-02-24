@@ -108,7 +108,7 @@ export const toTitleCase = (str: string): string =>
 /**
  * Convert an Excel serial date number or "DD-MMM-YY" string → "YYYY-MM-DD".
  */
-export const parseExcelDate = (value: unknown): string => {
+export const parseExcelDate = (value: unknown, fallbackYear?: number): string => {
     if (!value && value !== 0) return "";
 
     if (typeof value === "number") {
@@ -130,7 +130,19 @@ export const parseExcelDate = (value: unknown): string => {
     }
 
     if (typeof value === "string") {
-        const str = value.trim();
+        const raw = value.trim();
+
+        // ── Pre-clean: strip trailing annotations separated by whitespace ──────
+        // Handles dirty data like:
+        //   "30 /5/2024  DOP ( 3)"  → "30 /5/2024"
+        //   "25 /6 /2024 DOP = 21"  → "25 /6 /2024"
+        // Strategy: extract the leading date-shaped token from the string.
+        // Priority order: ISO (YYYY-MM-DD) > numeric D/M/Y > named-month D-MMM-Y
+        const leadingDateMatch = raw.match(
+            /^(\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}\s*[\/\-]\s*\d{1,2}\s*[\/\-]\s*\d{4}|\d{1,2}[-\/\s][A-Za-z]{3,}[-\/\s]\d{2,4})(?=\s|$)/,
+        );
+        const str = leadingDateMatch ? leadingDateMatch[1].trim() : raw;
+
         const MONTH_MAP: Record<string, string> = {
             Jan: "01",
             Feb: "02",
@@ -150,11 +162,50 @@ export const parseExcelDate = (value: unknown): string => {
             Dec: "12",
             Des: "12",
         };
-        // Matching DD-MMM-YY, DD MMM YYYY, etc. (e.g. "07-Sep-25" or "20 MEI 2012")
-        const match = str.match(/^(\d{1,2})[-/\s]([A-Za-z]{3,})[-/\s](\d{2,4})$/);
+
+        // Full English month name + ordinal day suffix (1st, 2nd, 3rd, 4th … 31st)
+        // Handles:
+        //   "January 3rd, 2017"  → 2017-01-03
+        //   "January 10th, 2017" → 2017-01-10
+        //   "January, 7th"       → uses fallbackYear (year from NO. INDUK)
+        //   "January 9th"        → uses fallbackYear
+        //   "January 22nd"       → uses fallbackYear
+        const FULL_MONTH_MAP: Record<string, string> = {
+            january: "01", february: "02", march: "03", april: "04",
+            may: "05", june: "06", july: "07", august: "08",
+            september: "09", october: "10", november: "11", december: "12",
+        };
+        // Pattern: "January, 7th" | "January 9th" | "January 3rd, 2017" | "January 3rd 2017"
+        const longOrdinal = str.match(
+            /^([A-Za-z]+),?\s+(\d{1,2})(?:st|nd|rd|th)(?:[,\s]+(\d{4}))?$/i,
+        );
+        if (longOrdinal) {
+            const month = FULL_MONTH_MAP[longOrdinal[1].toLowerCase()];
+            if (month) {
+                const day = longOrdinal[2].padStart(2, "0");
+                const rawYear = longOrdinal[3]
+                    ? longOrdinal[3]
+                    : fallbackYear
+                        ? String(fallbackYear)
+                        : "";
+                if (rawYear) return `${rawYear}-${month}-${day}`;
+            }
+        }
+
+        // YYYY-MM-DD or YYYY/MM/DD (ISO / ISO-like)
+        // (e.g. "2024-08-20")
+        const iso = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+        if (iso) {
+            const month = iso[2].padStart(2, "0");
+            const day = iso[3].padStart(2, "0");
+            return `${iso[1]}-${month}-${day}`;
+        }
+
+        // DD-MMM-YY or DD MMM YYYY (e.g. "07-Sep-25" or "20 MEI 2012")
+        const match = str.match(/^(\d{1,2})[-\/\s]([A-Za-z]{3,})[-\/\s](\d{2,4})$/);
         if (match) {
             const day = match[1].padStart(2, "0");
-            const monthRaw = match[2].slice(0, 3); // take first 3 chars for mapping
+            const monthRaw = match[2].slice(0, 3);
             const monthKey =
                 monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1).toLowerCase();
             const month = MONTH_MAP[monthKey] ?? "01";
@@ -166,8 +217,9 @@ export const parseExcelDate = (value: unknown): string => {
                     : match[3];
             return `${year}-${month}-${day}`;
         }
+
         // DD / MM / YYYY with optional spaces around slashes
-        // (e.g. "29 /4/ 2024", "13 /5 /2024", "20 /1/2024")
+        // (e.g. "29 /4/ 2024", "13 /5 /2024", "30 /5/2024")
         const spacedSlash = str.match(/^(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})$/);
         if (spacedSlash) {
             const day = spacedSlash[1].padStart(2, "0");
@@ -175,7 +227,8 @@ export const parseExcelDate = (value: unknown): string => {
             const year = spacedSlash[3];
             return `${year}-${month}-${day}`;
         }
-        // DD/MM/YYYY (e.g. "20/01/2025") — JS Date() would parse this wrong as MM/DD
+
+        // DD/MM/YYYY without spaces (e.g. "20/01/2025")
         const ddmmyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if (ddmmyyyy) {
             const day = ddmmyyyy[1].padStart(2, "0");
@@ -183,6 +236,8 @@ export const parseExcelDate = (value: unknown): string => {
             const year = ddmmyyyy[3];
             return `${year}-${month}-${day}`;
         }
+
+        // Last resort: let JS parse ISO strings (e.g. already-clean "2024-08-20")
         const d = new Date(str);
         if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
         return str;
