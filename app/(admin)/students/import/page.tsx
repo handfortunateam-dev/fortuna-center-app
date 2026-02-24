@@ -115,10 +115,22 @@ export default function ImportStudentsPage() {
       // that also happen to match EXCEL_COLUMN_MAP, but have no "NO" column, so without this guard
       // every row would be filtered out and the user would see the "empty file" error.
       const hasNoColumn = firstRowHeaders.includes("NO");
+
+      // Find the ACTUAL key for the NO column (preserving original casing from XLSX)
+      // because row lookup must use the original key, not the uppercased version.
+      // e.g. if Excel header is "No " → firstRowHeaders has "NO" (trimmed+upper),
+      //      but row["NO"] returns undefined — we need row["No "] instead.
+      const actualNoKey = hasNoColumn
+        ? Object.keys(jsonData[0]).find((k) => k.trim().toUpperCase() === "NO")
+        : undefined;
+
       const filteredData =
-        isKnownExcelFormat && hasNoColumn
+        isKnownExcelFormat && hasNoColumn && actualNoKey
           ? jsonData.filter((row) => {
-              const no = row["NO"];
+              const no = row[actualNoKey];
+              // cellDates:true may convert number cells with date-formatting to
+              // JS Date objects — treat any valid Date as a present (non-blank) row.
+              if (no instanceof Date) return !isNaN(no.getTime());
               if (typeof no === "number") return no > 0;
               if (typeof no === "string" && no.trim()) {
                 const num = parseFloat(no.replace(/,/g, ""));
