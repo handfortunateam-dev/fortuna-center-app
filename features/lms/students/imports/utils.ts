@@ -240,24 +240,20 @@ export const parseExcelDate = (value: unknown, fallbackYear?: number): string =>
             return `${year}-${month}-${day}`;
         }
 
-        // DD / MM / YYYY with optional spaces around slashes
-        // (e.g. "29 /4/ 2024", "13 /5 /2024", "30 /5/2024")
-        const spacedSlash = str.match(/^(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})$/);
-        if (spacedSlash) {
-            const day = spacedSlash[1].padStart(2, "0");
-            const month = spacedSlash[2].padStart(2, "0");
-            const year = spacedSlash[3];
+        // DD[/-]MM[/-]YYYY — unified pattern for both slash and dash separators,
+        // with optional spaces around them. Handles:
+        //   "13-1-1988"   (DD-M-YYYY, single-digit month/day with dash)
+        //   "16-06-1988"  (DD-MM-YYYY with dash)
+        //   "29 /4/ 2024" (DD / M / YYYY with spaces around slash)
+        //   "20/01/2025"  (DD/MM/YYYY no spaces)
+        const numericDMY = str.match(/^(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{4})$/);
+        if (numericDMY) {
+            const day = numericDMY[1].padStart(2, "0");
+            const month = numericDMY[2].padStart(2, "0");
+            const year = numericDMY[3];
             return `${year}-${month}-${day}`;
         }
 
-        // DD/MM/YYYY without spaces (e.g. "20/01/2025")
-        const ddmmyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (ddmmyyyy) {
-            const day = ddmmyyyy[1].padStart(2, "0");
-            const month = ddmmyyyy[2].padStart(2, "0");
-            const year = ddmmyyyy[3];
-            return `${year}-${month}-${day}`;
-        }
 
         // Last resort: let JS parse ISO strings (e.g. already-clean "2024-08-20")
         const d = new Date(str);
