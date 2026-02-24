@@ -82,6 +82,8 @@ export const EXCEL_COLUMN_MAP: Record<string, string | null> = {
     "PLACE & DATE OF BIRTH": "placeOfBirth",
     ADDRESS: "address",
     "PHONE NUMBER": "phone",
+    "TLP/HP": "phone",          // Indonesian: Telepon/HP
+    "NO. HP": "phone",
     "NAMA ORANG TUA": "phone", // dirty data variant where parents' name actually holds phone number
     "NAMA ORTU": "phone",
     "EDUCATION OR OCCUPATION": "__educationOrOccupation",
@@ -94,9 +96,12 @@ export const EXCEL_COLUMN_MAP: Record<string, string | null> = {
     "NAMA LENGKAP": "__fullName",
     "L/P": "gender",
     "TEMPAT TANGGAL LAHIR": "placeOfBirth",
+    "TEMPAT & TANGGAL LAHIR": "placeOfBirth",
     ALAMAT: "address",
     PEKERJAAN: "occupation",
     PENDIDIKAN: "education",
+    "PENDIDIKAN TERAKHIR": "education", // more specific variant
+    "PENDIDIKAN AKHIR": "education",
     __EMPTY: null, // skip: trailing empty columns (e.g. "PAS FOTO" note)
 };
 

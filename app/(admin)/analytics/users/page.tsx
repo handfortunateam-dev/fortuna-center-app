@@ -32,6 +32,7 @@ import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import StatCard from "@/components/ui/StatCard";
 import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 
 const COLORS = [
   "#3B82F6",
@@ -230,10 +231,10 @@ export default function AnalyticsUsersPage() {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 print:hidden">
         <div className="space-y-1">
           <Heading title="Users Analytics">Analytics Overview</Heading>
-          <p className="text-default-500 text-sm md:text-base max-w-2xl">
+          <Text className="text-default-500 text-sm md:text-base max-w-2xl">
             Real-time insights into user demographics, registrations, and
             behavioral trends across students and teachers.
-          </p>
+          </Text>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-2 bg-default-100 dark:bg-default-50 px-4 py-2 rounded-2xl text-xs font-semibold text-default-600 border border-divider">
