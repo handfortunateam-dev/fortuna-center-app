@@ -108,7 +108,7 @@ export const toTitleCase = (str: string): string =>
 /**
  * Convert an Excel serial date number or "DD-MMM-YY" string → "YYYY-MM-DD".
  */
-export const parseExcelDate = (value: unknown): string => {
+export const parseExcelDate = (value: unknown, fallbackYear?: number): string => {
     if (!value && value !== 0) return "";
 
     if (typeof value === "number") {
@@ -162,6 +162,35 @@ export const parseExcelDate = (value: unknown): string => {
             Dec: "12",
             Des: "12",
         };
+
+        // Full English month name + ordinal day suffix (1st, 2nd, 3rd, 4th … 31st)
+        // Handles:
+        //   "January 3rd, 2017"  → 2017-01-03
+        //   "January 10th, 2017" → 2017-01-10
+        //   "January, 7th"       → uses fallbackYear (year from NO. INDUK)
+        //   "January 9th"        → uses fallbackYear
+        //   "January 22nd"       → uses fallbackYear
+        const FULL_MONTH_MAP: Record<string, string> = {
+            january: "01", february: "02", march: "03", april: "04",
+            may: "05", june: "06", july: "07", august: "08",
+            september: "09", october: "10", november: "11", december: "12",
+        };
+        // Pattern: "January, 7th" | "January 9th" | "January 3rd, 2017" | "January 3rd 2017"
+        const longOrdinal = str.match(
+            /^([A-Za-z]+),?\s+(\d{1,2})(?:st|nd|rd|th)(?:[,\s]+(\d{4}))?$/i,
+        );
+        if (longOrdinal) {
+            const month = FULL_MONTH_MAP[longOrdinal[1].toLowerCase()];
+            if (month) {
+                const day = longOrdinal[2].padStart(2, "0");
+                const rawYear = longOrdinal[3]
+                    ? longOrdinal[3]
+                    : fallbackYear
+                        ? String(fallbackYear)
+                        : "";
+                if (rawYear) return `${rawYear}-${month}-${day}`;
+            }
+        }
 
         // YYYY-MM-DD or YYYY/MM/DD (ISO / ISO-like)
         // (e.g. "2024-08-20")

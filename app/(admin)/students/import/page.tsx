@@ -141,6 +141,21 @@ export default function ImportStudentsPage() {
       const dataWithKeys = filteredData.map((row, index) => {
         const normalized: Record<string, unknown> = {};
 
+        // ── Extract fallback year from NO. INDUK before processing columns ──
+        // NO. INDUK format: "15.821/I/2021" — year is the 4-digit number after
+        // the last "/" (Roman-numeral month separator).
+        // This fallback is used when TGL. REGISTRASI has no year (e.g. "January, 7th").
+        let fallbackYear: number | undefined;
+        if (isKnownExcelFormat) {
+          for (const [rk, rv] of Object.entries(row)) {
+            if (rk.trim().toUpperCase().includes("INDUK")) {
+              const ym = String(rv ?? "").match(/\/(\d{4})$/);
+              if (ym) fallbackYear = parseInt(ym[1]);
+              break;
+            }
+          }
+        }
+
         for (const [rawKey, value] of Object.entries(row)) {
           const upperKey = rawKey.trim().toUpperCase();
 
@@ -164,7 +179,7 @@ export default function ImportStudentsPage() {
               normalized.education = education;
               normalized.occupation = occupation;
             } else if (mappedKey === "registrationDate") {
-              normalized.registrationDate = parseExcelDate(value);
+              normalized.registrationDate = parseExcelDate(value, fallbackYear);
             } else if (mappedKey === "gender") {
               normalized.gender = normalizeGender(value);
             } else if (mappedKey === "phone") {
@@ -199,7 +214,7 @@ export default function ImportStudentsPage() {
             ) {
               // When re-importing a failed-rows Excel export, xlsx converts ISO date strings
               // (e.g. "2015-02-23") to Excel serial numbers (e.g. 42058). Parse them back.
-              normalized[camelKey] = parseExcelDate(value);
+              normalized[camelKey] = parseExcelDate(value, fallbackYear);
             } else {
               normalized[camelKey] = value;
             }
