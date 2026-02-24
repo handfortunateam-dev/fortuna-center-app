@@ -120,6 +120,15 @@ export const parseExcelDate = (value: unknown): string => {
         return `${y}-${m}-${d}`;
     }
 
+    // When XLSX.read is called with cellDates:true, date cells come as JS Date objects
+    if (value instanceof Date) {
+        if (isNaN(value.getTime())) return "";
+        const y = value.getUTCFullYear();
+        const m = String(value.getUTCMonth() + 1).padStart(2, "0");
+        const d = String(value.getUTCDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }
+
     if (typeof value === "string") {
         const str = value.trim();
         const MONTH_MAP: Record<string, string> = {
@@ -155,6 +164,15 @@ export const parseExcelDate = (value: unknown): string => {
                         ? `19${match[3]}`
                         : `20${match[3]}`
                     : match[3];
+            return `${year}-${month}-${day}`;
+        }
+        // DD / MM / YYYY with optional spaces around slashes
+        // (e.g. "29 /4/ 2024", "13 /5 /2024", "20 /1/2024")
+        const spacedSlash = str.match(/^(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})$/);
+        if (spacedSlash) {
+            const day = spacedSlash[1].padStart(2, "0");
+            const month = spacedSlash[2].padStart(2, "0");
+            const year = spacedSlash[3];
             return `${year}-${month}-${day}`;
         }
         // DD/MM/YYYY (e.g. "20/01/2025") — JS Date() would parse this wrong as MM/DD
