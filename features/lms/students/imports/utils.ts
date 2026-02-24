@@ -132,16 +132,22 @@ export const parseExcelDate = (value: unknown, fallbackYear?: number): string =>
     if (typeof value === "string") {
         const raw = value.trim();
 
-        // ── Pre-clean: strip trailing annotations separated by whitespace ──────
-        // Handles dirty data like:
-        //   "30 /5/2024  DOP ( 3)"  → "30 /5/2024"
-        //   "25 /6 /2024 DOP = 21"  → "25 /6 /2024"
-        // Strategy: extract the leading date-shaped token from the string.
+        // ── Step 1: Strip leading day-of-week prefix (English & Indonesian) ──
+        // "Friday, 02 January 2015"    → "02 January 2015"
+        // "Wednesday, 07 January 2015" → "07 January 2015"
+        // "Senin, 12 Januari 2015"     → "12 Januari 2015"
+        const withoutDay = raw.replace(
+            /^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Senin|Selasa|Rabu|Kamis|Jumat|Sabtu|Minggu),?\s*/i,
+            "",
+        );
+
+        // ── Step 2: Strip trailing annotations (e.g. "30 /5/2024  DOP ( 3)") ─
         // Priority order: ISO (YYYY-MM-DD) > numeric D/M/Y > named-month D-MMM-Y
-        const leadingDateMatch = raw.match(
+        const leadingDateMatch = withoutDay.match(
             /^(\d{4}[-\/]\d{1,2}[-\/]\d{1,2}|\d{1,2}\s*[\/\-]\s*\d{1,2}\s*[\/\-]\s*\d{4}|\d{1,2}[-\/\s][A-Za-z]{3,}[-\/\s]\d{2,4})(?=\s|$)/,
         );
-        const str = leadingDateMatch ? leadingDateMatch[1].trim() : raw;
+        const str = leadingDateMatch ? leadingDateMatch[1].trim() : withoutDay;
+
 
         const MONTH_MAP: Record<string, string> = {
             Jan: "01",
@@ -165,19 +171,29 @@ export const parseExcelDate = (value: unknown, fallbackYear?: number): string =>
 
         // Full English month name + ordinal day suffix (1st, 2nd, 3rd, 4th … 31st)
         // Handles:
-        //   "January 3rd, 2017"  → 2017-01-03
-        //   "January 10th, 2017" → 2017-01-10
-        //   "January, 7th"       → uses fallbackYear (year from NO. INDUK)
-        //   "January 9th"        → uses fallbackYear
-        //   "January 22nd"       → uses fallbackYear
+        //   "January 3rd, 2017"   → 2017-01-03
+        //   "June , 9th 2016"     → 2016-06-09  (space before comma)
+        //   "June,13th 2016"      → 2016-06-13  (no space after comma)
+        //   "November2nd, 2016"   → 2016-11-02  (no space between month+day)
+        //   "September7th, 2016"  → 2016-09-07
+        //   "January4th, 2017"    → 2017-01-04
+        //   "January, 7th"        → uses fallbackYear
+        //   "January 9th"         → uses fallbackYear
+        //   "September"           → "" (incomplete / no day)
         const FULL_MONTH_MAP: Record<string, string> = {
             january: "01", february: "02", march: "03", april: "04",
             may: "05", june: "06", july: "07", august: "08",
             september: "09", october: "10", november: "11", december: "12",
         };
-        // Pattern: "January, 7th" | "January 9th" | "January 3rd, 2017" | "January 3rd 2017"
+
+        // Guard: just a bare month name with no day — can't be a valid date
+        if (FULL_MONTH_MAP[str.toLowerCase()]) return "";
+
+        // Key change vs previous: \s*,?\s* instead of ,?\s+
+        //   • \s* before ,? → allows "June , 9th" (space before comma)
+        //   • \s* after  ,? → allows "November2nd" (zero space between month and day)
         const longOrdinal = str.match(
-            /^([A-Za-z]+),?\s+(\d{1,2})(?:st|nd|rd|th)(?:[,\s]+(\d{4}))?$/i,
+            /^([A-Za-z]+)\s*,?\s*(\d{1,2})(?:st|nd|rd|th)(?:[,\s]+(\d{4}))?$/i,
         );
         if (longOrdinal) {
             const month = FULL_MONTH_MAP[longOrdinal[1].toLowerCase()];
@@ -191,6 +207,7 @@ export const parseExcelDate = (value: unknown, fallbackYear?: number): string =>
                 if (rawYear) return `${rawYear}-${month}-${day}`;
             }
         }
+
 
         // YYYY-MM-DD or YYYY/MM/DD (ISO / ISO-like)
         // (e.g. "2024-08-20")
