@@ -83,8 +83,8 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
 
   return (
     <CardWrapper
-      title="Activity Logs"
-      description="Latest learning and streaming activities"
+      title="Recent Classes"
+      description="Recently created LMS classes"
       titleSize="xl"
       className="h-full"
       headerPadding="p-6 pb-0"
@@ -105,7 +105,7 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
         </Tabs>
       </div>
 
-      <div className="space-y-3 min-h-[300px]">
+      <div className="overflow-y-auto max-h-[440px] space-y-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-default-100 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-default-300">
         {activeType === "classes" && (
           <>
             {lmsLoading ? (
@@ -125,18 +125,20 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
                   index={idx}
                   className="flex items-center gap-4 p-3 rounded-xl bg-default-50 hover:bg-default-100 border border-default-200 transition-all group cursor-pointer"
                 >
+                  {/* Class icon — book style, no play/stop streaming icon */}
                   <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center ${session.isActive ? "bg-blue-500/10" : "bg-default-200/50"}`}
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                      session.isActive ? "bg-primary/10" : "bg-default-100"
+                    }`}
                   >
                     <Icon
-                      icon={
-                        session.isActive
-                          ? "solar:play-circle-bold"
-                          : "solar:stop-circle-bold"
-                      }
-                      className={`text-2xl ${session.isActive ? "text-blue-500" : "text-default-400"}`}
+                      icon="solar:book-bookmark-bold"
+                      className={`text-2xl ${
+                        session.isActive ? "text-primary" : "text-default-400"
+                      }`}
                     />
                   </div>
+
                   <div className="flex-1 min-w-0">
                     <Heading
                       as="h3"
@@ -145,24 +147,32 @@ export default function RecentSessions({ limit = 5 }: RecentSessionsProps) {
                     >
                       {session.name}
                     </Heading>
-                    <div className="flex items-center gap-2">
-                      LMS
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        LMS
+                      </span>
                       <span className="text-xs text-default-400">
                         Code: {session.code}
                       </span>
                     </div>
                   </div>
-                  <div className="text-right">
+
+                  <div className="text-right shrink-0">
                     <span className="text-[10px] text-default-400 block mb-1">
                       {formatDistanceToNow(new Date(session.createdAt), {
                         addSuffix: true,
                       })}
                     </span>
-                    {session.isActive && (
-                      <span className="px-2 py-0.5 rounded-full bg-blue-500 text-white text-[9px] font-bold uppercase animate-pulse">
-                        Live
-                      </span>
-                    )}
+                    {/* Status chip — no LIVE badge, just Active / Inactive */}
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase ${
+                        session.isActive
+                          ? "bg-success/10 text-success border border-success/30"
+                          : "bg-default-100 text-default-400 border border-default-200"
+                      }`}
+                    >
+                      {session.isActive ? "Active" : "Inactive"}
+                    </span>
                   </div>
                 </ListItemMotion>
               ))
