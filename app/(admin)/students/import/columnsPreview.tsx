@@ -10,7 +10,8 @@ export const previewColumns: FormTableColumn[] = [
     key: "studentId",
     label: "ID / No Induk",
     type: "text",
-    minWidth: 140,
+    minWidth: 160,
+    placeholder: "Auto-generate (e.g. 20260001)",
   },
   {
     key: "registrationDate",
