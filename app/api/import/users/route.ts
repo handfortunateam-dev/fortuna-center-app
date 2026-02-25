@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       success: 0,
       failed: 0,
       errors: [] as string[],
-      failedRows: [] as any[], // New array to store failed rows along with reason
+      failedRows: [] as Record<string, unknown>[], // New array to store failed rows along with reason
     };
 
     const client = await clerkClient();
@@ -50,13 +50,13 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        if (!email || !firstName || !lastName) {
-          const msg = `Missing required fields (email, first name, last name)`;
+        if (!email || !firstName) {
+          const msg = `Missing required fields (email, first name)`;
           results.errors.push(`Row skipped: ${msg}`);
           currentFailedRow.Error = msg;
           results.failedRows.push(currentFailedRow);
           results.failed++;
-          continue; 
+          continue;
         }
 
         // Validate role
@@ -106,10 +106,12 @@ export async function POST(request: NextRequest) {
 
             clerkUser = await client.users.createUser(createUserParams);
             clerkId = clerkUser.id;
-          } catch (clerkError: any) {
-            let errorMessage = clerkError.errors?.[0]?.message || clerkError.message;
+          } catch (clerkError: unknown) {
+            const ce = clerkError as Record<string, unknown>;
+            const ceErrors = ce.errors as Array<Record<string, string>> | undefined;
+            let errorMessage: string = (ceErrors?.[0]?.message) || (ce.message as string) || "Unknown Clerk error";
             // Handle if user already exists in Clerk
-            if (clerkError.errors && clerkError.errors[0]?.code === "form_identifier_exists") {
+            if (ceErrors && ceErrors[0]?.code === "form_identifier_exists") {
               errorMessage = "User already exists in Clerk (but not in local DB)";
             }
 
@@ -127,14 +129,14 @@ export async function POST(request: NextRequest) {
         // Create user in DB
         await db.insert(users).values({
           email,
-          name: `${firstName} ${lastName}`,
+          name: `${firstName} ${lastName ?? ""}`.trim(),
           role: role as "ADMIN" | "TEACHER" | "STUDENT" | "ADMINISTRATIVE_EMPLOYEE",
           clerkId: clerkId,
           password: hashedPassword,
         });
 
         results.success++;
-      } catch (rowError: any) {
+      } catch (rowError: unknown) {
         console.error("Error processing row:", rowError);
         const errorMsg = rowError instanceof Error ? rowError.message : "Unknown error";
         results.failed++;
