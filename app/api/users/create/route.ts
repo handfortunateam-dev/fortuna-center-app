@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { isAdmin } from "@/lib/auth/getAuthUser";
+import { clerkClient } from "@clerk/nextjs/server";
+import { isAdmin, getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
 import { UserRole } from "@/enums/common";
@@ -17,10 +17,10 @@ interface CreateUserRequest {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if user is authenticated
-    const { userId } = await auth();
+    // Check if user is authenticated (supports both Clerk and Local)
+    const authenticatedUser = await getAuthUser();
 
-    if (!userId) {
+    if (!authenticatedUser) {
       return NextResponse.json(
         {
           success: false,
