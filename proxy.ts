@@ -1,4 +1,4 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkMiddleware } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { NextRequest } from 'next/server'
 import { adminSidebarNavigation, type AdminNavigationItem } from '@/config/navigationItem'
@@ -20,13 +20,24 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
     // Explicitly allow public API routes that don't need auth protection here
     // or handle them via matcher exclusions.
-    // Specifically allow /api/auth endpoints to be handled by Clerk or pass through
-    if (pathname.startsWith('/api/auth')) {
+    if (
+        pathname.startsWith('/api/auth') ||
+        pathname.startsWith('/api/webhooks/clerk') ||
+        pathname.startsWith('/api/auth/set-password')
+    ) {
         return NextResponse.next();
     }
 
+    // ── Already authenticated → redirect away from login page ────────────────
+    const localSession = request.cookies.get("local_session")?.value;
+    const isAuthenticated = !!userId || !!localSession;
+
+    if (isAuthenticated && pathname.startsWith('/auth/login')) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
     // If route is protected and user is not authenticated, redirect to home
-    if (isProtected && !userId) {
+    if (isProtected && !isAuthenticated) {
         return NextResponse.redirect(new URL('/', request.url))
     }
 

@@ -234,16 +234,53 @@ export async function PATCH(
         const { id } = await params;
         const body = await request.json();
 
+        // Trim & normalize string inputs
+        if (body.email) body.email = body.email.trim().toLowerCase();
+        if (body.firstName) body.firstName = body.firstName.trim();
+        if (body.lastName !== undefined) body.lastName = (body.lastName ?? "").trim();
+
         // Check if ID is a UUID (database ID) or Clerk ID
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
         if (isUUID) {
-            // Update database user directly
-            const updateData: { name?: string; email?: string; role?: UserRole; isAdminEmployeeAlso?: boolean } = {};
-            if (body.name) updateData.name = body.name;
-            if (body.email) updateData.email = body.email;
+            // Fetch the user from DB first to get clerkId
+            const userInDb = await db
+                .select()
+                .from(users)
+                .where(eq(users.id, id))
+                .limit(1);
+
+            if (!userInDb || userInDb.length === 0) {
+                return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+            }
+
+            const dbUser = userInDb[0];
+
+            // Update Clerk if clerkId exists
+            if (dbUser.clerkId) {
+                const client = await clerkClient();
+                const clerkUpdateParams: Parameters<typeof client.users.updateUser>[1] = {};
+                if (body.firstName !== undefined) clerkUpdateParams.firstName = body.firstName;
+                if (body.lastName !== undefined) clerkUpdateParams.lastName = body.lastName;
+                if (body.password) clerkUpdateParams.password = body.password;
+
+                if (Object.keys(clerkUpdateParams).length > 0) {
+                    await client.users.updateUser(dbUser.clerkId, clerkUpdateParams);
+                }
+            }
+
+            // Build DB update — form sends firstName + lastName, not name
+            const updateData: { name?: string; email?: string; role?: UserRole; isAdminEmployeeAlso?: boolean; password?: string } = {};
+            if (body.firstName !== undefined || body.lastName !== undefined) {
+                updateData.name = `${body.firstName || ""} ${body.lastName || ""}`.trim();
+            }
+            if (body.email) updateData.email = body.email.trim().toLowerCase();
             if (body.role !== undefined) updateData.role = body.role;
             if (body.isAdminEmployeeAlso !== undefined) updateData.isAdminEmployeeAlso = body.isAdminEmployeeAlso;
+            if (body.password) {
+                const bcrypt = await import("bcryptjs");
+                updateData.password = await bcrypt.hash(body.password, 10);
+            }
 
             const updatedUser = await db.update(users)
                 .set(updateData)
