@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { isAdmin } from "@/lib/auth/getAuthUser";
+import { clerkClient } from "@clerk/nextjs/server";
+import { isAdmin, getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
 import { teacherClasses } from "@/db/schema/teacher-class.schema";
@@ -18,9 +18,9 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId } = await auth();
+        const authenticatedUser = await getAuthUser();
 
-        if (!userId) {
+        if (!authenticatedUser) {
             return NextResponse.json(
                 {
                     success: false,
@@ -139,8 +139,8 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const authenticatedUser = await getAuthUser();
+        if (!authenticatedUser) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
@@ -221,8 +221,8 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const authenticatedUser = await getAuthUser();
+        if (!authenticatedUser) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 

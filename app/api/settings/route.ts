@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { settingsService } from "@/services/settingsService";
-import { isAdmin } from "@/lib/auth/getAuthUser";
+import { isAdmin, getAuthUser } from "@/lib/auth/getAuthUser";
 
 export async function GET(request: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const authenticatedUser = await getAuthUser();
+        if (!authenticatedUser) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
@@ -27,9 +26,9 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json({ success: true, data: settings });
-    } catch (error: any) {
+    } catch (error: unknown) {
         return NextResponse.json(
-            { success: false, message: error.message || "Failed to fetch settings" },
+            { success: false, message: error instanceof Error ? error.message : "Failed to fetch settings" },
             { status: 500 }
         );
     }
@@ -37,8 +36,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(req: Request) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const authenticatedUser = await getAuthUser();
+        if (!authenticatedUser) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
@@ -66,10 +65,10 @@ export async function POST(req: Request) {
             success: true,
             message: "Settings updated successfully",
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error updating settings:", error);
         return NextResponse.json(
-            { success: false, message: error.message || "Failed to update settings" },
+            { success: false, message: error instanceof Error ? error.message : "Failed to update settings" },
             { status: 500 }
         );
     }

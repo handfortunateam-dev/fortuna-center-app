@@ -1,12 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users } from "@/db/schema/users.schema";
 import { hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { clerkClient } from "@clerk/nextjs/server";
+import { isAdmin, getAuthUser } from "@/lib/auth/getAuthUser";
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if user is authenticated (supports both Clerk and Local)
+    const authenticatedUser = await getAuthUser();
+
+    if (!authenticatedUser) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Check admin access
+    const isUserAdmin = await isAdmin();
+    if (!isUserAdmin) {
+      return NextResponse.json(
+        { success: false, message: "Forbidden - Admin access required" },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { data, createUserAccounts } = body;
 
