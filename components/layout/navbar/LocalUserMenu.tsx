@@ -23,6 +23,7 @@ import { Toast } from "@/components/toast";
 import { useClerk } from "@clerk/nextjs";
 import { useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/lib/axios";
+import { Text } from "@/components/text";
 
 export default function LocalUserMenu() {
   const { user, loading } = useGetIdentity();
@@ -35,33 +36,39 @@ export default function LocalUserMenu() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // 1. Destroy local session (if any)
+      // 1. Destroy local session cookie
       await apiClient.post("/auth/logout");
 
-      // 2. Cancel any in-flight queries to prevent them from re-populating the
-      //    cache with the old user's data after we clear it.
-      await queryClient.cancelQueries();
+      // 2. Set identity to null immediately → AuthButtons re-renders NOW
+      //    (Dashboard button disappears before the redirect)
+      queryClient.setQueryData(["identity"], null);
 
-      // 3. Clear query cache so the next user gets a fresh fetch
+      // 3. Cancel in-flight queries & clear the full cache
+      await queryClient.cancelQueries();
       queryClient.clear();
 
-      // 4. Clear persisted role-view state so the next user doesn't inherit it
+      // 4. Clear persisted role-view state
       if (typeof window !== "undefined") {
         localStorage.removeItem("multiRoleView");
         document.cookie = "multiRoleView=; path=/; max-age=0";
       }
-
-      // 5. Destroy Clerk session & redirect
-      await signOut(() => router.push("/auth/login"));
 
       Toast({
         title: "Success",
         description: "Logged out successfully",
         color: "success",
       });
+
+      // 5. Sign out of Clerk (if active) then redirect, otherwise just redirect
+      try {
+        await signOut();
+      } catch {
+        // User has no Clerk session (local auth mode) — that's fine, just redirect
+      }
+
+      router.push("/auth/login");
     } catch (error) {
       console.error("Logout failed", error);
-      // Fallback redirect
       router.push("/auth/login");
     } finally {
       setIsLoggingOut(false);
@@ -89,8 +96,8 @@ export default function LocalUserMenu() {
         </DropdownTrigger>
         <DropdownMenu aria-label="Profile Actions" variant="flat">
           <DropdownItem key="profile" className="h-14 gap-2">
-            <p className="font-semibold">Signed in as</p>
-            <p className="font-semibold">{user.email}</p>
+            <Text className="font-semibold">Signed in as</Text>
+            <Text className="font-semibold">{user.email}</Text>
           </DropdownItem>
           <DropdownItem
             key="settings"
@@ -108,9 +115,9 @@ export default function LocalUserMenu() {
         <ModalContent>
           <ModalHeader>Confirm Logout</ModalHeader>
           <ModalBody>
-            <p className="text-gray-600 dark:text-gray-400">
+            <Text className="text-gray-600 dark:text-gray-400">
               Are you sure you want to log out?
-            </p>
+            </Text>
           </ModalBody>
           <ModalFooter>
             <Button variant="light" onPress={onClose} isDisabled={isLoggingOut}>

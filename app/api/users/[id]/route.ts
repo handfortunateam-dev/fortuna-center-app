@@ -234,6 +234,11 @@ export async function PATCH(
         const { id } = await params;
         const body = await request.json();
 
+        // Trim & normalize string inputs
+        if (body.email) body.email = body.email.trim().toLowerCase();
+        if (body.firstName) body.firstName = body.firstName.trim();
+        if (body.lastName !== undefined) body.lastName = (body.lastName ?? "").trim();
+
         // Check if ID is a UUID (database ID) or Clerk ID
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
@@ -269,7 +274,7 @@ export async function PATCH(
             if (body.firstName !== undefined || body.lastName !== undefined) {
                 updateData.name = `${body.firstName || ""} ${body.lastName || ""}`.trim();
             }
-            if (body.email) updateData.email = body.email;
+            if (body.email) updateData.email = body.email.trim().toLowerCase();
             if (body.role !== undefined) updateData.role = body.role;
             if (body.isAdminEmployeeAlso !== undefined) updateData.isAdminEmployeeAlso = body.isAdminEmployeeAlso;
             if (body.password) {

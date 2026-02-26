@@ -3,11 +3,12 @@ import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import { nanoid } from "nanoid";
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, password } = await req.json();
+        const body = await req.json();
+        const email = (body.email ?? "").trim().toLowerCase();
+        const password = (body.password ?? "").trim();
 
         if (!email || !password) {
             return NextResponse.json({ success: false, message: "Missing email or password" }, { status: 400 });
@@ -31,12 +32,26 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: "Invalid credentials" }, { status: 401 });
         }
 
-        // TODO: Issue session cookie or JWT here
-        // For now, simple success response
-        return NextResponse.json({ success: true, user: { id: user.id, name: user.name, role: user.role } });
+        // ── Set session cookie ────────────────────────────────────────────────
+        const response = NextResponse.json({
+            success: true,
+            user: { id: user.id, name: user.name, role: user.role, email: user.email },
+        });
 
-    } catch (error: any) {
+        // HttpOnly so JS can't read it (XSS safe), Secure in production
+        response.cookies.set("local_session", user.id, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+        });
+
+        return response;
+
+    } catch (error: unknown) {
         console.error("Login error:", error);
         return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
     }
 }
+

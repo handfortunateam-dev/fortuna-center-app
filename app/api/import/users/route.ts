@@ -34,11 +34,11 @@ export async function POST(request: NextRequest) {
 
       try {
         // Flexible mapping to support various header formats
-        const email = row.email || row["Email"] || row.EMAIL;
-        const password = row.password || row["Password"] || row.PASSWORD;
-        const firstName = row.firstName || row["First Name"] || row.firstname || row["first name"];
-        const lastName = row.lastName || row["Last Name"] || row.lastname || row["last name"];
-        const role = (row.role || row["Role"] || row.ROLE || "STUDENT").toUpperCase();
+        const email = (row.email || row["Email"] || row.EMAIL || "").toString().trim().toLowerCase();
+        const password = (row.password || row["Password"] || row.PASSWORD || "").toString().trim();
+        const firstName = (row.firstName || row["First Name"] || row.firstname || row["first name"] || "").toString().trim();
+        const lastName = (row.lastName || row["Last Name"] || row.lastname || row["last name"] || "").toString().trim();
+        const role = (row.role || row["Role"] || row.ROLE || "STUDENT").toString().trim().toUpperCase();
 
         // Validate required fields
         if (createUserAccounts && !password) {

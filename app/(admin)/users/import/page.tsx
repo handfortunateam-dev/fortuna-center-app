@@ -26,7 +26,7 @@ import { UserRole } from "@/enums/common";
 interface ImportResult {
   success: boolean;
   message: string;
-  details?: {
+  details?: { 
     success: number;
     failed: number;
     errors: string[];

@@ -23,10 +23,15 @@ import {
   Tab,
   RadioGroup,
   Radio,
+  Chip,
+  Kbd,
+  Tooltip,
 } from "@heroui/react";
 import { useForm, Controller } from "react-hook-form";
 import { Toast } from "@/components/toast";
 import { Icon } from "@iconify/react";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 
 interface EditFormValues {
   key: string;
@@ -85,7 +90,11 @@ export default function SettingsPage() {
       onClose(); // Close modal on success for generic wrapper
     },
     onError: (err: unknown) => {
-      Toast({ title: "Error", description: (err as Error).message, color: "danger" });
+      Toast({
+        title: "Error",
+        description: (err as Error).message,
+        color: "danger",
+      });
     },
   });
 
@@ -127,19 +136,57 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const unwrapped = unwrapValue(allowedIpsSetting?.value);
-    let displayValue = "";
+    let ips: string[] = [];
     if (Array.isArray(unwrapped)) {
-      displayValue = unwrapped.join(", ");
-    } else if (typeof unwrapped === "string") {
-      displayValue = unwrapped;
-    } else if (unwrapped) {
-      displayValue = String(unwrapped);
+      ips = unwrapped.map(String).filter(Boolean);
+    } else if (typeof unwrapped === "string" && unwrapped.trim()) {
+      ips = unwrapped
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
     }
-
     if (allowedIpsSetting?.value) {
-      setIpInput(displayValue);
+      setIpInput(ips.join(", "));
     }
   }, [allowedIpsSetting]);
+
+  // Derived list of IPs from the raw ipInput string
+  const parsedIps = useMemo(
+    () =>
+      ipInput
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    [ipInput],
+  );
+
+  const [ipFieldValue, setIpFieldValue] = useState("");
+  const [ipFieldError, setIpFieldError] = useState("");
+
+  const isValidIp = (ip: string) =>
+    /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) &&
+    ip.split(".").every((n) => parseInt(n) <= 255);
+
+  const addIp = (raw: string) => {
+    const ip = raw.trim().replace(/,+$/, "");
+    if (!ip) return;
+    if (!isValidIp(ip)) {
+      setIpFieldError(`"${ip}" is not a valid IPv4 address`);
+      return;
+    }
+    if (parsedIps.includes(ip)) {
+      setIpFieldError(`"${ip}" is already in the list`);
+      return;
+    }
+    setIpInput((prev) => (prev.trim() ? `${prev.trim()}, ${ip}` : ip));
+    setIpFieldValue("");
+    setIpFieldError("");
+  };
+
+  const removeIp = (ip: string) => {
+    const updated = parsedIps.filter((p) => p !== ip);
+    setIpInput(updated.join(", "));
+  };
 
   const [detectingIp, setDetectingIp] = useState(false);
 
@@ -240,10 +287,10 @@ export default function SettingsPage() {
   return (
     <div className="max-w-7xl mx-auto space-y-6 p-4 md:p-0">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">System Settings</h1>
-        <p className="text-default-500">
+        <Heading className="text-2xl font-bold">System Settings</Heading>
+        <Text className="text-default-500">
           Manage global configurations and maintenance mode.
-        </p>
+        </Text>
       </div>
 
       <Tabs
@@ -271,30 +318,34 @@ export default function SettingsPage() {
         >
           <div className="mt-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
             <div className="mb-4">
-              <h2 className="text-2xl font-bold">Maintenance Mode</h2>
-              <p className="text-default-500">
+              <Heading className="text-2xl font-bold">Maintenance Mode</Heading>
+              <Text className="text-default-500">
                 Control access to your site during downtime.
-              </p>
+              </Text>
             </div>
 
             <Card className="bg-default-50 border-default-200 border shadow-none">
               <CardBody className="gap-6 p-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <Icon
-                        icon="solar:power-bold"
-                        className={
-                          isMaintenanceOn ? "text-danger" : "text-success"
-                        }
-                      />
+                    <Heading
+                      startContent={
+                        <Icon
+                          icon="solar:power-bold"
+                          className={
+                            isMaintenanceOn ? "text-danger" : "text-success"
+                          }
+                        />
+                      }
+                      className="text-lg font-semibold flex items-center gap-2"
+                    >
                       Site Status: {isMaintenanceOn ? "Offline" : "Online"}
-                    </h3>
-                    <p className="text-default-500 text-sm mt-1">
+                    </Heading>
+                    <Text className="text-default-500 text-sm mt-1">
                       {isMaintenanceOn
                         ? "Your site is currently in maintenance mode. Only administrators and whitelisted IPs can access it."
                         : "Your site is publicly accessible."}
-                    </p>
+                    </Text>
                   </div>
                   <Switch
                     isSelected={isMaintenanceOn}
@@ -324,41 +375,151 @@ export default function SettingsPage() {
 
                 <Divider className="my-2" />
 
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">Whitelisted IPs</label>
-                  <p className="text-xs text-default-400">
-                    Enter valid IP addresses separated by commas. These IPs will
-                    bypass maintenance mode.
-                  </p>
-                  <div className="flex flex-col gap-2">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-sm font-semibold">
+                        Whitelisted IPs
+                      </label>
+                      <Text className="text-xs text-default-400 mt-0.5">
+                        Only these IPs can access the site while maintenance
+                        mode is active.
+                      </Text>
+                    </div>
+                    <Tooltip content="Open whatismyip.com to find your public IP">
+                      <a
+                        href="https://www.whatismyip.com"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <Icon
+                          icon="lucide:external-link"
+                          className="w-3.5 h-3.5"
+                        />
+                        Find your IP
+                      </a>
+                    </Tooltip>
+                  </div>
+
+                  {/* IP chip list */}
+                  <div className="min-h-[48px] flex flex-wrap gap-2 p-3 rounded-xl border border-default-200 bg-default-50 dark:bg-default-100/5">
+                    {parsedIps.length === 0 ? (
+                      <span className="text-xs text-default-400 italic self-center">
+                        No IPs whitelisted yet — add one below
+                      </span>
+                    ) : (
+                      parsedIps.map((ip) => (
+                        <Chip
+                          key={ip}
+                          variant="flat"
+                          color="primary"
+                          size="sm"
+                          onClose={() => removeIp(ip)}
+                          classNames={{ base: "font-mono text-xs" }}
+                          startContent={
+                            <Icon icon="lucide:shield" className="w-3 h-3" />
+                          }
+                        >
+                          {ip}
+                        </Chip>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Add IP field */}
+                  <div className="flex flex-col gap-1">
                     <Input
-                      placeholder="Examples: 127.0.0.1, 192.168.0.1"
-                      value={ipInput}
-                      onValueChange={setIpInput}
-                      fullWidth
+                      placeholder="e.g. 192.168.1.1"
+                      value={ipFieldValue}
+                      onValueChange={(v) => {
+                        setIpFieldValue(v);
+                        setIpFieldError("");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === ",") {
+                          e.preventDefault();
+                          addIp(ipFieldValue);
+                        }
+                      }}
+                      isInvalid={!!ipFieldError}
+                      errorMessage={ipFieldError}
                       variant="faded"
+                      size="sm"
+                      endContent={
+                        <div className="flex items-center gap-1 text-default-400">
+                          <Kbd keys={["enter"]} className="text-[10px]" />
+                          <span className="text-[10px]">or comma to add</span>
+                        </div>
+                      }
                     />
-                    <div className="flex gap-2">
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      color="primary"
+                      startContent={
+                        <Icon icon="lucide:plus" className="w-3.5 h-3.5" />
+                      }
+                      onPress={() => addIp(ipFieldValue)}
+                      isDisabled={!ipFieldValue.trim()}
+                    >
+                      Add IP
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      color="secondary"
+                      startContent={
+                        <Icon icon="solar:laptop-minimalistic-bold" />
+                      }
+                      onPress={handleDetectIp}
+                      isLoading={detectingIp}
+                    >
+                      Add My Current IP
+                    </Button>
+                    <div className="ml-auto flex gap-2">
+                      {parsedIps.length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="danger"
+                          startContent={
+                            <Icon
+                              icon="lucide:trash-2"
+                              className="w-3.5 h-3.5"
+                            />
+                          }
+                          onPress={() => setIpInput("")}
+                        >
+                          Clear All
+                        </Button>
+                      )}
                       <Button
+                        size="sm"
                         color="primary"
                         onPress={saveIps}
                         isLoading={updateMutation.isPending}
+                        startContent={
+                          <Icon icon="lucide:save" className="w-3.5 h-3.5" />
+                        }
                       >
                         Save Changes
                       </Button>
-                      <Button
-                        variant="flat"
-                        color="secondary"
-                        startContent={
-                          <Icon icon="solar:laptop-minimalistic-bold" />
-                        }
-                        onPress={handleDetectIp}
-                        isLoading={detectingIp}
-                      >
-                        Add My Current IP
-                      </Button>
                     </div>
                   </div>
+
+                  {parsedIps.length > 0 && (
+                    <Text className="text-[11px] text-default-400">
+                      {parsedIps.length} IP{parsedIps.length !== 1 ? "s" : ""}{" "}
+                      whitelisted
+                      {" · "}
+                      Click the ✕ on any chip to remove it, then Save Changes.
+                    </Text>
+                  )}
                 </div>
               </CardBody>
             </Card>

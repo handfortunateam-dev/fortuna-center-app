@@ -146,14 +146,15 @@ export default function MySettingsPage() {
                     placeholder="Your email address"
                     variant="bordered"
                     type="email"
-                    {...register("email", { required: true })}
+                    isDisabled
+                    {...register("email")}
                     startContent={
                       <Icon
                         icon="solar:letter-bold"
                         className="text-default-400"
                       />
                     }
-                    description="Changing email might require re-verification in future updates."
+                    description="Email changes are currently not supported. Please contact your administrator."
                   />
                 </div>
               </div>

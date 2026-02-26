@@ -45,6 +45,11 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const body: CreateUserRequest = await request.json();
 
+    // Trim & normalize inputs — prevents whitespace from sneaking into DB/Clerk
+    body.email = (body.email ?? "").trim().toLowerCase();
+    if (body.firstName) body.firstName = body.firstName.trim();
+    if (body.lastName) body.lastName = (body.lastName ?? "").trim();
+
     // Validate required fields
     if (!body.email || !body.firstName || !body.password || !body.role) {
       return NextResponse.json(
