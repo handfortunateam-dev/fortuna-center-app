@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { classSchedules, scheduleTeachers, users, classes } from "@/db/schema";
+import { classSchedules, scheduleTeachers, classes } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import { users } from "@/db/schema/users.schema";
 
 // GET - List all schedules with filters
 export async function GET(request: NextRequest) {
@@ -76,14 +77,9 @@ export async function GET(request: NextRequest) {
 // POST - Create new schedule
 export async function POST(request: NextRequest) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
-            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-        }
-
-        const [user] = await db.select().from(users).where(eq(users.clerkId, clerkUserId)).limit(1);
+        const user = await getAuthUser();
         if (!user) {
-            return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
@@ -105,21 +101,32 @@ export async function POST(request: NextRequest) {
                 .returning();
 
             // Insert schedule_teachers
-            if (teacherIds && teacherIds.length > 0) {
-                await tx.insert(scheduleTeachers).values(
-                    teacherIds.map((tid: string) => ({
-                        scheduleId: created.id,
-                        teacherId: tid,
-                        assignedBy: user.id,
-                    }))
-                );
+            if (teacherIds) {
+                // Ensure array format
+                let teachersArray: string[] = [];
+                if (Array.isArray(teacherIds)) {
+                    teachersArray = teacherIds;
+                } else if (typeof teacherIds === "string") {
+                    // Handle comma-separated string or a single ID string
+                    teachersArray = teacherIds.split(",").map(id => id.trim()).filter(Boolean);
+                }
+
+                if (teachersArray.length > 0) {
+                    await tx.insert(scheduleTeachers).values(
+                        teachersArray.map((tid: string) => ({
+                            scheduleId: created.id,
+                            teacherId: tid,
+                            assignedBy: user.id,
+                        }))
+                    );
+                }
             }
 
             return created;
         });
 
         return NextResponse.json({ success: true, data: result }, { status: 201 });
-    } catch {
-        return NextResponse.json({ success: false, message: "Failed to create schedule" }, { status: 500 });
+    } catch (error) {
+        return NextResponse.json({ success: false, message: "Failed to create schedule", error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
     }
 }

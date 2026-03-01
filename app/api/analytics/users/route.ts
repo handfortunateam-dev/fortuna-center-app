@@ -22,7 +22,7 @@ export async function GET() {
             .from(users)
             .groupBy(users.role);
 
-        // 3. Student registrations over time from registrationDate
+        // 3. Student registrations over time from registrationDate (monthly)
         const registrationsData = await db
             .select({
                 month: sql<string>`to_char(${students.registrationDate}, 'YYYY-MM')`,
@@ -32,6 +32,38 @@ export async function GET() {
             .where(isNotNull(students.registrationDate))
             .groupBy(sql`to_char(${students.registrationDate}, 'YYYY-MM')`)
             .orderBy(sql`to_char(${students.registrationDate}, 'YYYY-MM')`);
+
+        // Yearly registrations
+        const registrationsByYearData = await db
+            .select({
+                year: sql<string>`to_char(${students.registrationDate}, 'YYYY')`,
+                count: sql<number>`count(*)`
+            })
+            .from(students)
+            .where(isNotNull(students.registrationDate))
+            .groupBy(sql`to_char(${students.registrationDate}, 'YYYY')`)
+            .orderBy(sql`to_char(${students.registrationDate}, 'YYYY')`);
+
+        // Quarterly registrations
+        const registrationsByQuarterData = await db
+            .select({
+                quarter: sql<string>`to_char(${students.registrationDate}, 'YYYY') || '-Q' || to_char(${students.registrationDate}, 'Q')`,
+                count: sql<number>`count(*)`
+            })
+            .from(students)
+            .where(isNotNull(students.registrationDate))
+            .groupBy(sql`to_char(${students.registrationDate}, 'YYYY') || '-Q' || to_char(${students.registrationDate}, 'Q')`)
+            .orderBy(sql`to_char(${students.registrationDate}, 'YYYY') || '-Q' || to_char(${students.registrationDate}, 'Q')`);
+
+        // Place of birth distribution (NULL + empty string → "Unknown/Missing")
+        const studentPlaceOfBirthData = await db
+            .select({
+                name: sql<string>`COALESCE(NULLIF(TRIM(${students.placeOfBirth}), ''), 'Unknown/Missing')`,
+                value: sql<number>`count(*)`
+            })
+            .from(students)
+            .groupBy(sql`COALESCE(NULLIF(TRIM(${students.placeOfBirth}), ''), 'Unknown/Missing')`)
+            .orderBy(sql`count(*) DESC`);
 
         // 4. Students analytics
         const studentGenderData = await db
@@ -45,21 +77,21 @@ export async function GET() {
 
         const studentEducationData = await db
             .select({
-                name: students.education,
+                name: sql<string>`COALESCE(${students.education}, 'Unknown/Missing')`,
                 value: sql<number>`count(*)`
             })
             .from(students)
-            .where(isNotNull(students.education))
-            .groupBy(students.education);
+            .groupBy(sql`COALESCE(${students.education}, 'Unknown/Missing')`)
+            .orderBy(sql`count(*) DESC`);
 
         const studentOccupationData = await db
             .select({
-                name: students.occupation,
+                name: sql<string>`COALESCE(${students.occupation}, 'Unknown/Missing')`,
                 value: sql<number>`count(*)`
             })
             .from(students)
-            .where(isNotNull(students.occupation))
-            .groupBy(students.occupation);
+            .groupBy(sql`COALESCE(${students.occupation}, 'Unknown/Missing')`)
+            .orderBy(sql`count(*) DESC`);
 
         const studentStatusData = await db
             .select({
@@ -82,6 +114,7 @@ export async function GET() {
             .select({
                 name: sql<string>`
                     CASE 
+                        WHEN ${students.dateOfBirth} IS NULL THEN 'Unknown/Missing'
                         WHEN EXTRACT(YEAR FROM age(current_date, ${students.dateOfBirth})) < 18 THEN '< 18'
                         WHEN EXTRACT(YEAR FROM age(current_date, ${students.dateOfBirth})) BETWEEN 18 AND 24 THEN '18-24'
                         WHEN EXTRACT(YEAR FROM age(current_date, ${students.dateOfBirth})) BETWEEN 25 AND 34 THEN '25-34'
@@ -92,9 +125,9 @@ export async function GET() {
                 value: sql<number>`count(*)`
             })
             .from(students)
-            .where(isNotNull(students.dateOfBirth))
             .groupBy(sql`
                     CASE 
+                        WHEN ${students.dateOfBirth} IS NULL THEN 'Unknown/Missing'
                         WHEN EXTRACT(YEAR FROM age(current_date, ${students.dateOfBirth})) < 18 THEN '< 18'
                         WHEN EXTRACT(YEAR FROM age(current_date, ${students.dateOfBirth})) BETWEEN 18 AND 24 THEN '18-24'
                         WHEN EXTRACT(YEAR FROM age(current_date, ${students.dateOfBirth})) BETWEEN 25 AND 34 THEN '25-34'
@@ -166,12 +199,15 @@ export async function GET() {
                 },
                 usersByRole: rolesData.map(r => ({ ...r, value: Number(r.value) })),
                 registrations: registrationsData.map(r => ({ name: r.month, users: Number(r.count) })),
+                registrationsByYear: registrationsByYearData.map(r => ({ name: r.year, users: Number(r.count) })),
+                registrationsByQuarter: registrationsByQuarterData.map(r => ({ name: r.quarter, users: Number(r.count) })),
                 students: {
                     gender: studentGenderData.map(r => ({ ...r, value: Number(r.value) })),
                     education: studentEducationData.map(r => ({ ...r, value: Number(r.value) })),
                     occupation: studentOccupationData.map(r => ({ ...r, value: Number(r.value) })),
                     status: studentStatusData.map(r => ({ ...r, value: Number(r.value) })),
                     ages: studentAgeData.map(r => ({ ...r, value: Number(r.value) })),
+                    placeOfBirth: studentPlaceOfBirthData.map(r => ({ ...r, value: Number(r.value) })),
                     avgAge: Math.round(Number(studentAvgAge) || 0)
                 },
                 teachers: {

@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Select, SelectItem, Input, Tabs, Tab } from "@heroui/react";
+import {
+  Button,
+  Autocomplete,
+  AutocompleteItem,
+  Input,
+  Tabs,
+  Tab,
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useScheduler } from "../context/SchedulerContext";
 import { SchedulerView } from "../types";
@@ -194,15 +201,18 @@ export function SchedulerHeader({
 
         {/* Teacher Filter */}
         {!hideTeacherFilter && (
-          <Select
+          <Autocomplete
             placeholder="All Teachers"
+            aria-label="All Teachers"
             size="sm"
-            className="w-full sm:w-40"
-            selectedKeys={filters.teacherId ? [filters.teacherId] : []}
-            onChange={(e) => handleTeacherFilter(e.target.value)}
+            className="w-full sm:w-48"
+            selectedKey={filters.teacherId || null}
+            onSelectionChange={(key) =>
+              handleTeacherFilter((key as string) || "")
+            }
           >
             {teachers.map((teacher) => (
-              <SelectItem key={teacher.id} textValue={teacher.name}>
+              <AutocompleteItem key={teacher.id} textValue={teacher.name}>
                 <div className="flex items-center gap-2">
                   <div
                     className="w-3 h-3 rounded-full"
@@ -210,25 +220,36 @@ export function SchedulerHeader({
                   />
                   {teacher.name}
                 </div>
-              </SelectItem>
+              </AutocompleteItem>
             ))}
-          </Select>
+          </Autocomplete>
         )}
 
         {/* Class Filter */}
-        <Select
+        <Autocomplete
           placeholder="All Classes"
+          aria-label="All Classes"
           size="sm"
-          className="w-full sm:w-40"
-          selectedKeys={filters.classId ? [filters.classId] : []}
-          onChange={(e) => handleClassFilter(e.target.value)}
+          className="w-full sm:w-48"
+          selectedKey={filters.classId || null}
+          onSelectionChange={(key) => handleClassFilter((key as string) || "")}
         >
           {classes.map((cls) => (
-            <SelectItem key={cls.id} textValue={cls.name}>
-              {cls.name}
-            </SelectItem>
+            <AutocompleteItem
+              key={cls.id}
+              textValue={cls.code ? `${cls.code} - ${cls.name}` : cls.name}
+            >
+              <div className="flex items-center justify-between gap-2 w-full">
+                <span className="truncate">{cls.name}</span>
+                {cls.code && (
+                  <span className="text-xs font-mono text-default-400 bg-default-100 px-1.5 py-0.5 rounded-md shrink-0">
+                    {cls.code}
+                  </span>
+                )}
+              </div>
+            </AutocompleteItem>
           ))}
-        </Select>
+        </Autocomplete>
 
         {/* Clear Filters */}
         {hasActiveFilters && (

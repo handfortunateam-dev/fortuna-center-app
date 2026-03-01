@@ -2,47 +2,32 @@
 
 import { useClasses } from "@/services/classesService";
 import { useStudents } from "@/services/studentsService";
-import { useQuery } from "@tanstack/react-query";
-import { getChannelStatistics, checkQuotaHealth } from "@/services/youtubeService";
+import { useTeachers } from "@/services/teachersService";
+import { useUsers } from "@/services/usersService";
+import { useSchedules } from "@/services/schedulerService";
 import { useMemo } from "react";
-
-// This is a mock/placeholder for broadcast-specific analytics until we have a real service
-const broadcastChannelId = process.env.NEXT_PUBLIC_YOUTUBE_CHANNEL_ID || "";
-
-const CACHE_STALE_TIME = 1000 * 60 * 15; // 15 minutes
-const CACHE_GC_TIME = 1000 * 60 * 30; // 30 minutes
 
 export function useDashboardStats() {
     // Stabilize parameters to ensure stable query keys
-    const classesParams = useMemo(() => ({ limit: 100 }), []);
-    const studentsParams = useMemo(() => ({ limit: 1 }), []);
+    const listParams = useMemo(() => ({ limit: 100 }), []);
 
-    const { data: classesResponse, isLoading: classesLoading } = useClasses(classesParams);
-    const { data: studentsResponse, isLoading: studentsLoading } = useStudents(studentsParams);
+    const { data: classesResponse, isLoading: classesLoading } = useClasses(listParams);
+    const { data: studentsResponse, isLoading: studentsLoading } = useStudents(listParams);
+    const { data: teachersResponse, isLoading: teachersLoading } = useTeachers(listParams);
+    const { data: usersResponse, isLoading: usersLoading } = useUsers(listParams);
+    const { data: schedulesResponse, isLoading: schedulesLoading } = useSchedules();
 
-    // YouTube Stats
-    const { data: ytStats, isLoading: ytLoading } = useQuery({
-        queryKey: ["youtube-stats", broadcastChannelId],
-        queryFn: () => getChannelStatistics(broadcastChannelId),
-        enabled: !!broadcastChannelId,
-        staleTime: CACHE_STALE_TIME,
-        gcTime: CACHE_GC_TIME,
-    });
+    const isLoading = classesLoading || studentsLoading || teachersLoading || usersLoading || schedulesLoading;
 
-    // Quota health
-    const { data: quotaStatus } = useQuery({
-        queryKey: ["youtube-quota-health"],
-        queryFn: () => checkQuotaHealth(),
-        staleTime: 1000 * 60 * 60, // 1 hour
-        gcTime: 1000 * 60 * 60 * 2, // 2 hours
-    });
+    type BasicResponse = { totalCount?: number; data?: { isActive?: boolean }[] };
 
-    const isLoading = classesLoading || studentsLoading || ytLoading;
+    const totalClasses = (classesResponse as BasicResponse)?.totalCount ?? (classesResponse as BasicResponse)?.data?.length ?? 0;
+    const activeClasses = (classesResponse as BasicResponse)?.data?.filter((c) => c.isActive).length || 0;
 
-    const totalClasses = classesResponse?.totalCount ?? classesResponse?.data?.length ?? 0;
-    const activeClasses = classesResponse?.data?.filter(c => c.isActive).length || 0;
-
-    const totalStudents = studentsResponse?.totalCount ?? studentsResponse?.data?.length ?? 0;
+    const totalStudents = (studentsResponse as BasicResponse)?.totalCount ?? (studentsResponse as BasicResponse)?.data?.length ?? 0;
+    const totalTeachers = (teachersResponse as BasicResponse)?.totalCount ?? (teachersResponse as BasicResponse)?.data?.length ?? 0;
+    const totalUsers = (usersResponse as BasicResponse)?.totalCount ?? (usersResponse as BasicResponse)?.data?.length ?? 0;
+    const totalSchedules = (schedulesResponse as BasicResponse)?.totalCount ?? (schedulesResponse as BasicResponse)?.data?.length ?? 0;
 
     return {
         lms: {
@@ -51,12 +36,11 @@ export function useDashboardStats() {
             totalStudents,
             isLoading: classesLoading || studentsLoading,
         },
-        broadcast: {
-            subscribers: ytStats?.subscriberCount || "0",
-            totalViews: ytStats?.viewCount || "0",
-            videoCount: ytStats?.videoCount || "0",
-            isQuotaExceeded: quotaStatus?.status === 'quota_exceeded',
-            isLoading: ytLoading,
+        personnel: {
+            totalTeachers,
+            totalUsers,
+            totalSchedules,
+            isLoading: teachersLoading || usersLoading || schedulesLoading,
         },
         overallLoading: isLoading,
     };

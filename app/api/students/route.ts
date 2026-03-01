@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { students } from "@/db/schema";
@@ -19,11 +19,22 @@ export async function GET(request: NextRequest) {
             const dbQuery = `%${query}%`;
             filters.push(
                 or(
+                    // Identity
+                    ilike(students.studentId, dbQuery),
+                    sql`${students.studentNumber}::text ILIKE ${dbQuery}`,
+                    // Name fields
                     ilike(students.firstName, dbQuery),
+                    ilike(students.middleName, dbQuery),
                     ilike(students.lastName, dbQuery),
-                    ilike(students.email, dbQuery),
                     ilike(students.nickname, dbQuery),
+                    // Contact & location
+                    ilike(students.email, dbQuery),
                     ilike(students.phone, dbQuery),
+                    ilike(students.address, dbQuery),
+                    ilike(students.placeOfBirth, dbQuery),
+                    // Demographics
+                    ilike(students.education, dbQuery),
+                    ilike(students.occupation, dbQuery),
                 )
             );
         }
@@ -36,10 +47,14 @@ export async function GET(request: NextRequest) {
                     filters.push(sql`EXTRACT(YEAR FROM ${students.registrationDate}) = ${parseInt(value)}`);
                     return;
                 }
-
-                const column = (students as unknown as Record<string, unknown>)[key];
+                /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                const column = (students as any)[key] as any;
                 if (column) {
-                    filters.push(eq(column, value));
+                    if (value === "Unknown/Missing") {
+                        filters.push(or(eq(column, "Unknown/Missing"), sql`${column} IS NULL`, eq(column, "")));
+                    } else {
+                        filters.push(eq(column, value));
+                    }
                 }
             }
         });
@@ -84,8 +99,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const authenticatedUser = await getAuthUser();
+        if (!authenticatedUser) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 }
@@ -182,13 +197,13 @@ export async function POST(request: NextRequest) {
                 firstName,
                 middleName: middleName || null,
                 lastName: lastName || "",
-                nickname: nickname || null,
+                nickname: nickname ? nickname.toUpperCase() : null,
                 gender: gender || null,
-                placeOfBirth: placeOfBirth || null,
+                placeOfBirth: placeOfBirth ? placeOfBirth.toUpperCase() : null,
                 dateOfBirth: dateOfBirth || null,
                 email: email || null,
                 phone,
-                address: address || null,
+                address: address ? address.toUpperCase() : null,
                 education: education || null,
                 occupation: occupation || null,
                 userId: userId || null,

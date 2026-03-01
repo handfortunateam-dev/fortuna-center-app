@@ -16,9 +16,9 @@ import { TextInput } from "@/components/inputs/TextInput";
 import { TextareaInput } from "@/components/inputs/TextareaInput";
 import { TimeInput } from "@/components/inputs/TimeInput";
 import { useScheduler } from "../context/SchedulerContext";
-import { createSchedule } from "@/services/schedulerService";
+import { createSchedule, schedulerKeys } from "@/services/schedulerService";
 import { useQueryClient } from "@tanstack/react-query";
-import { schedulerKeys } from "@/services/schedulerService";
+import { Toast } from "@/components/toast";
 
 interface CreateScheduleModalProps {
   isOpen: boolean;
@@ -125,6 +125,12 @@ export function CreateScheduleModal({
         notes: data.notes || undefined,
       });
 
+      Toast({
+        title: "Success",
+        description: "Schedule created successfully",
+        color: "success",
+      });
+
       // Invalidate queries to refresh the calendar
       await queryClient.invalidateQueries({ queryKey: schedulerKeys.all });
 
@@ -132,6 +138,12 @@ export function CreateScheduleModal({
       onClose();
     } catch (error) {
       console.error("Failed to create schedule", error);
+      Toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to create schedule",
+        color: "danger",
+      });
     }
   };
 
@@ -150,7 +162,7 @@ export function CreateScheduleModal({
                   label="Class"
                   placeholder="Select a class"
                   options={classes.map((cls) => ({
-                    label: cls.name,
+                    label: cls.name + " - " + cls.code,
                     value: cls.id,
                   }))}
                 />

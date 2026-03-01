@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
+import { EDUCATION_LEVELS, OCCUPATION_TYPES } from "@/features/lms/students/constants";
 
 export async function GET() {
   try {
@@ -7,8 +8,8 @@ export async function GET() {
     const worksheet = workbook.addWorksheet("Students Template");
 
     // Define columns
+    // Define columns
     worksheet.columns = [
-      { header: "Student ID", key: "studentId", width: 20 },
       { header: "Registration Date", key: "registrationDate", width: 18 },
       { header: "First Name", key: "firstName", width: 20 },
       { header: "Middle Name", key: "middleName", width: 20 },
@@ -21,7 +22,7 @@ export async function GET() {
       { header: "Address", key: "address", width: 40 },
       { header: "Education", key: "education", width: 25 },
       { header: "Occupation", key: "occupation", width: 25 },
-      { header: "Password", key: "password", width: 20 },
+      // { header: "Password", key: "password", width: 20 },
     ];
 
     // Style the header row
@@ -37,24 +38,22 @@ export async function GET() {
 
     // Add example/dummy data (2 rows as examples)
     worksheet.addRow({
-      studentId: "STD-20260217-ABC12",
       registrationDate: "2026-02-17",
       firstName: "John",
       middleName: "Michael",
       lastName: "Doe",
       gender: "male",
       placeOfBirth: "Jakarta",
-      dateOfBirth: "2000-01-15",
+      dateOfBirth: "1971-04-17",
       email: "john.doe@example.com",
       phone: "+62812345678",
       address: "Jl. Contoh No. 123, Jakarta",
       education: "Senior High School",
       occupation: "Student (School)",
-      password: "Password123!",
+      // password: "Password123!",
     });
 
     worksheet.addRow({
-      studentId: "STD-20260217-XYZ34",
       registrationDate: "2026-02-17",
       firstName: "Jane",
       middleName: "",
@@ -67,8 +66,32 @@ export async function GET() {
       address: "Jl. Sample No. 456, Bandung",
       education: "Diploma 3",
       occupation: "Student (University)",
-      password: "SecurePass456!",
+      // password: "SecurePass456!",
     });
+
+    // Add data validations for Education (column K) and Occupation (column L) up to row 1000
+    const educationList = `"${EDUCATION_LEVELS.map((e) => e.value).join(",")}"`;
+    const occupationList = `"${OCCUPATION_TYPES.map((o) => o.value).join(",")}"`;
+
+    for (let i = 2; i <= 1000; i++) {
+      worksheet.getCell(`K${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [educationList],
+        showErrorMessage: true,
+        errorTitle: "Invalid Education",
+        error: "Please select a valid education level from the dropdown list.",
+      };
+
+      worksheet.getCell(`L${i}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [occupationList],
+        showErrorMessage: true,
+        errorTitle: "Invalid Occupation",
+        error: "Please select a valid occupation from the dropdown list.",
+      };
+    }
 
     // Add borders to all cells
     worksheet.eachRow((row, rowNumber) => {
@@ -98,10 +121,10 @@ export async function GET() {
 
     // Add instruction note below the data
     const instructionRow = worksheet.addRow([
-      "⚠️ Hapus baris contoh di atas. Student ID & Registration Date akan auto-generate jika kosong. Gender: male/female. Date format: YYYY-MM-DD. Password hanya diperlukan jika centang 'Buat akun user juga'",
+      "⚠️ Hapus baris contoh di atas. Registration Date akan auto-generate jika kosong. Gender: male/female. Date format: YYYY-MM-DD (contoh: 1971-04-17). Password hanya diperlukan jika centang 'Buat akun user juga'. Gunakan dropdown untuk Education dan Occupation.",
     ]);
     instructionRow.getCell(1).font = { italic: true, color: { argb: "FF6B7280" } };
-    worksheet.mergeCells(`A${instructionRow.number}:N${instructionRow.number}`);
+    worksheet.mergeCells(`A${instructionRow.number}:M${instructionRow.number}`);
 
     const buffer = await workbook.xlsx.writeBuffer();
 

@@ -5,8 +5,15 @@ import { ClassSchedule } from "../types";
 import { TimeSlot } from "./TimeSlot";
 import { ClassCard } from "./ClassCard";
 import { useScheduler } from "../context/SchedulerContext";
-import { generateTimeSlots, isToday, isWeekend, formatDate } from "../utils/timeUtils";
+import {
+  generateTimeSlots,
+  isToday,
+  isWeekend,
+  formatDate,
+} from "../utils/timeUtils";
 import { DAYS_OF_WEEK } from "../constants";
+import { Skeleton } from "@heroui/react";
+import { getPositionedSchedules } from "../utils/overlapUtils";
 
 interface DayColumnProps {
   date: Date;
@@ -14,8 +21,12 @@ interface DayColumnProps {
   onScheduleClick?: (schedule: ClassSchedule) => void;
 }
 
-export function DayColumn({ date, schedules, onScheduleClick }: DayColumnProps) {
-  const { config } = useScheduler();
+export function DayColumn({
+  date,
+  schedules,
+  onScheduleClick,
+}: DayColumnProps) {
+  const { config, isLoading } = useScheduler();
   const dayOfWeek = date.getDay();
   const dayInfo = DAYS_OF_WEEK[dayOfWeek];
   const timeSlots = generateTimeSlots(config);
@@ -23,18 +34,22 @@ export function DayColumn({ date, schedules, onScheduleClick }: DayColumnProps) 
   const today = isToday(date);
   const weekend = isWeekend(date);
 
+  // Position schedules that overlap
+  const positionedSchedules = getPositionedSchedules(schedules);
+
   return (
-    <div className="flex-1 min-w-[100px]">
+    <div className="flex-1 min-w-[150px]">
       {/* Day Header - fixed height 68px to match TimeColumn */}
       <div
         className={`
           sticky top-0 z-20 text-center py-2 border-b h-[68px]
           flex flex-col justify-center
-          ${today
-            ? "bg-primary/10 border-primary"
-            : weekend
-              ? "bg-red-50 dark:bg-red-900/20 border-gray-200 dark:border-gray-700"
-              : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+          ${
+            today
+              ? "bg-primary/10 border-primary"
+              : weekend
+                ? "bg-red-50 dark:bg-red-900/20 border-gray-200 dark:border-gray-700"
+                : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
           }
         `}
       >
@@ -80,14 +95,53 @@ export function DayColumn({ date, schedules, onScheduleClick }: DayColumnProps) 
           );
         })}
 
-        {/* Class cards overlay */}
-        {schedules.map((schedule) => (
-          <ClassCard
-            key={schedule.id}
-            schedule={schedule}
-            onClick={onScheduleClick}
-          />
-        ))}
+        {/* Loading Skeletons */}
+        {isLoading ? (
+          <>
+            <div
+              className="absolute left-[5%] right-[5%] rounded-md overflow-hidden bg-white/50 dark:bg-gray-800/50 z-10"
+              style={{
+                top: "100px",
+                height: "120px",
+              }}
+            >
+              <Skeleton className="w-full h-full rounded-md" />
+            </div>
+            {dayOfWeek % 2 === 0 && (
+              <div
+                className="absolute left-[5%] right-[5%] rounded-md overflow-hidden bg-white/50 dark:bg-gray-800/50 z-10"
+                style={{
+                  top: "320px",
+                  height: "90px",
+                }}
+              >
+                <Skeleton className="w-full h-full rounded-md" />
+              </div>
+            )}
+            {dayOfWeek % 3 === 0 && (
+              <div
+                className="absolute left-[5%] right-[5%] rounded-md overflow-hidden bg-white/50 dark:bg-gray-800/50 z-10"
+                style={{
+                  top: "540px",
+                  height: "150px",
+                }}
+              >
+                <Skeleton className="w-full h-full rounded-md" />
+              </div>
+            )}
+          </>
+        ) : (
+          /* Class cards overlay */
+          positionedSchedules.map((posSchedule) => (
+            <ClassCard
+              key={posSchedule.id}
+              schedule={posSchedule}
+              onClick={onScheduleClick}
+              left={posSchedule.left}
+              width={posSchedule.width}
+            />
+          ))
+        )}
       </div>
     </div>
   );

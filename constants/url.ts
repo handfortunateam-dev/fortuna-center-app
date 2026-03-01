@@ -93,6 +93,8 @@ export const NAV_URL = {
             PENDING: "/vultr-billing/pending-charges",
         },
         PAYMENT_COURSE_HISTORY: "/payment-course-history",
+        HELP_SUPPORT: "/help-support",
+        CHANGE_LOG: "/change-log",
     },
     TEACHER: {
         DASHBOARD: "/dashboard",
@@ -104,6 +106,7 @@ export const NAV_URL = {
         GRADES: "/grades-overview", // Assumed
         TEACHING_SCHEDULE: "/teaching-schedule",
         SETTINGS: "/teacher-settings", // Assumed
+        HELP_SUPPORT: "/help-support",
     },
     STUDENT: {
         DASHBOARD: "/dashboard",
@@ -114,6 +117,7 @@ export const NAV_URL = {
         ATTENDANCE: "/my-attendance",
         SEE_SCHEDULES: "/see-schedules",
         SETTINGS: "/student-settings",
+        HELP_SUPPORT: "/help-support",
     },
     ADMINISTRATIVE: {
         DASHBOARD: "/dashboard",
@@ -129,6 +133,7 @@ export const NAV_URL = {
         FINANCIAL: "/financial",
         SETTINGS: "/settings",
         POST_ARTICLES: "/post-articles",
+        HELP_SUPPORT: "/help-support",
         ANALYTICS: {
             ROOT: "/analytics",
             USERS: "/analytics/users",

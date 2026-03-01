@@ -36,7 +36,7 @@ type AnalyticsData = {
   summary: {
     currentMonthRevenue: number;
     currentMonthUnpaid: number;
-    totalRevenue: number;
+  totalRevenue: number;
   };
   revenueByClass: { name: string; value: number }[];
   monthlyTrend: { period: string; revenue: number }[];

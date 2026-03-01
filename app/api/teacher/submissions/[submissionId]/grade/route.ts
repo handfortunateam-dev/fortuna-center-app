@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
     assignmentSubmissions,
-    assignments,
-    users
+    assignments
 } from "@/db/schema";
 
 export async function PATCH(
@@ -13,25 +12,18 @@ export async function PATCH(
     { params }: { params: Promise<{ submissionId: string }> }
 ) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+        }
+
+        if (user.role !== "TEACHER") {
+            return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
         }
 
         const { submissionId } = await params;
         const body = await request.json();
         const { score, feedback } = body;
-
-        // Get current teacher
-        const [currentUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, userId))
-            .limit(1);
-
-        if (!currentUser || currentUser.role !== "TEACHER") {
-            return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
-        }
 
         // Get submission
         const [submission] = await db
@@ -51,7 +43,7 @@ export async function PATCH(
             .where(
                 and(
                     eq(assignments.id, submission.assignmentId),
-                    eq(assignments.teacherId, currentUser.id)
+                    eq(assignments.teacherId, user.id)
                 )
             )
             .limit(1);
@@ -78,7 +70,7 @@ export async function PATCH(
                 score: score !== undefined ? score : submission.score,
                 feedback: feedback !== undefined ? feedback : submission.feedback,
                 status: score !== undefined && score !== null ? "graded" : submission.status,
-                gradedBy: currentUser.id,
+                gradedBy: user.id,
                 gradedAt: new Date(),
             })
             .where(eq(assignmentSubmissions.id, submissionId))

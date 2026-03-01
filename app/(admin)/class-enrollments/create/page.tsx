@@ -9,10 +9,7 @@ import { Toast } from "@/components/toast/index";
 import { CreateOrEditFormWrapper } from "@/components/form/CreateOrEditFormWrapper";
 import { EnrollmentForm } from "@/features/lms/enrollments/forms/EnrollmentForm";
 import { ClassEnrollmentFormValues } from "@/features/lms/enrollments/interfaces";
-import {
-  createClassEnrollment,
-  classEnrollmentKeys,
-} from "@/services/classesService";
+import { createClassEnrollment } from "@/services/classesService";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function CreateEnrollmentPage() {
@@ -42,7 +39,7 @@ export default function CreateEnrollmentPage() {
 
       // Invalidate queries to refresh list
       await queryClient.invalidateQueries({
-        queryKey: classEnrollmentKeys.all,
+        queryKey: ["/class-enrollments"],
       });
 
       // Redirect after short delay

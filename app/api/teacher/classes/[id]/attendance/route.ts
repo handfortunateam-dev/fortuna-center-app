@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { 
-  classAttendances, 
-  classSessions, 
-  classEnrollments, 
+import {
+  classAttendances,
+  classSessions,
+  classEnrollments,
   classSchedules,
   classes,
-  users 
+  students,
 } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -32,12 +32,14 @@ export async function GET(
     // Get all students enrolled in this class
     const enrolledStudents = await db
       .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
+        id: students.id,
+        firstName: students.firstName,
+        middleName: students.middleName,
+        lastName: students.lastName,
+        email: students.email,
       })
       .from(classEnrollments)
-      .innerJoin(users, eq(classEnrollments.studentId, users.id))
+      .innerJoin(students, eq(classEnrollments.studentId, students.id))
       .where(eq(classEnrollments.classId, classId));
 
     // Get all sessions for this class
@@ -97,14 +99,14 @@ export async function GET(
       };
 
       const totalRecorded = stats.present + stats.late + stats.absent + stats.excused + stats.sick;
-      const attendanceRate = totalRecorded > 0 
+      const attendanceRate = totalRecorded > 0
         ? Math.round(((stats.present + stats.late) / totalRecorded) * 100)
         : 0;
 
       return {
         student: {
           id: student.id,
-          name: student.name,
+          name: [student.firstName, student.middleName, student.lastName].filter(Boolean).join(" "),
           email: student.email,
         },
         attendance: studentAttendance,

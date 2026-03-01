@@ -10,6 +10,7 @@ import { CreateScheduleModal } from "./CreateScheduleModal";
 import { EditScheduleModal } from "./EditScheduleModal";
 import { SchedulerContextMenu } from "./SchedulerContextMenu";
 import { ScheduleDetailModal } from "./ScheduleDetailModal";
+import { LoadingScreen } from "@/components/loading/LoadingScreen";
 
 interface SchedulerProps {
   onScheduleClick?: (schedule: ClassSchedule) => void;
@@ -31,6 +32,7 @@ function SchedulerContent({
     closeDetailModal,
     openDetailModal,
     readOnly,
+    isUpdating,
   } = useScheduler();
 
   const handleScheduleClick = (schedule: ClassSchedule) => {
@@ -43,6 +45,7 @@ function SchedulerContent({
 
   return (
     <div className="space-y-4">
+      <LoadingScreen isLoading={isUpdating} />
       <SchedulerHeader hideTeacherFilter={hideTeacherFilter} />
       <SchedulerGrid onScheduleClick={handleScheduleClick} />
 

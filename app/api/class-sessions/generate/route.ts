@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { classSessions, classSchedules, scheduleTeachers, users } from "@/db/schema";
+import { classSessions, classSchedules, scheduleTeachers } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
 
 // POST - Generate sessions for a date range
 export async function POST(request: NextRequest) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
-
-        const [user] = await db.select().from(users).where(eq(users.clerkId, clerkUserId)).limit(1);
 
         const body = await request.json();
         const { scheduleIds, startDate, endDate } = body;

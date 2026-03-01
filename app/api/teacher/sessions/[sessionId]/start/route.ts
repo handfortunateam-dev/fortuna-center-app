@@ -1,37 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { classSessions, users } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { classSessions } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ sessionId: string }> }
 ) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 }
             );
         }
 
-        const { sessionId } = await params;
-
-        // Get current user
-        const [currentUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, userId))
-            .limit(1);
-
-        if (!currentUser || currentUser.role !== "TEACHER") {
+        if (user.role !== "TEACHER") {
             return NextResponse.json(
                 { success: false, message: "Forbidden - Teacher access required" },
                 { status: 403 }
             );
         }
+
+        const { sessionId } = await params;
 
         // Update session status to in_progress
         const [updatedSession] = await db

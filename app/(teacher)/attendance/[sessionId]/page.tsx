@@ -17,7 +17,7 @@ import {
   SelectItem,
   Textarea,
   Chip,
-  Spinner,
+  Skeleton,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter, useParams } from "next/navigation";
@@ -77,6 +77,26 @@ export default function AttendanceDetailPage() {
     },
   });
 
+  // Mutation to complete session
+  const completeSessionMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(
+        `/api/teacher/sessions/${sessionId}/complete`,
+        {
+          method: "PATCH",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to complete session");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["session-attendance", sessionId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["teacher-sessions"] });
+    },
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ["session-attendance", sessionId],
     queryFn: () => getSessionAttendance(sessionId),
@@ -104,7 +124,9 @@ export default function AttendanceDetailPage() {
   const handleStatusChange = (recordId: string, status: string) => {
     setRecords((prev) =>
       prev.map((r) =>
-        r.id === recordId ? { ...r, status: status as any } : r,
+        r.id === recordId
+          ? { ...r, status: status as AttendanceRecord["status"] }
+          : r,
       ),
     );
     setHasChanges(true);
@@ -118,7 +140,9 @@ export default function AttendanceDetailPage() {
   };
 
   const handleBulkAction = (status: string) => {
-    setRecords((prev) => prev.map((r) => ({ ...r, status: status as any })));
+    setRecords((prev) =>
+      prev.map((r) => ({ ...r, status: status as AttendanceRecord["status"] })),
+    );
     setHasChanges(true);
   };
 
@@ -134,8 +158,93 @@ export default function AttendanceDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner size="lg" />
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center gap-4">
+          <Skeleton className="w-10 h-10 rounded-lg" />
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Skeleton className="w-16 h-6 rounded-full" />
+              <Skeleton className="w-32 h-6 rounded-full" />
+            </div>
+            <Skeleton className="w-64 h-8 rounded-lg mb-2" />
+            <Skeleton className="w-40 h-5 rounded-lg" />
+          </div>
+        </div>
+
+        {/* Warning Card Skeleton */}
+        <Card className="border-2 border-default-200">
+          <CardBody className="p-6">
+            <div className="flex items-start gap-4">
+              <Skeleton className="w-8 h-8 rounded-full shrink-0" />
+              <div className="flex-1">
+                <Skeleton className="w-48 h-6 rounded-lg mb-3" />
+                <Skeleton className="w-full max-w-2xl h-4 rounded-lg mb-5" />
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-32 h-10 rounded-lg" />
+                  <Skeleton className="w-24 h-6 rounded-full" />
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Statistics Cards Skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Card key={i} className="border border-default-200">
+              <CardBody className="p-3 text-center flex flex-col items-center justify-center">
+                <Skeleton className="h-8 w-12 rounded-lg mb-2" />
+                <Skeleton className="h-3 w-16 rounded-lg" />
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+
+        {/* Bulk Actions Skeleton */}
+        <Card className="border border-default-200">
+          <CardBody className="p-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-5 w-24 rounded-lg mr-2" />
+              <Skeleton className="h-8 w-32 rounded-lg" />
+              <Skeleton className="h-8 w-32 rounded-lg" />
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Attendance Table Skeleton */}
+        <Card className="border border-default-200">
+          <CardBody className="p-0">
+            <div className="p-4 border-b border-default-200 flex gap-4">
+              <Skeleton className="h-4 w-32 rounded-lg" />
+              <Skeleton className="h-4 w-24 rounded-lg ml-[250px]" />
+              <Skeleton className="h-4 w-24 rounded-lg ml-[150px]" />
+            </div>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="p-4 border-b border-default-100 flex items-center gap-4"
+              >
+                <div className="min-w-[300px]">
+                  <Skeleton className="h-5 w-48 rounded-lg mb-2" />
+                  <Skeleton className="h-3 w-32 rounded-lg" />
+                </div>
+                <div className="min-w-[150px]">
+                  <Skeleton className="h-8 w-full rounded-lg" />
+                </div>
+                <div className="flex-1">
+                  <Skeleton className="h-8 w-full max-w-[300px] rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+
+        {/* Footer Skeleton */}
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-10 w-20 rounded-lg" />
+          <Skeleton className="h-12 w-40 rounded-lg" />
+        </div>
       </div>
     );
   }
@@ -152,6 +261,8 @@ export default function AttendanceDetailPage() {
   const { session } = data;
   const isScheduled = session.status === "scheduled";
   const isNotStarted = session.status === "not_started";
+  const isInProgress = session.status === "in_progress";
+  const isCompleted = session.status === "completed";
   const canEditAttendance =
     session.status === "in_progress" || session.status === "completed";
 
@@ -168,6 +279,10 @@ export default function AttendanceDetailPage() {
 
   const handleStartSession = () => {
     startSessionMutation.mutate();
+  };
+
+  const handleCompleteSession = () => {
+    completeSessionMutation.mutate();
   };
 
   return (
@@ -233,6 +348,29 @@ export default function AttendanceDetailPage() {
                     Status: {isScheduled ? "Scheduled" : "Not Started"}
                   </Chip>
                 </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Session Completed Notice */}
+      {isCompleted && (
+        <Card className="border-2 border-success bg-success-50 dark:bg-success-100/10">
+          <CardBody className="p-6">
+            <div className="flex items-start gap-4">
+              <Icon
+                icon="lucide:check-circle"
+                className="w-8 h-8 text-success shrink-0"
+              />
+              <div className="flex-1">
+                <Heading className="text-lg font-bold text-success-700 dark:text-success mb-2">
+                  Session Completed
+                </Heading>
+                <Text className="text-success-700 dark:text-success-300">
+                  This session has been marked as completed. You can still
+                  modify attendance records if needed.
+                </Text>
               </div>
             </div>
           </CardBody>
@@ -353,18 +491,29 @@ export default function AttendanceDetailPage() {
 
       {/* Action Buttons */}
       <div className="flex justify-between items-center">
-        <Button variant="light" onPress={() => router.back()}>
+        <Button variant="flat" onPress={() => router.back()}>
           Cancel
         </Button>
         <div className="flex gap-2">
+          {isInProgress && (
+            <Button
+              color="danger"
+              variant="flat"
+              startContent={<Icon icon="lucide:check-circle-2" />}
+              onPress={handleCompleteSession}
+              isLoading={completeSessionMutation.isPending}
+            >
+              End Session
+            </Button>
+          )}
           {hasChanges && (
-            <Chip color="warning" variant="flat">
+            <Chip color="warning" variant="flat" className="my-auto">
               Unsaved Changes
             </Chip>
           )}
           <Button
             color="primary"
-            size="lg"
+            size="md"
             startContent={<Icon icon="lucide:save" />}
             onPress={handleSave}
             isLoading={updateMutation.isPending}

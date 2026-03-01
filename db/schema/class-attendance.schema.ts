@@ -1,5 +1,6 @@
 import { pgTable, text, uuid, pgEnum, timestamp } from 'drizzle-orm/pg-core';
 import { users } from './users.schema';
+import { students } from './students.schema';
 import { classSessions } from './class-session.schema';
 import { id } from './columns.helper';
 
@@ -18,7 +19,7 @@ export const classAttendances = pgTable('class_attendances', {
 
   // References
   sessionId: uuid('session_id').references(() => classSessions.id, { onDelete: 'cascade' }).notNull(),
-  studentId: uuid('student_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  studentId: uuid('student_id').references(() => students.id, { onDelete: 'cascade' }).notNull(),
 
   // Attendance details
   status: attendanceStatusEnum('status').default('absent').notNull(), // Default absent, updated when present

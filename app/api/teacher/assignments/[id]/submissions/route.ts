@@ -1,36 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
     assignmentSubmissions,
     assignments,
-    users,
     classEnrollments
 } from "@/db/schema";
+import { users } from "@/db/schema/users.schema";
 
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const { id: assignmentId } = await params;
-
-        // Get current teacher
-        const [currentUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, userId))
-            .limit(1);
-
-        if (!currentUser || currentUser.role !== "TEACHER") {
+        if (user.role !== "TEACHER") {
             return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
         }
+
+        const { id: assignmentId } = await params;
 
         // Verify teacher owns this assignment
         const [assignment] = await db
@@ -39,13 +32,13 @@ export async function GET(
             .where(
                 and(
                     eq(assignments.id, assignmentId),
-                    eq(assignments.teacherId, currentUser.id)
+                    eq(assignments.teacherId, user.id)
                 )
             )
             .limit(1);
 
         if (!assignment) {
-            return NextResponse.json({ success: false, message: "Assignment not found or not yours" }, { status: 404 });
+            return NextResponse.json({ success: false, message: "Assignment not found or yours" }, { status: 404 });
         }
 
         // Get all enrolled students in this class

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { coursePayments, users, classes } from "@/db/schema";
@@ -49,25 +49,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 },
-            );
-        }
-
-        // Get internal user ID from clerk ID
-        const [currentUser] = await db
-            .select({ id: users.id })
-            .from(users)
-            .where(eq(users.clerkId, clerkUserId))
-            .limit(1);
-
-        if (!currentUser) {
-            return NextResponse.json(
-                { success: false, message: "User not found" },
-                { status: 404 },
             );
         }
 
@@ -125,7 +111,7 @@ export async function POST(request: NextRequest) {
                 status,
                 paidAt: paidAt || null,
                 notes: notes || null,
-                recordedBy: currentUser.id,
+                recordedBy: user.id,
             })
             .returning();
 

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { classes, users, classEnrollments, teacherClasses } from "@/db/schema";
+import { classes, classEnrollments, teacherClasses } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { users } from "@/db/schema/users.schema";
 
 export async function GET(
     request: NextRequest,
@@ -10,19 +11,9 @@ export async function GET(
 ) {
     const params = await props.params;
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-        }
-
-        const [student] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, clerkUserId))
-            .limit(1);
-
-        if (!student) {
-            return NextResponse.json({ success: false, message: "Student not found" }, { status: 404 });
         }
 
         const classId = params.id;
@@ -34,7 +25,7 @@ export async function GET(
             .where(
                 and(
                     eq(classEnrollments.classId, classId),
-                    eq(classEnrollments.studentId, student.id)
+                    eq(classEnrollments.studentId, user.id)
                 )
             )
             .limit(1);
@@ -84,21 +75,13 @@ export async function GET(
             image: t.teacher.image,
         }));
 
-        // Fetch assignments for this class (optional, maybe displayed in the detail page)
-        // For now, let's just return basic info + people.
-
-        // Ensure bannerUrl and imgUrl are handled properly if they don't exist in schema yet
-        // Based on lint errors, they might be missing. I will use null casting or check schema.
-        // If lint says they don't exist, I'll pass null for now or cast to any if I know migration is pending.
-        // But safer to just use null if not in schema.
-
         const responseData = {
             id: classData.id,
             name: classData.name,
             code: classData.code,
             description: classData.description,
-            bannerUrl: null, // classData.bannerUrl might not exist in schema
-            imgUrl: null, // classData.imgUrl might not exist in schema
+            bannerUrl: null,
+            imgUrl: null,
             teachers: teachers,
             classmates: classmates,
         };

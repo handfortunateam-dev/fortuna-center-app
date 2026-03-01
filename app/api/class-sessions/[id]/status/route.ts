@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { classSessions, users } from "@/db/schema";
+import { classSessions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 // PATCH - Update session status
@@ -10,9 +10,11 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
-    const { userId: clerkUserId } = await auth();
+    const user = await getAuthUser();
 
-    const [user] = await db.select().from(users).where(eq(users.clerkId, clerkUserId!)).limit(1);
+    if (!user) {
+        return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
 
     const body = await request.json();
     const { status } = body;

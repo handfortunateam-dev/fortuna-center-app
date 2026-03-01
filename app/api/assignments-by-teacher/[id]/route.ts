@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
-import { assignments, classes, users } from "@/db/schema";
+import { assignments, classes } from "@/db/schema";
+import { users } from "@/db/schema/users.schema";
 
 interface Context {
     params: Promise<{ id: string }>;
@@ -65,8 +66,8 @@ export async function PATCH(
     context: Context
 ) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 }
@@ -75,26 +76,6 @@ export async function PATCH(
 
         const { id } = await context.params;
         const assignmentId = id;
-
-        // Get DB user
-        const [currentUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, clerkUserId))
-            .limit(1);
-
-        if (!currentUser) {
-            return NextResponse.json(
-                { success: false, message: "User not found in database" },
-                { status: 404 }
-            );
-        }
-
-        // Verify ownership (optional: or allow admins)
-        // For now, we assume if you are a teacher/admin you can edit.
-        // Or strictly check if assignment belongs to current user? 
-        // Logic: admins can edit all, teachers only theirs. 
-        // For simplicity, let's just check existence first.
 
         const [existingAssignment] = await db
             .select()
@@ -160,8 +141,8 @@ export async function DELETE(
     context: Context
 ) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 }

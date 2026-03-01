@@ -16,8 +16,12 @@ import { TextInput } from "@/components/inputs/TextInput";
 import { TextareaInput } from "@/components/inputs/TextareaInput";
 import { TimeInput } from "@/components/inputs/TimeInput";
 import { useScheduler } from "../context/SchedulerContext";
-import { updateSchedule as apiUpdateSchedule, schedulerKeys } from "@/services/schedulerService";
+import {
+  updateSchedule as apiUpdateSchedule,
+  schedulerKeys,
+} from "@/services/schedulerService";
 import { useQueryClient } from "@tanstack/react-query";
+import { Toast } from "@/components/toast";
 import { ClassSchedule, ClassRoom, Teacher } from "../types";
 
 interface EditScheduleModalProps {
@@ -92,12 +96,24 @@ export function EditScheduleModal({
         notes: data.notes || undefined,
       });
 
+      Toast({
+        title: "Success",
+        description: "Schedule updated successfully",
+        color: "success",
+      });
+
       await queryClient.invalidateQueries({ queryKey: schedulerKeys.all });
 
       reset();
       onClose();
     } catch (error) {
       console.error("Failed to update schedule", error);
+      Toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to update schedule",
+        color: "danger",
+      });
     }
   };
 
@@ -118,7 +134,7 @@ export function EditScheduleModal({
                   label="Class"
                   placeholder="Select a class"
                   options={classes.map((cls: ClassRoom) => ({
-                    label: cls.name,
+                    label: cls.name + " - " + cls.code,
                     value: cls.id,
                   }))}
                 />

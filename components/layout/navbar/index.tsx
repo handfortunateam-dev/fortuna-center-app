@@ -22,6 +22,7 @@ import LocalUserMenu from "./LocalUserMenu";
 import { useAuthProvider } from "@/hooks/useAuthProvider";
 import { useGetIdentity } from "@/hooks/useGetIdentity";
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
+import NotificationWidget from "@/components/NotificationWidget";
 
 interface NavbarProps {
   // Mode configuration
@@ -265,7 +266,7 @@ export default function Navbar({
 
           <div className="flex items-center gap-2">
             {/* Command Bar (Ctrl+K) */}
-            <div className="hidden sm:block">
+            <div className="hidden md:block">
               <CommandBar userRole={localUser?.role} />
             </div>
 
@@ -287,6 +288,9 @@ export default function Navbar({
                 )}
               </Button>
             )}
+
+            <NotificationWidget />
+
             {/* User Profile */}
             <div className="flex items-center gap-3 pl-3 border-l border-gray-200 dark:border-gray-700">
               {authProvider === "clerk" ? (

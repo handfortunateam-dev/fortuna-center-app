@@ -10,6 +10,7 @@ export interface Teacher {
 export interface ClassRoom {
   id: string;
   name: string;
+  code?: string;
   level: string;
   maxStudents: number;
 }

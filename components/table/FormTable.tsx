@@ -14,6 +14,14 @@ import {
   Pagination,
   Chip,
   DatePicker,
+  Autocomplete,
+  AutocompleteItem,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@heroui/react";
 import { parseDate } from "@internationalized/date";
 import type { CalendarDate } from "@internationalized/date";
@@ -28,7 +36,7 @@ export interface FormTableColumn {
   /** Label header kolom */
   label: string;
   /** Tipe input yang dirender di cell */
-  type?: "text" | "email" | "number" | "date" | "select";
+  type?: "text" | "email" | "number" | "date" | "select" | "autocomplete";
   /** Opsi untuk type="select" */
   options?: { label: string; value: string }[];
   /** Wajib diisi? (default: false) */
@@ -59,6 +67,7 @@ interface FormTableProps<T extends Record<string, unknown>> {
   description?: string;
   pageSize?: number;
   showPagination?: boolean;
+  enableUnsavedChangesWarning?: boolean;
 }
 
 // ==================== HELPERS ====================
@@ -89,9 +98,39 @@ export function FormTable<T extends Record<string, unknown>>({
   description,
   pageSize = 20,
   showPagination = true,
+  enableUnsavedChangesWarning = false,
 }: FormTableProps<T>) {
+  const [internalPageSize, setInternalPageSize] = useState(pageSize);
   const [currentPage, setCurrentPage] = useState(1);
   const [editedRows, setEditedRows] = useState<Set<number>>(new Set());
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [pendingPage, setPendingPage] = useState<number | null>(null);
+
+  const handlePageChangeRequest = (page: number) => {
+    const start = (currentPage - 1) * internalPageSize;
+    const end = start + internalPageSize;
+    let hasEditsOnCurrentPage = false;
+    for (let i = start; i < end; i++) {
+      if (editedRows.has(i)) {
+        hasEditsOnCurrentPage = true;
+        break;
+      }
+    }
+
+    if (enableUnsavedChangesWarning && hasEditsOnCurrentPage) {
+      setPendingPage(page);
+      onOpen();
+    } else {
+      setCurrentPage(page);
+    }
+  };
+
+  const confirmPageChange = () => {
+    if (pendingPage !== null) setCurrentPage(pendingPage);
+    onClose();
+    setPendingPage(null);
+  };
 
   // ==================== HANDLERS ====================
 
@@ -128,8 +167,8 @@ export function FormTable<T extends Record<string, unknown>>({
     } as T;
     onChange([...data, newRow]);
     const newTotal = data.length + 1;
-    setCurrentPage(Math.ceil(newTotal / pageSize));
-  }, [data, onChange, emptyRowTemplate, pageSize, keyField]);
+    setCurrentPage(Math.ceil(newTotal / internalPageSize));
+  }, [data, onChange, emptyRowTemplate, internalPageSize, keyField]);
 
   // ==================== COLUMNS ====================
 
@@ -150,16 +189,16 @@ export function FormTable<T extends Record<string, unknown>>({
 
   // ==================== PAGINATION ====================
 
-  const totalPages = Math.ceil(data.length / pageSize);
+  const totalPages = Math.ceil(data.length / internalPageSize);
 
   const paginatedData = useMemo((): PaginatedItem<T>[] => {
-    const start = (currentPage - 1) * pageSize;
-    return data.slice(start, start + pageSize).map((row, i) => ({
+    const start = (currentPage - 1) * internalPageSize;
+    return data.slice(start, start + internalPageSize).map((row, i) => ({
       key: String(row[keyField] ?? start + i),
       row,
       globalIndex: start + i,
     }));
-  }, [data, currentPage, pageSize, keyField]);
+  }, [data, currentPage, internalPageSize, keyField]);
 
   // ==================== CELL RENDERER ====================
 
@@ -235,6 +274,27 @@ export function FormTable<T extends Record<string, unknown>>({
               <SelectItem key={opt.value}>{opt.label}</SelectItem>
             ))}
           </Select>
+        );
+      }
+
+      // ── Autocomplete ───────────────────────────────────────
+      if (column.type === "autocomplete" && column.options) {
+        return (
+          <Autocomplete
+            aria-label={column.label}
+            size="md"
+            selectedKey={strValue || null}
+            onSelectionChange={(key) => {
+              handleCellChange(globalIndex, column.key, (key as string) ?? "");
+            }}
+            allowsCustomValue
+            className="w-full"
+            placeholder={column.placeholder ?? column.label}
+          >
+            {column.options.map((opt) => (
+              <AutocompleteItem key={opt.value}>{opt.label}</AutocompleteItem>
+            ))}
+          </Autocomplete>
         );
       }
 
@@ -364,21 +424,87 @@ export function FormTable<T extends Record<string, unknown>>({
         </Table>
       </div>
 
-      {/* Pagination */}
-      {showPagination && totalPages > 1 && (
-        <div className="flex items-center justify-between px-1">
-          <p className="text-xs text-default-400">
-            Halaman {currentPage} dari {totalPages} ({data.length} total baris)
-          </p>
-          <Pagination
-            showControls
-            page={currentPage}
-            total={totalPages}
-            onChange={setCurrentPage}
-            size="sm"
-            color="primary"
-          />
+      {/* Pagination & Tools */}
+      {showPagination && data.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between px-1 gap-3 sm:gap-0 mt-3">
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-default-400">
+              Halaman {currentPage} dari {totalPages} ({data.length} total
+              baris)
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-default-400">Per halaman:</span>
+              <Select
+                aria-label="Items per page"
+                size="sm"
+                className="w-20"
+                selectedKeys={new Set([String(internalPageSize)])}
+                onSelectionChange={(keys) => {
+                  const val = Array.from(keys as Set<string>)[0];
+                  if (val) {
+                    setInternalPageSize(Number(val));
+                    setCurrentPage(1);
+                  }
+                }}
+              >
+                <SelectItem key="10">10</SelectItem>
+                <SelectItem key="20">20</SelectItem>
+                <SelectItem key="50">50</SelectItem>
+                <SelectItem key="100">100</SelectItem>
+              </Select>
+            </div>
+          </div>
+
+          {totalPages > 1 && (
+            <Pagination
+              showControls
+              page={currentPage}
+              total={totalPages}
+              onChange={handlePageChangeRequest}
+              size="sm"
+              color="primary"
+            />
+          )}
         </div>
+      )}
+
+      {/* Unsaved Changes Modal */}
+      {enableUnsavedChangesWarning && (
+        <Modal
+          isOpen={isOpen}
+          onClose={() => {
+            onClose();
+            setPendingPage(null);
+          }}
+        >
+          <ModalContent>
+            <ModalHeader>Unsaved Changes</ModalHeader>
+            <ModalBody>
+              <p className="text-sm">
+                You have unsaved edits on the current page. If you proceed to
+                change the page, your edits will remain but you might lose track
+                of them.
+              </p>
+              <p className="text-sm font-medium">
+                Are you sure you want to go to another page before saving?
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="flat"
+                onPress={() => {
+                  onClose();
+                  setPendingPage(null);
+                }}
+              >
+                Stay Here
+              </Button>
+              <Button color="warning" onPress={confirmPageChange}>
+                Proceed Anyway
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       )}
     </div>
   );

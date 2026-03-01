@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, desc, eq, ilike } from "drizzle-orm";
 import { db } from "@/db";
 import { postCategories } from "@/db/schema/post-category.schema";
@@ -43,8 +43,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 }

@@ -79,6 +79,7 @@ export const DatePickerInput = ({
                 isInvalid={!!error}
                 isRequired={required}
                 minValue={minValue}
+                showMonthAndYearPickers
                 value={dateValue}
                 onChange={(date) => {
                   if (date) {
