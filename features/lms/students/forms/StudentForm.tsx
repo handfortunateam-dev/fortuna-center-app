@@ -10,6 +10,7 @@ import {
 } from "@/components/inputs";
 import { StudentFormValues } from "@/features/lms/students/interface";
 import { EDUCATION_LEVELS, OCCUPATION_TYPES } from "../constants";
+import { Heading } from "@/components/heading";
 
 interface StudentFormProps {
   mode?: "create" | "edit";
@@ -114,9 +115,9 @@ export function StudentForm({ mode }: StudentFormProps) {
 
       {/* Contact Info */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <Heading className="text-lg font-semibold text-gray-900 dark:text-white">
           Contact Information
-        </h3>
+        </Heading>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TextInput
             label="Email"
@@ -135,10 +136,10 @@ export function StudentForm({ mode }: StudentFormProps) {
             label="Phone Number"
             name="phone"
             placeholder="e.g., +1234567890"
-            required={true}
-            validation={{
-              required: "Phone number is required",
-            }}
+            required={false}
+            // validation={{
+            //   required: "Phone number is required",
+            // }}
           />
         </div>
 

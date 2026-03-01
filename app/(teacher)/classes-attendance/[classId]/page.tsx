@@ -18,7 +18,7 @@ import {
   Tabs,
   Tab,
   Tooltip,
-  Spinner,
+  Skeleton,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useQuery } from "@tanstack/react-query";
@@ -72,8 +72,94 @@ export default function ClassAttendancePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Spinner size="lg" />
+      <div className="space-y-6">
+        {/* Summary Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="border border-default-200">
+              <CardBody className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-4 w-24 rounded-lg mb-2" />
+                    <Skeleton className="h-8 w-16 rounded-lg" />
+                  </div>
+                  <Skeleton className="w-12 h-12 rounded-xl" />
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+
+        {/* Statistics Summary Skeleton */}
+        <Card className="border border-default-200">
+          <CardBody className="p-6">
+            <Skeleton className="h-6 w-40 rounded-lg mb-4" />
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-lg bg-default-50 flex flex-col items-center justify-center h-[96px]"
+                >
+                  <Skeleton className="h-8 w-12 rounded-lg mb-2" />
+                  <Skeleton className="h-3 w-16 rounded-lg" />
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Tabs and Button Skeleton */}
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32 rounded-lg" />
+            <Skeleton className="h-10 w-32 rounded-lg" />
+          </div>
+          <Skeleton className="h-10 w-36 rounded-lg" />
+        </div>
+
+        {/* Table Skeleton */}
+        <Card className="border border-default-200">
+          <CardBody className="p-0">
+            <div className="p-4 border-b border-default-200 flex justify-between gap-4">
+              <Skeleton className="h-6 w-32 rounded-lg" />
+              <Skeleton className="h-6 w-24 rounded-lg" />
+              <Skeleton className="h-6 w-24 rounded-lg" />
+              <Skeleton className="h-6 w-24 rounded-lg" />
+              <Skeleton className="h-6 w-24 rounded-lg" />
+              <Skeleton className="h-6 w-24 rounded-lg" />
+              <Skeleton className="h-6 w-24 rounded-lg" />
+            </div>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="p-4 border-b border-default-100 flex justify-between items-center gap-4"
+              >
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-48 rounded-lg mb-2" />
+                  <Skeleton className="h-3 w-64 rounded-lg" />
+                </div>
+                <div className="w-32 flex justify-center">
+                  <Skeleton className="h-6 w-16 rounded-lg" />
+                </div>
+                <div className="w-24 flex justify-center">
+                  <Skeleton className="h-6 w-10 rounded-lg" />
+                </div>
+                <div className="w-24 flex justify-center">
+                  <Skeleton className="h-6 w-10 rounded-lg" />
+                </div>
+                <div className="w-24 flex justify-center">
+                  <Skeleton className="h-6 w-10 rounded-lg" />
+                </div>
+                <div className="w-24 flex justify-center">
+                  <Skeleton className="h-6 w-10 rounded-lg" />
+                </div>
+                <div className="w-24 flex justify-center">
+                  <Skeleton className="h-6 w-10 rounded-lg" />
+                </div>
+              </div>
+            ))}
+          </CardBody>
+        </Card>
       </div>
     );
   }
@@ -88,6 +174,7 @@ export default function ClassAttendancePage() {
   }
 
   const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     class: classInfo,
     sessions,
     totalStudents,

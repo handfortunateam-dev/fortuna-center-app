@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -7,25 +7,18 @@ import {
     assignmentSubmissions,
     classes,
     classEnrollments,
-    teacherClasses,
-    users
+    teacherClasses
 } from "@/db/schema";
+import { users } from "@/db/schema/users.schema";
 
 export async function GET(request: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        // Get DB user
-        const [currentUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, userId))
-            .limit(1);
-
-        if (!currentUser || currentUser.role !== "TEACHER") {
+        if (user.role !== "TEACHER") {
             return NextResponse.json({ success: false, message: "Forbidden - Teacher access only" }, { status: 403 });
         }
 
@@ -43,7 +36,7 @@ export async function GET(request: NextRequest) {
             .from(teacherClasses)
             .where(
                 and(
-                    eq(teacherClasses.teacherId, currentUser.id),
+                    eq(teacherClasses.teacherId, user.id),
                     eq(teacherClasses.classId, classId)
                 )
             )
@@ -71,7 +64,7 @@ export async function GET(request: NextRequest) {
             .where(
                 and(
                     eq(assignments.classId, classId),
-                    eq(assignments.teacherId, currentUser.id)
+                    eq(assignments.teacherId, user.id)
                 )
             )
             .orderBy(desc(assignments.createdAt));

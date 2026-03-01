@@ -563,6 +563,11 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
     href: NAV_URL.SYSTEM.SETTINGS,
     icon: (props) => <Icon icon="solar:settings-bold-duotone" {...props} />,
   },
+  {
+    name: "Help & Support",
+    href: NAV_URL.ADMIN.HELP_SUPPORT,
+    icon: (props) => <Icon icon="lucide:life-buoy" {...props} />,
+  },
 ];
 
 /**
@@ -627,6 +632,11 @@ export const teacherSidebarNavigation: AdminNavigationItem[] = [
     href: NAV_URL.TEACHER.SETTINGS,
     icon: (props) => <Icon icon="solar:settings-bold-duotone" {...props} />,
   },
+  {
+    name: "Help & Support",
+    href: NAV_URL.TEACHER.HELP_SUPPORT,
+    icon: (props) => <Icon icon="lucide:life-buoy" {...props} />,
+  },
 ];
 
 /**
@@ -681,6 +691,11 @@ export const studentSidebarNavigation: AdminNavigationItem[] = [
     name: "Settings",
     href: NAV_URL.STUDENT.SETTINGS,
     icon: (props) => <Icon icon="solar:settings-bold-duotone" {...props} />,
+  },
+  {
+    name: "Help & Support",
+    href: NAV_URL.STUDENT.HELP_SUPPORT,
+    icon: (props) => <Icon icon="lucide:life-buoy" {...props} />,
   },
 ];
 
@@ -828,6 +843,15 @@ export const getNavigationByRole = (
   currentView?: "admin" | "teacher",
 ): AdminNavigationItem[] => {
   switch (role) {
+    case "DEVELOPER":
+      return [
+        ...adminSidebarNavigation,
+        {
+          name: "Change Log",
+          href: NAV_URL.ADMIN.CHANGE_LOG,
+          icon: (props) => <Icon icon="lucide:log-out" {...props} />,
+        },
+      ];
     case "ADMIN":
       return adminSidebarNavigation;
     case "TEACHER":

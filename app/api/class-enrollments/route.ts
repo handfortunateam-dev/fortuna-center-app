@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { classEnrollments, users, classes, students } from "@/db/schema";
@@ -129,20 +129,9 @@ export async function POST(request: NextRequest) {
 
     // Get enrolledBy from current admin session (optional)
     let enrolledById: string | null = null;
-    try {
-      const { userId: clerkUserId } = await auth();
-      if (clerkUserId) {
-        const [currentUser] = await db
-          .select()
-          .from(users)
-          .where(eq(users.clerkId, clerkUserId))
-          .limit(1);
-        if (currentUser) {
-          enrolledById = currentUser.id;
-        }
-      }
-    } catch {
-      // Session not available, continue with null
+    const authUser = await getAuthUser();
+    if (authUser) {
+      enrolledById = authUser.id;
     }
 
     const [created] = await db

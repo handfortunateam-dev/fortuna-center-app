@@ -24,6 +24,7 @@ interface AutocompleteInputProps {
   onChange?: (value: string | number | boolean) => void;
   isLoading?: boolean;
   isClearable?: boolean;
+  multiple?: boolean;
   disabledKeys?: Iterable<string | number>;
 }
 
@@ -39,6 +40,7 @@ export const AutocompleteInput = ({
   isLoading = false,
   isClearable = false,
   disabledKeys,
+  multiple = false,
 }: AutocompleteInputProps) => {
   const {
     control,
@@ -66,6 +68,7 @@ export const AutocompleteInput = ({
             isLoading={isLoading}
             disabledKeys={disabledKeys}
             placeholder={placeholder}
+            multiple={multiple}
             selectedKey={field.value ? String(field.value) : null}
             onSelectionChange={(key: string | number | null) => {
               const selected = key as string;

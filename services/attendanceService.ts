@@ -164,6 +164,21 @@ export const updateSessionAttendance = async (
     }
 };
 
+export const updateSessionStatus = async (
+    sessionId: string,
+    status: 'scheduled' | 'not_started' | 'in_progress' | 'completed' | 'cancelled'
+): Promise<{ success: boolean; message: string; data: any }> => {
+    try {
+        const response = await apiClient.patch(`/teacher/sessions/${sessionId}/status`, {
+            status,
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Failed to update session status:", error);
+        throw error;
+    }
+};
+
 export interface ClassSchedule {
     id: string;
     dayOfWeek: number;

@@ -1,5 +1,6 @@
 // Education levels constants
 export const EDUCATION_LEVELS = [
+    { label: "Kindergarten", value: "Kindergarten" },
     { label: "Elementary School (SD)", value: "Elementary School" },
     { label: "Junior High School (SMP)", value: "Junior High School" },
     { label: "Senior High School (SMA/SMK)", value: "Senior High School" },
@@ -21,6 +22,7 @@ export const OCCUPATION_TYPES = [
     { label: "Private Employee", value: "Private Employee" },
     { label: "Civil Servant", value: "Civil Servant" },
     { label: "Entrepreneur", value: "Entrepreneur" },
+    { label: "Employee", value: "Employee" },
     { label: "Professional", value: "Professional" },
     { label: "Housewife", value: "Housewife" },
     { label: "Freelancer", value: "Freelancer" },
@@ -30,6 +32,12 @@ export const OCCUPATION_TYPES = [
     { label: "Retired", value: "Retired" },
     { label: "Others", value: "Others" },
     { label: "Unknown", value: "Unknown" },
+    { label: "Lecturer", value: "Lecturer" },
+    { label: "Police Officer", value: "Police Officer" },
+    { label: "Military", value: "Military" },
+    { label: "Staff/Employee BUMN", value: "Staff/Employee BUMN" },
+    { label: "Midwife", value: "Midwife" },
+
 ];
 
 // Export types for TypeScript

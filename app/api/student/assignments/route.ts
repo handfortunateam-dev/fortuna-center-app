@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
 import {
     assignments,
@@ -8,31 +8,19 @@ import {
     assignmentSubmissions
 } from "@/db/schema";
 import { eq, and, inArray, desc } from "drizzle-orm";
-import { users } from "@/db/schema/users.schema";
 
 export async function GET(request: NextRequest) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        // 1. Get current student ID from DB
-        const [student] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, clerkUserId))
-            .limit(1);
-
-        if (!student) {
-            return NextResponse.json({ success: false, message: "Student not found" }, { status: 404 });
-        }
-
-        // 2. Get enrolled class IDs
+        // 1. Get enrolled class IDs
         const enrollments = await db
             .select({ classId: classEnrollments.classId })
             .from(classEnrollments)
-            .where(eq(classEnrollments.studentId, student.id));
+            .where(eq(classEnrollments.studentId, user.id));
 
         const classIds = enrollments.map(e => e.classId);
 
@@ -40,10 +28,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, data: [] });
         }
 
-        // 3. Fetch assignments for these classes + submission status
-        // We want all assignments where classId is in 'classIds'
-        // AND we want to join with submission to see if THIS student has submitted.
-
+        // 2. Fetch assignments for these classes + submission status
         const rawAssignments = await db
             .select({
                 id: assignments.id,
@@ -51,7 +36,7 @@ export async function GET(request: NextRequest) {
                 dueDate: assignments.dueDate,
                 classId: assignments.classId,
                 className: classes.name,
-                status: assignments.status, // Assignment status
+                status: assignments.status,
                 maxScore: assignments.maxScore,
                 submissionStatus: assignmentSubmissions.status,
                 submissionScore: assignmentSubmissions.score,
@@ -62,13 +47,13 @@ export async function GET(request: NextRequest) {
                 assignmentSubmissions,
                 and(
                     eq(assignments.id, assignmentSubmissions.assignmentId),
-                    eq(assignmentSubmissions.studentId, student.id)
+                    eq(assignmentSubmissions.studentId, user.id)
                 )
             )
             .where(
                 and(
                     inArray(assignments.classId, classIds),
-                    eq(assignments.status, "published") // Only show published assignments? Usually yes.
+                    eq(assignments.status, "published")
                 )
             )
             .orderBy(desc(assignments.dueDate));

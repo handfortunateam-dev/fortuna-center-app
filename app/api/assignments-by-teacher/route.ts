@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, desc, eq, ilike } from "drizzle-orm";
 import { db } from "@/db";
-import { assignments, classes, users } from "@/db/schema";
-import { assignmentStatusEnum } from "@/db/schema/assignment.schema";
+import { assignments, classes } from "@/db/schema";
+import { users } from "@/db/schema/users.schema";
 
 export async function GET(request: NextRequest) {
     try {
@@ -69,25 +69,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 }
-            );
-        }
-
-        // Get DB user
-        const [currentUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, clerkUserId))
-            .limit(1);
-
-        if (!currentUser) {
-            return NextResponse.json(
-                { success: false, message: "User not found in database" },
-                { status: 404 }
             );
         }
 
@@ -117,7 +103,7 @@ export async function POST(request: NextRequest) {
                 description,
                 instructions,
                 classId,
-                teacherId: currentUser.id, // Assign to current user
+                teacherId: user.id,
                 status: status || "draft",
                 maxScore: maxScore || 100,
                 dueDate: dueDate ? new Date(dueDate) : null,

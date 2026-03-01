@@ -25,7 +25,8 @@ export function useAccessControl() {
     const role = user?.role || "";
     const userName = user?.name || "";
     const userEmail = user?.email || "";
-    const isAdmin = role === "ADMIN";
+    const isAdmin = role === "ADMIN" || role === "DEVELOPER";
+    const isDeveloper = role === "DEVELOPER";
 
     // Manage multi-role view state
     const [currentView, setCurrentView] = useState<"admin" | "teacher">(() => {
@@ -98,6 +99,7 @@ export function useAccessControl() {
         userEmail,
         role,
         isAdmin,
+        isDeveloper,
         isLoading,
         menuItems: menuItems,
         currentView,

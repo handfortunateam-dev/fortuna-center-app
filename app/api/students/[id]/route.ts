@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { students } from "@/db/schema";
@@ -43,8 +43,8 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const authenticatedUser = await getAuthUser();
+        if (!authenticatedUser) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 }
@@ -59,6 +59,7 @@ export async function PATCH(
             firstName,
             middleName,
             lastName,
+            nickname,
             gender,
             placeOfBirth,
             dateOfBirth,
@@ -67,8 +68,13 @@ export async function PATCH(
             address,
             education,
             occupation,
+            status,
             userId
         } = body;
+
+        // Postgres date columns reject empty strings — coerce to null
+        const toDate = (v: unknown) =>
+            v === "" || v === null ? null : (v as string | undefined);
 
         // Check if student exists
         const [existingStudent] = await db
@@ -136,19 +142,21 @@ export async function PATCH(
             .update(students)
             .set({
                 ...(studentId !== undefined && { studentId }),
-                ...(registrationDate !== undefined && { registrationDate }),
+                ...(registrationDate !== undefined && { registrationDate: toDate(registrationDate) ?? existingStudent.registrationDate }),
                 ...(firstName !== undefined && { firstName }),
-                ...(middleName !== undefined && { middleName }),
+                ...(middleName !== undefined && { middleName: middleName || null }),
                 ...(lastName !== undefined && { lastName }),
-                ...(gender !== undefined && { gender }),
-                ...(placeOfBirth !== undefined && { placeOfBirth }),
-                ...(dateOfBirth !== undefined && { dateOfBirth }),
-                ...(email !== undefined && { email }),
-                ...(phone !== undefined && { phone }),
-                ...(address !== undefined && { address }),
-                ...(education !== undefined && { education }),
-                ...(occupation !== undefined && { occupation }),
-                ...(userId !== undefined && { userId }),
+                ...(nickname !== undefined && { nickname: nickname || null }),
+                ...(gender !== undefined && { gender: gender || null }),
+                ...(placeOfBirth !== undefined && { placeOfBirth: placeOfBirth ? placeOfBirth.toUpperCase() : null }),
+                ...(dateOfBirth !== undefined && { dateOfBirth: toDate(dateOfBirth) }),
+                ...(email !== undefined && { email: email || null }),
+                ...(phone !== undefined && { phone: phone || null }),
+                ...(address !== undefined && { address: address ? address.toUpperCase() : null }),
+                ...(education !== undefined && { education: education || null }),
+                ...(occupation !== undefined && { occupation: occupation || null }),
+                ...(status !== undefined && { status }),
+                ...(userId !== undefined && { userId: userId || null }),
                 updatedAt: new Date(),
             })
             .where(eq(students.id, id))
@@ -177,8 +185,8 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const authenticatedUser = await getAuthUser();
+        if (!authenticatedUser) {
             return NextResponse.json(
                 { success: false, message: "Unauthorized" },
                 { status: 401 }

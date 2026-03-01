@@ -27,6 +27,8 @@ export default async function DashboardGrid() {
 
   // Render dashboard based on user role
   switch (user.role) {
+    case UserRole.DEVELOPER:
+      return <DashboardAdmin user={user} />;
     case UserRole.ADMIN:
       return <DashboardAdmin user={user} />;
 

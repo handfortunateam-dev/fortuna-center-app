@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { users, assignmentSubmissions } from "@/db/schema";
+import { assignmentSubmissions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function POST(
@@ -10,19 +10,9 @@ export async function POST(
 ) {
     const params = await props.params;
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-        }
-
-        const [student] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, clerkUserId))
-            .limit(1);
-
-        if (!student) {
-            return NextResponse.json({ success: false, message: "Student not found" }, { status: 404 });
         }
 
         const assignmentId = params.id;
@@ -36,7 +26,7 @@ export async function POST(
             .where(
                 and(
                     eq(assignmentSubmissions.assignmentId, assignmentId),
-                    eq(assignmentSubmissions.studentId, student.id)
+                    eq(assignmentSubmissions.studentId, user.id)
                 )
             )
             .limit(1);
@@ -61,7 +51,7 @@ export async function POST(
                 .insert(assignmentSubmissions)
                 .values({
                     assignmentId,
-                    studentId: student.id,
+                    studentId: user.id,
                     content,
                     attachments,
                     status: 'submitted',

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { classSchedules, scheduleTeachers, users } from "@/db/schema";
+import { classSchedules, scheduleTeachers } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { users } from "@/db/schema/users.schema";
 
 // GET - Single schedule
 export async function GET(
@@ -57,17 +58,23 @@ export async function PATCH(
             // Delete old assignments
             await tx.delete(scheduleTeachers).where(eq(scheduleTeachers.scheduleId, id));
 
+            // Ensure array format
+            const teachersArray = Array.isArray(teacherIds)
+                ? teacherIds
+                : typeof teacherIds === "string"
+                    ? teacherIds.split(',').map(id => id.trim()).filter(Boolean)
+                    : [];
+
             // Insert new assignments
-            if (teacherIds.length > 0) {
-                const { userId: clerkUserId } = await auth();
+            if (teachersArray.length > 0) {
+                const user = await getAuthUser();
                 let assignedBy: string | undefined;
-                if (clerkUserId) {
-                    const [user] = await tx.select().from(users).where(eq(users.clerkId, clerkUserId)).limit(1);
-                    assignedBy = user?.id;
+                if (user) {
+                    assignedBy = user.id;
                 }
 
                 await tx.insert(scheduleTeachers).values(
-                    teacherIds.map((tid: string) => ({
+                    teachersArray.map((tid: string) => ({
                         scheduleId: id,
                         teacherId: tid,
                         assignedBy: assignedBy,

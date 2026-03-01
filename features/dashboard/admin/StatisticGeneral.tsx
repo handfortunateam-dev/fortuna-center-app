@@ -7,7 +7,7 @@ import { Heading } from "@/components/heading";
 import { Badge, Spinner } from "@heroui/react";
 
 export default function StatisticGeneral() {
-  const { lms, broadcast } = useDashboardStats();
+  const { lms, personnel } = useDashboardStats();
 
   return (
     <div className="space-y-8">
@@ -84,70 +84,72 @@ export default function StatisticGeneral() {
         </div>
       </section>
 
-      {/* Broadcast Section */}
+      {/* Personnel & Logistics Section */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Heading as="h3" size="lg" className="font-bold text-default-800">
-            Broadcast Channel
+            Personnel & Logistics
           </Heading>
-          <Badge color="danger" variant="flat" size="sm">
-            YouTube Insights
+          <Badge color="secondary" variant="flat" size="sm">
+            Staffing
           </Badge>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <StatCard
-            title="Subscribers"
+            title="Total Teachers"
             value={
-              broadcast.isLoading ? (
+              personnel.isLoading ? (
                 <Spinner
                   classNames={{ label: "text-foreground mt-4" }}
                   variant="wave"
                   size="sm"
                 />
               ) : (
-                Number(broadcast.subscribers).toLocaleString()
+                personnel.totalTeachers.toLocaleString()
               )
             }
-            change="YouTube Channel"
-            icon="solar:user-heart-bold"
-            bgColor="bg-slate-500/10"
-            textColor="text-slate-700"
+            change="Registered educators"
+            icon="solar:user-id-bold"
+            bgColor="bg-purple-500/10"
+            textColor="text-purple-600"
             delay={0.4}
           />
           <StatCard
-            title="Total Views"
+            title="Total Users Accounts"
             value={
-              broadcast.isLoading ? (
+              personnel.isLoading ? (
                 <Spinner
                   classNames={{ label: "text-foreground mt-4" }}
                   variant="wave"
                   size="sm"
                 />
               ) : (
-                Number(broadcast.totalViews).toLocaleString()
+                personnel.totalUsers.toLocaleString()
               )
             }
-            change="All time reach"
-            icon="solar:eye-bold"
-            bgColor="bg-slate-600/10"
-            textColor="text-slate-800"
+            change="All system accounts"
+            icon="solar:users-group-two-rounded-bold"
+            bgColor="bg-purple-600/10"
+            textColor="text-purple-700"
             delay={0.5}
           />
           <StatCard
-            title="Quota Status"
-            value={broadcast.isQuotaExceeded ? "Exceeded" : "Healthy"}
-            change={
-              broadcast.isQuotaExceeded
-                ? "Needs attention"
-                : "API fully operational"
+            title="Active Schedules"
+            value={
+              personnel.isLoading ? (
+                <Spinner
+                  classNames={{ label: "text-foreground mt-4" }}
+                  variant="wave"
+                  size="sm"
+                />
+              ) : (
+                personnel.totalSchedules.toLocaleString()
+              )
             }
-            icon="solar:shield-check-bold"
-            bgColor={
-              broadcast.isQuotaExceeded ? "bg-red-500/10" : "bg-slate-700/10"
-            }
-            textColor={
-              broadcast.isQuotaExceeded ? "text-red-600" : "text-slate-900"
-            }
+            change="Class routines set"
+            icon="solar:calendar-date-bold"
+            bgColor="bg-purple-700/10"
+            textColor="text-purple-800"
             delay={0.6}
           />
         </div>

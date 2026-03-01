@@ -10,7 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { CreateOrEditFormWrapper } from "@/components/form/CreateOrEditFormWrapper";
 import { TeacherClassForm } from "@/features/lms/teacher-classes/forms/TeacherClassForm";
 import { TeacherClassFormValues } from "@/features/lms/classes/interfaces";
-import { createTeacherClass, teacherClassKeys } from "@/services/classesService";
+import { createTeacherClass } from "@/services/classesService";
 
 export default function CreateTeacherClassPage() {
   const router = useRouter();
@@ -32,7 +32,7 @@ export default function CreateTeacherClassPage() {
       }
 
       await queryClient.invalidateQueries({
-        queryKey: teacherClassKeys.all,
+        queryKey: ["/teacher-classes"],
         refetchType: "all",
       });
 

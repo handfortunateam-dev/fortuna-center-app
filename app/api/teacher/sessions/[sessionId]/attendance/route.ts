@@ -4,7 +4,7 @@ import {
     classAttendances,
     classSessions,
     classEnrollments,
-    users,
+    students,
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -45,15 +45,17 @@ export async function GET(
                 id: classAttendances.id,
                 sessionId: classAttendances.sessionId,
                 studentId: classAttendances.studentId,
-                studentName: users.name,
-                studentEmail: users.email,
+                firstName: students.firstName,
+                middleName: students.middleName,
+                lastName: students.lastName,
+                studentEmail: students.email,
                 status: classAttendances.status,
                 notes: classAttendances.notes,
                 checkedInAt: classAttendances.checkedInAt,
                 recordedAt: classAttendances.recordedAt,
             })
             .from(classAttendances)
-            .innerJoin(users, eq(classAttendances.studentId, users.id))
+            .innerJoin(students, eq(classAttendances.studentId, students.id))
             .where(eq(classAttendances.sessionId, sessionId));
 
         // If no records exist, auto-generate them (LAZY GENERATION)
@@ -63,12 +65,14 @@ export async function GET(
             // Get all enrolled students
             const enrolledStudents = await db
                 .select({
-                    studentId: users.id,
-                    studentName: users.name,
-                    studentEmail: users.email,
+                    studentId: students.id,
+                    firstName: students.firstName,
+                    middleName: students.middleName,
+                    lastName: students.lastName,
+                    studentEmail: students.email,
                 })
                 .from(classEnrollments)
-                .innerJoin(users, eq(classEnrollments.studentId, users.id))
+                .innerJoin(students, eq(classEnrollments.studentId, students.id))
                 .where(eq(classEnrollments.classId, classId));
 
             if (enrolledStudents.length === 0) {
@@ -111,15 +115,17 @@ export async function GET(
                     id: classAttendances.id,
                     sessionId: classAttendances.sessionId,
                     studentId: classAttendances.studentId,
-                    studentName: users.name,
-                    studentEmail: users.email,
+                    firstName: students.firstName,
+                    middleName: students.middleName,
+                    lastName: students.lastName,
+                    studentEmail: students.email,
                     status: classAttendances.status,
                     notes: classAttendances.notes,
                     checkedInAt: classAttendances.checkedInAt,
                     recordedAt: classAttendances.recordedAt,
                 })
                 .from(classAttendances)
-                .innerJoin(users, eq(classAttendances.studentId, users.id))
+                .innerJoin(students, eq(classAttendances.studentId, students.id))
                 .where(eq(classAttendances.sessionId, sessionId));
         }
 
@@ -133,17 +139,23 @@ export async function GET(
                 startTime: session.schedule?.startTime,
                 endTime: session.schedule?.endTime,
             },
-            records: attendanceRecords.map((r) => ({
-                id: r.id,
-                sessionId: r.sessionId,
-                studentId: r.studentId,
-                studentName: r.studentName || "N/A",
-                studentEmail: r.studentEmail,
-                status: r.status,
-                notes: r.notes,
-                checkedInAt: r.checkedInAt,
-                recordedAt: r.recordedAt,
-            })),
+            records: attendanceRecords.map((r) => {
+                const fullName = [r.firstName, r.middleName, r.lastName]
+                    .filter(Boolean)
+                    .join(" ");
+
+                return {
+                    id: r.id,
+                    sessionId: r.sessionId,
+                    studentId: r.studentId,
+                    studentName: fullName || "N/A",
+                    studentEmail: r.studentEmail,
+                    status: r.status as any,
+                    notes: r.notes,
+                    checkedInAt: r.checkedInAt,
+                    recordedAt: r.recordedAt,
+                };
+            }),
         });
     } catch (error) {
         console.error("Error fetching attendance records:", error);

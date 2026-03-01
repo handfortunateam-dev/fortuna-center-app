@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { users } from "@/db/schema/users.schema";
+
 import { classes } from "@/db/schema/class.schema";
 import { classEnrollments } from "@/db/schema/class-enrollment.schema";
 import { teacherClasses } from "@/db/schema/teacher-class.schema";
@@ -52,17 +52,32 @@ export async function GET(
         const enrollments = await db.query.classEnrollments.findMany({
             where: eq(classEnrollments.classId, classId),
             with: {
-                student: true
+                student: {
+                    with: {
+                        user: true
+                    }
+                }
             }
         });
 
-        const studentsList = enrollments.map(e => ({
-            id: e.student.id,
-            name: e.student.name,
-            email: e.student.email,
-            image: e.student.image,
-            enrolledAt: e.enrolledAt
-        }));
+        const studentsList = enrollments.map(e => {
+            const student = e.student;
+            const user = student.user;
+
+            // Construct full name from student table if user name is missing
+            const fullName = user?.name ||
+                [student.firstName, student.middleName, student.lastName]
+                    .filter(Boolean)
+                    .join(" ");
+
+            return {
+                id: student.id,
+                name: fullName || "Unknown Student",
+                email: user?.email || student.email || "No email",
+                image: user?.image || null,
+                enrolledAt: e.enrolledAt
+            };
+        });
 
         return NextResponse.json({
             ...classDetails,

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { posts, users, postCategories, postTags, postToCategories, postToTags } from "@/db/schema";
-import { eq, desc, inArray } from "drizzle-orm";
+import { posts, postCategories, postTags, postToCategories, postToTags } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 
 // Schema for validation
@@ -18,14 +18,9 @@ const createArticleSchema = z.object({
 
 export async function GET(request: NextRequest) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
-            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-        }
-
-        const [user] = await db.select().from(users).where(eq(users.clerkId, clerkUserId)).limit(1);
+        const user = await getAuthUser();
         if (!user) {
-            return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
         const userPosts = await db
@@ -43,14 +38,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
-            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-        }
-
-        const [user] = await db.select().from(users).where(eq(users.clerkId, clerkUserId)).limit(1);
+        const user = await getAuthUser();
         if (!user) {
-            return NextResponse.json({ success: false, message: "User not found" }, { status: 404 });
+            return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
         const body = await request.json();
@@ -62,11 +52,18 @@ export async function POST(request: NextRequest) {
 
         const { title, content, excerpt, coverImage, status, categoryIds, tags } = validated.data;
 
+        // Generate slug from title
+        const slug = title
+            .toLowerCase()
+            .replace(/ /g, "-")
+            .replace(/[^\w-]+/g, "") + "-" + Date.now();
+
         // Use transaction to ensure data integrity
         const result = await db.transaction(async (tx) => {
             // 1. Create Post
             const [newPost] = await tx.insert(posts).values({
                 title: title,
+                slug: slug,
                 content: content,
                 excerpt: excerpt || null,
                 coverImage: coverImage || null,
@@ -78,11 +75,6 @@ export async function POST(request: NextRequest) {
 
             // 2. Handle Categories
             if (categoryIds && categoryIds.length > 0) {
-                // Verify categories exist? Optional but good practice.
-                // For now, assume IDs are valid or foreign key constraint will fail/ignore?
-                // Drizzle insert doesn't auto-check unless configured. DB will throw if FK invalid.
-                // We'll trust the input for now or catch the error.
-
                 const categoryLinks = categoryIds.map(catId => ({
                     postId: newPost.id,
                     categoryId: catId,
@@ -95,23 +87,19 @@ export async function POST(request: NextRequest) {
 
             // 3. Handle Tags
             if (tags && tags.length > 0) {
-                // We assume 'tags' is an array of tag NAMES.
-                // We need to find existing tags or create new ones.
                 const processedTagIds: string[] = [];
 
                 for (const tagName of tags) {
-                    const slug = tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                    const tagSlug = tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-                    // Check if exists
-                    const [existingTag] = await tx.select().from(postTags).where(eq(postTags.slug, slug)).limit(1);
+                    const [existingTag] = await tx.select().from(postTags).where(eq(postTags.slug, tagSlug)).limit(1);
 
                     if (existingTag) {
                         processedTagIds.push(existingTag.id);
                     } else {
-                        // Create new tag
                         const [newTag] = await tx.insert(postTags).values({
                             name: tagName,
-                            slug: slug,
+                            slug: tagSlug,
                         }).returning();
                         processedTagIds.push(newTag.id);
                     }

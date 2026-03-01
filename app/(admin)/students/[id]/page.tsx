@@ -1,6 +1,9 @@
 "use client";
 
 import { use } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@heroui/react";
+import { Icon } from "@iconify/react";
 import { useStudentDetail } from "@/services/studentsService";
 import CardWrapper from "@/components/wrappers/card-wrappers";
 import TextShow from "@/components/text-show";
@@ -16,6 +19,7 @@ interface StudentDetailPageProps {
 
 export default function StudentDetailPage({ params }: StudentDetailPageProps) {
   const resolvedParams = use(params);
+  const router = useRouter();
   const { data, isLoading } = useStudentDetail(resolvedParams.id);
 
   if (isLoading) {
@@ -36,7 +40,23 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
     .join(" ");
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-4">
+      <div className="flex items-center justify-between">
+        <Button
+          variant="flat"
+          startContent={<Icon icon="lucide:arrow-left" className="w-4 h-4" />}
+          onPress={() => router.push("/students")}
+        >
+          Back
+        </Button>
+        <Button
+          color="primary"
+          startContent={<Icon icon="lucide:pencil" className="w-4 h-4" />}
+          onPress={() => router.push(`/students/${resolvedParams.id}/edit`)}
+        >
+          Edit Student
+        </Button>
+      </div>
       <CardWrapper
         title={fullName}
         description={`Student ID: ${s.studentId} • ${s.email}`}

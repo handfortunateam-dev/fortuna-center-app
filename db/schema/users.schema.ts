@@ -6,7 +6,8 @@ export const userRoleEnum = pgEnum('user_role', [
   'ADMINISTRATIVE_EMPLOYEE',
   'ADMIN',
   'TEACHER',
-  'STUDENT'
+  'STUDENT',
+  'DEVELOPER'
 ]);
 
 // Users table

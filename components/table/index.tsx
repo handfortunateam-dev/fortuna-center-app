@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Table,
   TableHeader,
@@ -21,7 +22,7 @@ import {
   Chip,
   Selection,
 } from "@heroui/react";
-import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -333,6 +334,7 @@ interface ListGridProps<T = unknown> {
   enableImport?: boolean;
   onImport?: () => void;
   exportResourcePath?: string;
+  additionalOptions?: OptionsMenuItem[];
   customOptions?: OptionsMenuItem[];
 
   // NEW! Rows per page options
@@ -420,6 +422,7 @@ export function ListGrid<T = unknown>({
   enableImport = false,
   onImport,
   exportResourcePath,
+  additionalOptions = [],
   customOptions = [],
   rowsPerPageOptions = [10, 20, 50, 100],
   onPageSizeChange,
@@ -513,6 +516,88 @@ export function ListGrid<T = unknown>({
   // Use external or internal pagination state
   const currentPage = externalCurrentPage ?? internalCurrentPage;
   const onPageChange = externalOnPageChange ?? setInternalCurrentPage;
+
+  // ── Right-click context menu ──────────────────────────────────────────────
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    row: Row;
+  } | null>(null);
+
+  // Internal flag: user activated selection mode via right-click "Select"
+  const [isSelectionActive, setIsSelectionActive] = useState(false);
+
+  // Effective selection mode (none by default, multiple after right-click select)
+  const effectiveSelectionMode = isSelectionActive ? "multiple" : selectionMode;
+
+  // Ref for the table wrapper — used to animate checkbox cells on selection activation
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  // Animate the checkbox column sliding in when selection is first activated
+  useEffect(() => {
+    if (!isSelectionActive || !tableRef.current) return;
+
+    // Wait one frame so HeroUI has rendered the checkbox cells
+    const frame = requestAnimationFrame(() => {
+      const cells = tableRef.current?.querySelectorAll<HTMLElement>(
+        "td:first-child, th:first-child",
+      );
+      if (!cells) return;
+
+      cells.forEach((el, i) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateX(-10px)";
+        el.style.transition = "none";
+
+        // Stagger each row by 18 ms
+        setTimeout(() => {
+          el.style.transition = "opacity 0.22s ease, transform 0.22s ease";
+          el.style.opacity = "1";
+          el.style.transform = "translateX(0)";
+        }, i * 18);
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isSelectionActive]);
+
+  // Close context menu on outside click or Escape
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    document.addEventListener("click", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [contextMenu]);
+
+  const handleContextMenu = (e: React.MouseEvent, row: Row) => {
+    e.preventDefault();
+    const menuW = 192; // min-w-48
+    const menuH = 180; // estimated height
+    const x = e.clientX + menuW > window.innerWidth ? e.clientX - menuW : e.clientX;
+    const y = e.clientY + menuH > window.innerHeight ? e.clientY - menuH : e.clientY;
+    setContextMenu({ x, y, row });
+  };
+
+  const handleContextMenuSelect = (row: Row) => {
+    setIsSelectionActive(true);
+    const current =
+      selectedKeys === "all"
+        ? new Set(rows.map((r) => r.key))
+        : new Set(selectedKeys as Set<string>);
+    current.add(row.key);
+    onSelectionChange(current);
+    setContextMenu(null);
+  };
+
+  const handleContextMenuDelete = (row: Row) => {
+    openDeleteDialog(String(row.id || row.key), row);
+    setContextMenu(null);
+  };
 
   // Debounce search query for server-side fetching
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
@@ -810,6 +895,13 @@ export function ListGrid<T = unknown>({
     }
     return (selectedKeys as Set<string>).size;
   }, [selectedKeys, rows.length]);
+
+  // Auto-deactivate selection mode when all rows are deselected
+  useEffect(() => {
+    if (isSelectionActive && selectedCount === 0) {
+      setIsSelectionActive(false);
+    }
+  }, [selectedCount, isSelectionActive]);
 
   // Handle bulk action click (with optional confirmation)
   const handleBulkActionClick = (action: BulkAction<T>) => {
@@ -1374,6 +1466,10 @@ export function ListGrid<T = unknown>({
       allOptions.push(...customOptions);
     }
 
+    if (additionalOptions && additionalOptions.length > 0) {
+      allOptions.unshift(...additionalOptions);
+    }
+
     if (enableImport) {
       allOptions.unshift({
         key: "import",
@@ -1690,21 +1786,16 @@ export function ListGrid<T = unknown>({
     );
   };
 
-  // ==================== BULK ACTIONS BAR ====================
-  const renderBulkActionsBar = () => {
-    if (selectionMode === "none" || selectedCount === 0) return null;
-
-    // Combine custom bulk actions with auto-generated bulk delete
-    const allBulkActions: BulkAction<T>[] = [...bulkActions];
-
-    // Add auto bulk delete if enabled and resourcePath is set
+  // ==================== BULK ACTIONS BAR (floating) ====================
+  const getBulkActions = (): BulkAction<T>[] => {
+    const all: BulkAction<T>[] = [...bulkActions];
     if (
       (enableDelete || onBulkDelete) &&
       !bulkActions.some((a) => a.key === "delete")
     ) {
-      allBulkActions.push({
+      all.push({
         key: "delete",
-        label: "Hapus Terpilih",
+        label: "Delete Selected",
         icon: "lucide:trash-2",
         color: "danger",
         confirmTitle: bulkDeleteConfirmTitle,
@@ -1723,48 +1814,11 @@ export function ListGrid<T = unknown>({
         },
       });
     }
-
-    return (
-      <div className="flex items-center gap-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
-        <div className="flex items-center gap-2">
-          <Chip color="primary" variant="flat" size="sm">
-            {selectedCount} item dipilih
-          </Chip>
-          <Button
-            size="lg"
-            variant="light"
-            onPress={() => onSelectionChange(new Set([]))}
-          >
-            Batal Pilih
-          </Button>
-        </div>
-
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-2">
-          {allBulkActions.map((action) => (
-            <Button
-              key={action.key}
-              size="lg"
-              color={action.color || "default"}
-              variant="flat"
-              startContent={
-                action.icon ? (
-                  <Icon icon={action.icon} className="w-6 h-6" />
-                ) : undefined
-              }
-              onPress={() => handleBulkActionClick(action)}
-              isLoading={
-                isBulkDeleting && pendingBulkAction?.key === action.key
-              }
-            >
-              {action.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-    );
+    return all;
   };
+
+  // Rendered inline (legacy placeholder — actual bar is rendered via AnimatePresence at the bottom)
+  const renderBulkActionsBar = () => null;
 
   // ==================== MOBILE SELECTION CHECKBOX ====================
   const renderMobileSelectionCheckbox = (item: Row) => {
@@ -1794,6 +1848,63 @@ export function ListGrid<T = unknown>({
             onSelectionChange(newSelection);
           }}
         />
+      </div>
+    );
+  };
+
+  // ==================== CONTEXT MENU ====================
+  const renderContextMenu = () => {
+    if (!contextMenu) return null;
+    const { x, y, row } = contextMenu;
+    return (
+      <div
+        className="fixed z-[9999] min-w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        style={{ top: y, left: x }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {enableShow && finalActionButtons?.show && (
+          <button
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default-700 hover:bg-default-100 dark:hover:bg-default-800 transition-colors text-left"
+            onClick={() => {
+              finalActionButtons.show!.onClick(String(row.id || row.key));
+              setContextMenu(null);
+            }}
+          >
+            <Icon icon="lucide:eye" className="w-4 h-4 text-default-500" />
+            View Detail
+          </button>
+        )}
+        {enableEdit && finalActionButtons?.edit && (
+          <button
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default-700 hover:bg-default-100 dark:hover:bg-default-800 transition-colors text-left"
+            onClick={() => {
+              finalActionButtons.edit!.onClick(String(row.id || row.key));
+              setContextMenu(null);
+            }}
+          >
+            <Icon icon="lucide:pencil" className="w-4 h-4 text-blue-500" />
+            Edit
+          </button>
+        )}
+        <button
+          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default-700 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors text-left"
+          onClick={() => handleContextMenuSelect(row)}
+        >
+          <Icon icon="lucide:check-square" className="w-4 h-4 text-primary" />
+          Select / Mark
+        </button>
+        {enableDelete && (
+          <>
+            <div className="border-t border-default-100 dark:border-default-800 my-1" />
+            <button
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-danger hover:bg-danger-50 dark:hover:bg-danger-900/20 transition-colors text-left"
+              onClick={() => handleContextMenuDelete(row)}
+            >
+              <Icon icon="lucide:trash-2" className="w-4 h-4" />
+              Delete
+            </button>
+          </>
+        )}
       </div>
     );
   };
@@ -1842,8 +1953,7 @@ export function ListGrid<T = unknown>({
           </div>
         </div>
 
-        {/* Bulk Actions Bar */}
-        {renderBulkActionsBar()}
+        {/* Bulk actions bar is now a floating element rendered via AnimatePresence at the bottom */}
 
         {enableSearch && (
           <div className="flex-1 max-w-md">
@@ -1921,13 +2031,13 @@ export function ListGrid<T = unknown>({
             )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4" ref={tableRef}>
             <Table
               aria-label="Tabel"
-              selectionMode={selectionMode}
-              selectedKeys={selectionMode !== "none" ? selectedKeys : undefined}
+              selectionMode={effectiveSelectionMode}
+              selectedKeys={effectiveSelectionMode !== "none" ? selectedKeys : undefined}
               onSelectionChange={
-                selectionMode !== "none" ? onSelectionChange : undefined
+                effectiveSelectionMode !== "none" ? onSelectionChange : undefined
               }
             >
               <TableHeader columns={filteredColumns}>
@@ -1952,6 +2062,7 @@ export function ListGrid<T = unknown>({
                       handleRowClick ? "cursor-pointer" : ""
                     }`}
                     onDoubleClick={() => handleRowClick?.(item as Row)}
+                    onContextMenu={(e) => handleContextMenu(e, item as Row)}
                   >
                     {(columnKey) => (
                       <TableCell
@@ -2048,6 +2159,64 @@ export function ListGrid<T = unknown>({
           }
         }}
       />
+
+      {/* ── Floating Bulk Action Bar (animated) ───────────────────────────── */}
+      <AnimatePresence>
+        {effectiveSelectionMode !== "none" && selectedCount > 0 && (
+          <motion.div
+            key="bulk-bar"
+            initial={{ opacity: 0, y: 40, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 40, scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border border-white/20 dark:border-white/10 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80"
+            style={{ minWidth: 360 }}
+          >
+            {/* Count chip + deselect */}
+            <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-semibold">
+                <Icon icon="lucide:check-square" className="w-4 h-4" />
+                {selectedCount} selected
+              </div>
+              <button
+                className="text-xs text-default-500 hover:text-default-700 dark:hover:text-default-300 transition-colors underline underline-offset-2"
+                onClick={() => {
+                  onSelectionChange(new Set([]));
+                }}
+              >
+                Clear
+              </button>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2">
+              {getBulkActions().map((action) => (
+                <Button
+                  key={action.key}
+                  size="sm"
+                  color={action.color || "default"}
+                  variant={action.color === "danger" ? "solid" : "flat"}
+                  startContent={
+                    action.icon ? (
+                      <Icon icon={action.icon} className="w-4 h-4" />
+                    ) : undefined
+                  }
+                  onPress={() => handleBulkActionClick(action)}
+                  isLoading={
+                    isBulkDeleting && pendingBulkAction?.key === action.key
+                  }
+                  className="font-semibold"
+                >
+                  {action.label}
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Right-click context menu ───────────────────────────────────────── */}
+      {renderContextMenu()}
     </>
   );
 }

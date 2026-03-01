@@ -48,11 +48,13 @@ export const columnsUsers = [
             color={
               user.role === "ADMIN"
                 ? "danger"
-                : user.role === "TEACHER"
-                  ? "primary"
-                  : user.role === "ADMINISTRATIVE_EMPLOYEE"
-                    ? "warning"
-                    : "default"
+                : user.role === "DEVELOPER"
+                  ? "secondary"
+                  : user.role === "TEACHER"
+                    ? "primary"
+                    : user.role === "ADMINISTRATIVE_EMPLOYEE"
+                      ? "warning"
+                      : "default"
             }
             variant="flat"
           >

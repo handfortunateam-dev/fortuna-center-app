@@ -133,7 +133,7 @@ export default function LocalSignIn() {
       {/* Loading overlay shown immediately after successful login */}
       {redirecting && <RedirectingOverlay name={userName} />}
 
-      <Card className="w-full max-w-[420px] shadow-2xl border border-default-100 bg-content1 rounded-2xl overflow-visible">
+      <Card className="mx-auto w-[calc(100%-2rem)] sm:w-full max-w-[420px] shadow-2xl border border-default-100 bg-content1 rounded-2xl overflow-visible">
         {/* Header with Logo */}
         <div className="flex flex-col items-center pt-8 pb-2 px-8">
           <div className="mb-6">
@@ -193,7 +193,7 @@ export default function LocalSignIn() {
             </form>
           </FormProvider>
 
-          <div className="mt-6 text-center text-small text-default-500">
+          {/* <div className="mt-6 text-center text-small text-default-500">
             Don&apos;t have an account?{" "}
             <Link
               href="/auth/signup"
@@ -201,7 +201,7 @@ export default function LocalSignIn() {
             >
               Sign up
             </Link>
-          </div>
+          </div> */}
         </CardBody>
 
         <div className="bg-default-50/50 py-4 text-center border-t border-default-100 rounded-b-2xl">

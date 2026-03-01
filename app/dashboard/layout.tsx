@@ -3,6 +3,7 @@
 import React, { ReactNode, useState } from "react";
 import { Navbar, Sidebar } from "@/components/layout";
 import { BreadcrumbsNav } from "@/components/breadcrumb";
+import { ChangelogNotification } from "@/components/changelog/ChangelogNotification";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -46,6 +47,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* Changelog Notification */}
+      <ChangelogNotification />
     </div>
   );
 }

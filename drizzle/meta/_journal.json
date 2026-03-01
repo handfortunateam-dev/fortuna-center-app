@@ -183,6 +183,48 @@
       "when": 1771754167614,
       "tag": "0025_steady_wild_child",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1771830637735,
+      "tag": "0026_natural_spot",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1771943441973,
+      "tag": "0027_glorious_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1772365677608,
+      "tag": "0028_classy_lilandra",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1772369646443,
+      "tag": "0029_unique_silver_samurai",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1772386192847,
+      "tag": "0030_sturdy_snowbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1772386517901,
+      "tag": "0031_burly_photon",
+      "breakpoints": true
     }
   ]
 }

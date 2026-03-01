@@ -13,7 +13,13 @@ interface SchedulerGridProps {
 }
 
 export function SchedulerGrid({ onScheduleClick }: SchedulerGridProps) {
-  const { weekDates, filteredSchedules, currentView, currentDate } = useScheduler();
+  const {
+    weekDates,
+    filteredSchedules,
+    currentView,
+    currentDate,
+    setExpandedScheduleId,
+  } = useScheduler();
 
   // Month view has its own component
   if (currentView === "month") {
@@ -24,7 +30,10 @@ export function SchedulerGrid({ onScheduleClick }: SchedulerGridProps) {
   const daysToShow = currentView === "day" ? [currentDate] : weekDates;
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
+    <div
+      className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900"
+      onClick={() => setExpandedScheduleId(null)}
+    >
       <div className="flex overflow-x-auto">
         {/* Time column */}
         <TimeColumn />
@@ -34,7 +43,7 @@ export function SchedulerGrid({ onScheduleClick }: SchedulerGridProps) {
           {daysToShow.map((date) => {
             const dayOfWeek = date.getDay();
             const daySchedules = sortSchedulesByTime(
-              getSchedulesForDay(filteredSchedules, dayOfWeek)
+              getSchedulesForDay(filteredSchedules, dayOfWeek),
             );
 
             return (

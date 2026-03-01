@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, desc, eq, ilike, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { podcasts, users } from "@/db/schema";
@@ -59,14 +59,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-    }
-
-    const [user] = await db.select().from(users).where(eq(users.clerkId, clerkUserId)).limit(1);
+    const user = await getAuthUser();
     if (!user) {
-      return NextResponse.json({ success: false, message: "User not found in database" }, { status: 404 });
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();

@@ -64,8 +64,17 @@ interface SchedulerContextType {
   // Drag state
   dragState: DragState;
 
+  // Loading state
+  isLoading: boolean;
+  isUpdating: boolean;
+  setIsUpdating: (val: boolean) => void;
+
   // Context Menu state
   contextMenu: ContextMenuState;
+
+  // Expanded Schedule state
+  expandedScheduleId: string | null;
+  setExpandedScheduleId: (id: string | null) => void;
 
   // Create Modal state
   createModalState: {
@@ -176,7 +185,11 @@ export function SchedulerProvider({
   const [filters, setFilters] = useState<SchedulerFilters>(initialFilters);
 
   // Fetch Teachers
-  const { data: teachersData } = useUsers({ role: "TEACHER", limit: 100 });
+  const {
+    data: teachersData,
+    isLoading: isTeachersLoading,
+    isFetching: isTeachersFetching,
+  } = useUsers({ role: "TEACHER", limit: 100 });
   const teachers: Teacher[] = useMemo(() => {
     return (teachersData?.data || []).map((t) => ({
       id: t.id,
@@ -187,28 +200,55 @@ export function SchedulerProvider({
     }));
   }, [teachersData]);
 
+  interface ApiTeacher {
+    id: string;
+    name: string;
+    image?: string;
+  }
+
+  interface ApiSchedule {
+    id: string;
+    classId: string;
+    className: string;
+    teachers: ApiTeacher[];
+    startTime: string;
+    endTime: string;
+    dayOfWeek: number;
+    hasAttendance: boolean;
+    enrolledStudents: number;
+    location?: string;
+    notes?: string;
+  }
+
   // Data state from API
-  const { data: schedulesData } = useSchedules(filters as SchedulerFilters);
+  const {
+    data: schedulesData,
+    isLoading: isSchedulesLoading,
+    isFetching: isSchedulesFetching,
+  } = useSchedules(filters as SchedulerFilters);
   const schedules: ClassSchedule[] = useMemo(() => {
     return (
-      ((schedulesData?.data as any[]) || [])?.map((s) => {
+      ((schedulesData?.data as ApiSchedule[]) || [])?.map((s) => {
         // Find colors for all teachers in this schedule
-        const groupedTeachers = ((s.teachers as any[]) || []).map((st) => {
-          const teacher = teachers.find((t) => t.id === st.id);
-          return {
-            ...st,
-            color: teacher?.color || stringToColor(st.id || "unknown"),
-            avatar: st.image || teacher?.avatar,
-          };
-        });
+        const groupedTeachers = ((s.teachers as ApiTeacher[]) || []).map(
+          (st) => {
+            const teacher = teachers.find((t) => t.id === st.id);
+            return {
+              id: st.id,
+              name: st.name,
+              color: teacher?.color || stringToColor(st.id || "unknown"),
+              avatar: st.image || teacher?.avatar,
+            };
+          },
+        );
 
         const primaryTeacher = groupedTeachers[0];
 
         return {
           ...s,
           // Ensure time format is HH:MM
-          startTime: (s.startTime as string).substring(0, 5),
-          endTime: (s.endTime as string).substring(0, 5),
+          startTime: s.startTime.substring(0, 5),
+          endTime: s.endTime.substring(0, 5),
           teachers: groupedTeachers,
           teacherId: primaryTeacher?.id || "",
           teacherName: primaryTeacher?.name || "No Teacher",
@@ -220,11 +260,16 @@ export function SchedulerProvider({
   }, [schedulesData, teachers]);
 
   // Fetch Classes
-  const { data: classesData } = useClasses({ isActive: true });
+  const {
+    data: classesData,
+    isLoading: isClassesLoading,
+    isFetching: isClassesFetching,
+  } = useClasses({ isActive: true });
   const classes: ClassRoom[] = useMemo(() => {
     return (classesData?.data || []).map((c) => ({
       id: c.id,
       name: c.name,
+      code: c.code,
       level: "N/A",
       maxStudents: 0,
     }));
@@ -242,6 +287,16 @@ export function SchedulerProvider({
     canDrop: false,
   });
 
+  // Loading & Updating state
+  const [isUpdating, setIsUpdating] = useState(false);
+  const isLoading =
+    isTeachersLoading ||
+    isTeachersFetching ||
+    isSchedulesLoading ||
+    isClassesLoading ||
+    isClassesFetching ||
+    isSchedulesFetching;
+
   // Context Menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     isOpen: false,
@@ -249,6 +304,11 @@ export function SchedulerProvider({
     y: 0,
     schedule: null,
   });
+
+  // Expanded Schedule state
+  const [expandedScheduleId, setExpandedScheduleId] = useState<string | null>(
+    null,
+  );
 
   // Create Modal state
   const [createModalState, setCreateModalState] = useState<{
@@ -297,6 +357,7 @@ export function SchedulerProvider({
         isOpen: true,
         defaultValues: defaults || null,
       });
+      setExpandedScheduleId(null);
     },
     [],
   );
@@ -309,6 +370,7 @@ export function SchedulerProvider({
   const openEditModal = useCallback((schedule: ClassSchedule) => {
     setDetailModalState({ isOpen: false, schedule: null }); // Ensure detail is closed if editing
     setEditModalState({ isOpen: true, schedule });
+    setExpandedScheduleId(null);
   }, []);
 
   const closeEditModal = useCallback(() => {
@@ -318,6 +380,7 @@ export function SchedulerProvider({
   // Detail Modal Handlers
   const openDetailModal = useCallback((schedule: ClassSchedule) => {
     setDetailModalState({ isOpen: true, schedule });
+    setExpandedScheduleId(null);
   }, []);
 
   const closeDetailModal = useCallback(() => {
@@ -360,7 +423,6 @@ export function SchedulerProvider({
     ): boolean => {
       const duration = calculateDuration(schedule.startTime, schedule.endTime);
       const newStartMinutes = timeToMinutes(newStartTime);
-      const newEndTime = minutesToTime(newStartMinutes + duration);
 
       // Check time bounds
       const maxMinutes = config.endHour * 60;
@@ -368,16 +430,10 @@ export function SchedulerProvider({
         return false;
       }
 
-      // Check conflicts
-      const conflict = checkConflict(
-        { dayOfWeek, startTime: newStartTime, endTime: newEndTime },
-        schedules,
-        schedule.id,
-      );
-
-      return !conflict;
+      // We now allow overlapping schedules like Google Calendar
+      return true;
     },
-    [schedules, config.endHour],
+    [config.endHour],
   );
 
   // Update a schedule (after drag & drop)
@@ -386,30 +442,15 @@ export function SchedulerProvider({
       const schedule = schedules.find((s) => s.id === id);
       if (!schedule) return false;
 
-      // Check for conflicts if day or time is changing
-      if (
-        updates.dayOfWeek !== undefined ||
-        updates.startTime ||
-        updates.endTime
-      ) {
-        const newSchedule = {
-          dayOfWeek: updates.dayOfWeek ?? schedule.dayOfWeek,
-          startTime: updates.startTime ?? schedule.startTime,
-          endTime: updates.endTime ?? schedule.endTime,
-        };
-
-        const conflict = checkConflict(newSchedule, schedules, id);
-        if (conflict) {
-          console.warn("Schedule conflict detected:", conflict);
-          return false;
-        }
-      }
-
+      // Conflict checking is removed to allow overlapping schedules
       try {
+        setIsUpdating(true);
         await apiUpdateSchedule(id, updates);
         await queryClient.invalidateQueries({ queryKey: schedulerKeys.all });
+        setIsUpdating(false);
         return true;
       } catch (error) {
+        setIsUpdating(false);
         console.error("Failed to update schedule:", error);
         return false;
       }
@@ -421,10 +462,13 @@ export function SchedulerProvider({
   const deleteSchedule = useCallback(
     async (id: string) => {
       try {
+        setIsUpdating(true);
         await apiDeleteSchedule(id);
         await queryClient.invalidateQueries({ queryKey: schedulerKeys.all });
+        setIsUpdating(false);
         return true;
       } catch (error) {
+        setIsUpdating(false);
         console.error("Failed to delete schedule:", error);
         return false;
       }
@@ -460,7 +504,7 @@ export function SchedulerProvider({
   // ============ DRAG & DROP HANDLERS ============
 
   const handleDragStart = useCallback(
-    (e: DragEvent<HTMLDivElement>, schedule: ClassSchedule) => {
+    (e: React.DragEvent<HTMLDivElement>, schedule: ClassSchedule) => {
       e.dataTransfer.setData("text/plain", JSON.stringify(schedule));
       e.dataTransfer.effectAllowed = "move";
 
@@ -479,7 +523,7 @@ export function SchedulerProvider({
     [],
   );
 
-  const handleDragEnd = useCallback((e: DragEvent<HTMLDivElement>) => {
+  const handleDragEnd = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     // Reset opacity
     if (e.currentTarget) {
       e.currentTarget.style.opacity = "1";
@@ -494,7 +538,7 @@ export function SchedulerProvider({
   }, []);
 
   const handleDragOver = useCallback(
-    (e: DragEvent<HTMLDivElement>, dayOfWeek: number, time: string) => {
+    (e: React.DragEvent<HTMLDivElement>, dayOfWeek: number, time: string) => {
       e.preventDefault();
 
       const { draggedSchedule } = dragState;
@@ -503,41 +547,56 @@ export function SchedulerProvider({
       const canDrop = canDropAtSlot(draggedSchedule, dayOfWeek, time);
       e.dataTransfer.dropEffect = canDrop ? "move" : "none";
 
-      setDragState((prev) => ({
-        ...prev,
-        dragOverSlot: { dayOfWeek, time },
-        canDrop,
-      }));
+      setDragState((prev) => {
+        if (
+          prev.dragOverSlot?.dayOfWeek === dayOfWeek &&
+          prev.dragOverSlot?.time === time &&
+          prev.canDrop === canDrop
+        ) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          dragOverSlot: { dayOfWeek, time },
+          canDrop,
+        };
+      });
     },
     [dragState, canDropAtSlot],
   );
 
-  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
-    // Check if we're leaving to another drop zone
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     const relatedTarget = e.relatedTarget as HTMLElement | null;
     if (!relatedTarget?.hasAttribute("data-drop-zone")) {
-      setDragState((prev) => ({
-        ...prev,
-        dragOverSlot: null,
-        canDrop: false,
-      }));
+      setDragState((prev) => {
+        if (prev.dragOverSlot === null && prev.canDrop === false) {
+          return prev;
+        }
+        return {
+          ...prev,
+          dragOverSlot: null,
+          canDrop: false,
+        };
+      });
     }
   }, []);
 
   const handleDrop = useCallback(
-    async (e: DragEvent<HTMLDivElement>, dayOfWeek: number, time: string) => {
+    async (
+      e: React.DragEvent<HTMLDivElement>,
+      dayOfWeek: number,
+      time: string,
+    ) => {
       e.preventDefault();
 
       let schedule: ClassSchedule | null = null;
-
-      // Try to get from dataTransfer
       try {
         const data = e.dataTransfer.getData("text/plain");
         if (data) {
           schedule = JSON.parse(data) as ClassSchedule;
         }
       } catch {
-        // Fallback to drag state
         schedule = dragState.draggedSchedule;
       }
 
@@ -547,6 +606,17 @@ export function SchedulerProvider({
       const duration = calculateDuration(schedule.startTime, schedule.endTime);
       const newStartMinutes = timeToMinutes(time);
       const newEndTime = minutesToTime(newStartMinutes + duration);
+
+      // Check max bounds
+      if (newStartMinutes + duration > config.endHour * 60) {
+        setDragState({
+          isDragging: false,
+          draggedSchedule: null,
+          dragOverSlot: null,
+          canDrop: false,
+        });
+        return;
+      }
 
       // Update the schedule
       const success = await updateSchedule(schedule.id, {
@@ -565,7 +635,6 @@ export function SchedulerProvider({
         );
       }
 
-      // Reset drag state
       setDragState({
         isDragging: false,
         draggedSchedule: null,
@@ -573,7 +642,7 @@ export function SchedulerProvider({
         canDrop: false,
       });
     },
-    [dragState.draggedSchedule, updateSchedule],
+    [dragState.draggedSchedule, updateSchedule, config.endHour],
   );
 
   // Context Menu Handlers
@@ -622,7 +691,12 @@ export function SchedulerProvider({
     filteredSchedules,
     config,
     dragState,
+    isLoading,
+    isUpdating,
+    setIsUpdating,
     contextMenu,
+    expandedScheduleId,
+    setExpandedScheduleId,
     createModalState,
     editModalState,
     openEditModal,

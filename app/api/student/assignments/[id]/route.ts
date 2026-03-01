@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { assignments, users, assignmentSubmissions } from "@/db/schema";
+import { assignments, assignmentSubmissions } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { users } from "@/db/schema/users.schema";
 
 export async function GET(
     request: NextRequest,
@@ -10,19 +11,9 @@ export async function GET(
 ) {
     const params = await props.params;
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-        }
-
-        const [student] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, clerkUserId))
-            .limit(1);
-
-        if (!student) {
-            return NextResponse.json({ success: false, message: "Student not found" }, { status: 404 });
         }
 
         const assignmentId = params.id;
@@ -58,15 +49,10 @@ export async function GET(
             .where(
                 and(
                     eq(assignmentSubmissions.assignmentId, assignmentId),
-                    eq(assignmentSubmissions.studentId, student.id)
+                    eq(assignmentSubmissions.studentId, user.id)
                 )
             )
             .limit(1);
-
-        // Transform submission attachments from old/new format schema if needed
-        // Assuming the DB schema update applied, attachments is JSONB. 
-        // If not applied yet, 'attachmentUrl' text might be there. We should handle both or assume update.
-        // For now, let's proceed assuming we write to the new schema, but read safely.
 
         const responseData = {
             ...assignmentData,

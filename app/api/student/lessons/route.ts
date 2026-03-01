@@ -1,27 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
-import { users, classEnrollments, classes } from "@/db/schema";
+import { classEnrollments, classes } from "@/db/schema";
 import { lessons } from "@/db/schema/lesson.schema";
 import { lessonMaterials } from "@/db/schema/lesson-material.schema";
 import { eq, asc, inArray, and, isNotNull } from "drizzle-orm";
+import { users } from "@/db/schema/users.schema";
 
 export async function GET(request: NextRequest) {
     try {
-        const { userId: clerkUserId } = await auth();
-        if (!clerkUserId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
-        }
-
-        // Get current student
-        const [student] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, clerkUserId))
-            .limit(1);
-
-        if (!student) {
-            return NextResponse.json({ success: false, message: "Student not found" }, { status: 404 });
         }
 
         const { searchParams } = new URL(request.url);
@@ -34,7 +24,7 @@ export async function GET(request: NextRequest) {
                 .from(classEnrollments)
                 .where(
                     and(
-                        eq(classEnrollments.studentId, student.id),
+                        eq(classEnrollments.studentId, user.id),
                         eq(classEnrollments.classId, classId)
                     )
                 )
@@ -87,7 +77,7 @@ export async function GET(request: NextRequest) {
         const enrollments = await db
             .select({ classId: classEnrollments.classId })
             .from(classEnrollments)
-            .where(eq(classEnrollments.studentId, student.id));
+            .where(eq(classEnrollments.studentId, user.id));
 
         const classIds = enrollments.map(e => e.classId);
 

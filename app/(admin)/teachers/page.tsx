@@ -23,7 +23,7 @@ export default function TeachersPage() {
       enableEdit
       enableDelete
       enableExport
-      enableImport
+      // enableImport
       actionButtons={{
         add: ADD_BUTTON.CREATE("/teachers/create"),
         custom: [

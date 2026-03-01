@@ -6,6 +6,7 @@ import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
 import { Card, CardBody, Button, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
 import {
@@ -20,6 +21,7 @@ import {
   TextareaInput,
 } from "@/components/inputs";
 import { today, getLocalTimeZone } from "@internationalized/date";
+import { Toast } from "@/components/toast";
 
 const DAYS = [
   "Sunday",
@@ -95,7 +97,21 @@ export default function CreateSessionPage() {
       queryClient.invalidateQueries({
         queryKey: ["teacher-sessions"],
       });
+      Toast({
+        title: "Session created successfully! Redirecting...",
+        color: "success",
+      });
+
       router.push(`/attendance/${data.session.id}`);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : "Failed to create session";
+      Toast({
+        title: "Error",
+        description: message,
+        color: "danger",
+      });
     },
   });
 

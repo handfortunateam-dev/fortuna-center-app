@@ -1,6 +1,4 @@
-"use client";
-
-import React, { DragEvent } from "react";
+import React from "react";
 import { useScheduler } from "../context/SchedulerContext";
 import { SLOT_HEIGHT } from "../constants";
 
@@ -11,55 +9,48 @@ interface TimeSlotProps {
   isHourStart: boolean;
 }
 
+import { Icon } from "@iconify/react";
+
 export function TimeSlot({
   dayOfWeek,
   hour,
   minute,
   isHourStart,
 }: TimeSlotProps) {
-  const { dragState, handleDragOver, handleDragLeave, handleDrop, readOnly } =
-    useScheduler();
+  const {
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    readOnly,
+    handleEmptySlotContextMenu,
+    dragState,
+  } = useScheduler();
 
   const slotTime = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
 
-  // Check if this slot is being hovered during drag
-  const isHovering =
+  const isDragOver =
     dragState.dragOverSlot?.dayOfWeek === dayOfWeek &&
     dragState.dragOverSlot?.time === slotTime;
+  const canDrop = isDragOver && dragState.canDrop;
 
-  const canDrop = isHovering && dragState.canDrop;
-  const cannotDrop = isHovering && !dragState.canDrop;
-
-  const onDragOver = (e: DragEvent<HTMLDivElement>) => {
+  const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     if (readOnly) return;
     handleDragOver(e, dayOfWeek, slotTime);
   };
 
-  const onDragLeave = (e: DragEvent<HTMLDivElement>) => {
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     handleDragLeave(e);
   };
 
-  const onDrop = (e: DragEvent<HTMLDivElement>) => {
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     if (readOnly) return;
     handleDrop(e, dayOfWeek, slotTime);
   };
-
-  const { handleEmptySlotContextMenu } = useScheduler();
 
   const onContextMenu = (e: React.MouseEvent) => {
     if (readOnly) return;
     handleEmptySlotContextMenu(e, dayOfWeek, slotTime);
   };
-
-  // Determine background color based on drag state
-  let bgClass = "";
-  if (canDrop) {
-    bgClass = "bg-green-100 dark:bg-green-900/30";
-  } else if (cannotDrop) {
-    bgClass = "bg-red-100 dark:bg-red-900/30";
-  } else if (dragState.isDragging) {
-    bgClass = "bg-blue-50/50 dark:bg-blue-900/10";
-  }
 
   return (
     <div
@@ -71,59 +62,18 @@ export function TimeSlot({
       onDrop={onDrop}
       onContextMenu={onContextMenu}
       className={`
-        relative
+        relative flex items-center justify-center transition-colors
         ${isHourStart ? "border-t border-gray-200 dark:border-gray-700" : "border-t border-gray-100 dark:border-gray-800"}
-        ${bgClass}
-        transition-colors duration-150
+        ${canDrop ? "bg-success-50 dark:bg-success-900/20 border-l-2 border-l-success z-10" : ""}
       `}
       style={{ height: `${SLOT_HEIGHT}px` }}
     >
-      {/* Drop indicator line */}
-      {isHovering && (
-        <div
-          className={`
-            absolute inset-x-1 top-0 h-1 rounded-full
-            ${canDrop ? "bg-green-500" : "bg-red-500"}
-          `}
-        />
-      )}
-
-      {/* Drop feedback icon */}
-      {isHovering && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          {canDrop ? (
-            <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
-              <svg
-                className="w-4 h-4 text-green-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-          ) : (
-            <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center">
-              <svg
-                className="w-4 h-4 text-red-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </div>
-          )}
+      {canDrop && (
+        <div className="absolute left-1 top-0 bottom-0 flex items-center">
+          <Icon
+            icon="lucide:check-circle-2"
+            className="text-success w-4 h-4 ml-1"
+          />
         </div>
       )}
     </div>

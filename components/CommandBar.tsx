@@ -147,20 +147,24 @@ export default function CommandBar({ userRole }: CommandBarProps) {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg  hover:bg-default-200 border-2 transition-colors border border-default-200"
+        aria-label="Search"
+        className="flex items-center justify-center gap-2 w-10 h-10 lg:w-auto lg:h-auto lg:px-3 lg:py-2 rounded-full lg:rounded-lg hover:bg-primary/10 lg:hover:bg-default-200 transition-colors border border-transparent lg:border-default-200 text-gray-500 dark:text-gray-400 focus:outline-none"
       >
         <Icon
-          icon="solar:magnifier-linear"
-          className="text-lg text-default-500"
+          icon="solar:magnifer-linear"
+          className="w-5 h-5 lg:w-auto lg:h-auto lg:text-lg lg:text-default-500"
         />
-        <span className="text-sm text-default-500 hidden sm:inline">
+        <span className="text-sm text-default-500 hidden lg:inline">
           Search...
         </span>
-        <div className="hidden sm:flex items-center gap-1">
-          <Kbd keys={isMac ? ["command"] : ["ctrl"]}>
+        <div className="hidden lg:flex items-center gap-1">
+          <Kbd
+            keys={isMac ? ["command"] : ["ctrl"]}
+            className="hidden xl:inline-block"
+          >
             {isMac ? "⌘" : "Ctrl"}
           </Kbd>
-          <Kbd>K</Kbd>
+          <Kbd className="hidden xl:inline-block">K</Kbd>
         </div>
       </button>
 
@@ -186,7 +190,7 @@ export default function CommandBar({ userRole }: CommandBarProps) {
                 onChange={(e) => setSearch(e.target.value)}
                 startContent={
                   <Icon
-                    icon="solar:magnifier-linear"
+                    icon="solar:magnifer-linear"
                     className="text-xl text-default-400"
                   />
                 }

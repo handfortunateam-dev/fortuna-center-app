@@ -35,4 +35,6 @@ export * from './podcast-comment.schema';
 export * from './podcast-like.schema';
 export * from './podcast-relations';
 export * from './course-payment.schema';
+export * from './tickets.schema';
+export * from './changelog.schema';
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getAuthUser, isAdmin } from "@/lib/auth/getAuthUser";
+import { UserRole } from "@/enums/common";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -12,19 +13,12 @@ import {
 
 export async function GET(request: NextRequest) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const user = await getAuthUser();
+        if (!user) {
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        // Get DB user to check role
-        const [currentUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.clerkId, userId))
-            .limit(1);
-
-        if (!currentUser || currentUser.role !== "ADMIN") {
+        if (user.role !== UserRole.ADMIN) {
             return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
         }
 

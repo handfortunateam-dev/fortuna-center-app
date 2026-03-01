@@ -58,3 +58,5 @@ next-env.d.ts
 
 docs/
 scripts/
+AGENTS.md
+.agent/
