@@ -9,6 +9,7 @@ import AbstractWaves from "@/components/backgrounds/AbstractWaves";
 import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
 import { HERO_STATS } from "@/constants/landingData";
+import { Button } from "@heroui/react";
 
 const CAROUSEL_IMAGES = [
   "/images/07b4928819.webp",
@@ -60,31 +61,26 @@ export default function HeroSection() {
             </Text>
 
             <div className="flex flex-wrap gap-4">
-              <Link
+              <Button
+                as={Link}
+                size="lg"
                 href="#programs"
-                className="px-8 py-4 rounded-xl bg-primary text-white font-bold hover:bg-red-700 transition-all duration-300 shadow-xl shadow-red-600/30 hover:-translate-y-1 active:scale-95"
+                variant="solid"
+                color="primary"
+                className="px-8 py-4 rounded-xl text-white font-bold hover:bg-red-700 transition-all duration-300 shadow-xl shadow-red-600/5 hover:-translate-y-1 active:scale-95"
               >
                 Explore Programs
-              </Link>
-              <Link
+              </Button>
+              <Button
+                as={Link}
+                size="lg"
                 href="#contact"
-                className="px-8 py-4 rounded-xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md text-foreground font-bold border border-border hover:bg-muted/80 transition-all duration-300 hover:-translate-y-1 active:scale-95 shadow-sm"
+                variant="bordered"
+                color="primary"
+                className="px-8 py-4 rounded-xl font-bold hover:text-primary! hover:opacity-100! data-[hover=true]:text-primary! data-[hover=true]:opacity-100! duration-300 shadow-xl shadow-red-600/5 hover:-translate-y-1 active:scale-95"
               >
                 Contact Us
-              </Link>
-            </div>
-
-            <div className="mt-12 flex items-center gap-8">
-              {HERO_STATS.map((stat, idx) => (
-                <div key={idx} className="flex items-center gap-3 group">
-                  <div className="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 shadow-sm">
-                    <Icon icon={stat.icon} className="text-xl" />
-                  </div>
-                  <Text weight="bold" size="sm" color="muted">
-                    {stat.label}
-                  </Text>
-                </div>
-              ))}
+              </Button>
             </div>
           </motion.div>
 
@@ -122,7 +118,7 @@ export default function HeroSection() {
                       priority
                     />
                     {/* Interior Gradient Overlay */}
-                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent z-10" />
+                    {/* <div className="absolute inset-0 bg-linear-to-t to-transparent z-10" /> */}
                   </motion.div>
                 </AnimatePresence>
 
