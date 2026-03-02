@@ -371,7 +371,7 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
             ),
           },
           {
-            name: "Scheduler",
+            name: "Class Scheduler Management",
             href: NAV_URL.ADMIN.SCHEDULER,
             icon: (props) => (
               <Icon icon="solar:calendar-date-bold-duotone" {...props} />

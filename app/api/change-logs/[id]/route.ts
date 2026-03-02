@@ -6,10 +6,10 @@ import { getAuthUser } from "@/lib/auth/getAuthUser";
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params;
+        const { id } = await params;
         const [log] = await db
             .select({
                 id: changelogs.id,
@@ -47,7 +47,7 @@ export async function GET(
 
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getAuthUser();
@@ -55,7 +55,7 @@ export async function PATCH(
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const { id } = params;
+        const { id } = await params;
         const body = await req.json();
         const { title, content, type, version, isPublished } = body;
 
@@ -88,7 +88,7 @@ export async function PATCH(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await getAuthUser();
@@ -96,7 +96,7 @@ export async function DELETE(
             return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
         }
 
-        const { id } = params;
+        const { id } = await params;
 
         const [deletedLog] = await db
             .update(changelogs)

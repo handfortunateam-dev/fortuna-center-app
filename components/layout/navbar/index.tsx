@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import Image from "next/image";
 import { Button, Skeleton } from "@heroui/react";
 import { UserButton, useUser, SignedIn } from "@clerk/nextjs";
@@ -22,7 +22,7 @@ import LocalUserMenu from "./LocalUserMenu";
 import { useAuthProvider } from "@/hooks/useAuthProvider";
 import { useGetIdentity } from "@/hooks/useGetIdentity";
 import { AnimatePresence, motion, PanInfo } from "framer-motion";
-import NotificationWidget from "@/components/NotificationWidget";
+import NotificationWidget from "@/components/notifications/NotificationWidget";
 
 interface NavbarProps {
   // Mode configuration
@@ -61,7 +61,8 @@ export default function Navbar({
   const { user: localUser, loading: localLoading } = useGetIdentity();
   const { setIsOpen: openSearch } = useSearchContext();
   const { theme, setTheme } = useTheme();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [, startTransition] = useTransition();
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -78,7 +79,9 @@ export default function Navbar({
 
   // Close mobile menu when route changes
   useEffect(() => {
-    setIsMobileMenuOpen(false);
+    startTransition(() => {
+      setIsMobileMenuOpen(false);
+    });
   }, [router]);
 
   // Prevent scrolling when mobile menu is open

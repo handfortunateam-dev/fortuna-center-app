@@ -94,7 +94,7 @@ export const NAV_URL = {
         },
         PAYMENT_COURSE_HISTORY: "/payment-course-history",
         HELP_SUPPORT: "/help-support",
-        CHANGE_LOG: "/change-log",
+        CHANGE_LOG: "/change-logs",
     },
     TEACHER: {
         DASHBOARD: "/dashboard",

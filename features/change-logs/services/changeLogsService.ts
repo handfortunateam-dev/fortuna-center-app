@@ -27,6 +27,17 @@ export function useChangeLogs(filters?: ChangelogFilters) {
     });
 }
 
+export function useChangeLog(id: string) {
+    return useQuery({
+        queryKey: changeLogKeys.detail(id),
+        queryFn: async () => {
+            const { data } = await apiClient.get<{ data: Changelog }>(`/change-logs/${id}`);
+            return data.data;
+        },
+        enabled: !!id,
+    });
+}
+
 export function useCreateChangeLog() {
     const queryClient = useQueryClient();
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { settingsService } from "@/services/settingsService";
-import { isAdmin, getAuthUser } from "@/lib/auth/getAuthUser";
+import { isAdmin, getAuthUser, isDeveloper } from "@/lib/auth/getAuthUser";
 
 export async function GET(request: NextRequest) {
     try {
@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
 
         // Check admin access for system settings
         const isUserAdmin = await isAdmin();
-        if (!isUserAdmin) {
+        const isUserDeveloper = await isDeveloper();
+        if (!isUserAdmin && !isUserDeveloper) {
             return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
         }
 
@@ -42,7 +43,8 @@ export async function POST(req: Request) {
         }
 
         const isUserAdmin = await isAdmin();
-        if (!isUserAdmin) {
+        const isUserDeveloper = await isDeveloper();
+        if (!isUserAdmin && !isUserDeveloper) {
             return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
         }
 

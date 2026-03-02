@@ -3,7 +3,7 @@
 import React, { ReactNode, useState } from "react";
 import { Navbar, Sidebar } from "@/components/layout";
 import { BreadcrumbsNav } from "@/components/breadcrumb";
-import { ChangelogNotification } from "@/components/changelog/ChangelogNotification";
+import { ChangelogNotification } from "@/components/notifications/ChangelogNotification";
 
 interface DashboardLayoutProps {
   children: ReactNode;

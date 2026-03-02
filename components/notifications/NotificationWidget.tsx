@@ -13,6 +13,13 @@ import { Icon } from "@iconify/react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 
+interface NotificationItem {
+  id: string;
+  title: string;
+  description: string;
+  timestamp: string;
+}
+
 export default function NotificationWidget() {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -27,7 +34,8 @@ export default function NotificationWidget() {
   });
 
   const notificationCount = data?.length || 0;
-  const displayCount = notificationCount > 99 ? "99+" : notificationCount.toString();
+  const displayCount =
+    notificationCount > 99 ? "99+" : notificationCount.toString();
 
   return (
     <Popover placement="bottom-end" isOpen={isOpen} onOpenChange={setIsOpen}>
@@ -71,7 +79,7 @@ export default function NotificationWidget() {
                 <Spinner size="sm" />
               </div>
             ) : data && data.length > 0 ? (
-              data.map((item: any) => (
+              data.map((item: NotificationItem) => (
                 <div
                   key={item.id}
                   className="px-4 py-3 border-b border-divider last:border-b-0 hover:bg-default-100 transition-colors cursor-default"
