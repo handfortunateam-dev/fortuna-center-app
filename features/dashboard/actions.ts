@@ -67,7 +67,7 @@ export interface RecentActivity {
 export async function getRecentActivity(): Promise<RecentActivity[]> {
     try {
         const user = await getAuthUser();
-        if (!user || (user.role !== "ADMINISTRATIVE_EMPLOYEE" && user.role !== "ADMIN" && !user.isAdminEmployeeAlso)) {
+        if (!user || (user.role !== "ADMINISTRATIVE_EMPLOYEE" && user.role !== "ADMIN" && !user.isAdminEmployeeAlso && user.role !== "DEVELOPER")) {
             throw new Error("Unauthorized access to administrative dashboard");
         }
 

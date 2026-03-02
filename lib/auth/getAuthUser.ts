@@ -107,6 +107,11 @@ export async function isAdmin(): Promise<boolean> {
   return user?.role === UserRole.ADMIN;
 }
 
+export async function isDeveloper(): Promise<boolean> {
+  const user = await getAuthUser();
+  return user?.role === UserRole.DEVELOPER;
+}
+
 /**
  * Check if user is authenticated
  */
