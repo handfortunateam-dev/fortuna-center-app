@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
-import { Card, Listbox, ListboxItem } from "@heroui/react";
+import React, { useRef, useEffect, useState } from "react";
+import { Card, Listbox, ListboxItem, useDisclosure } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useScheduler } from "../context/SchedulerContext";
 import { DAYS_OF_WEEK } from "../constants";
+import { ConfirmDialog } from "@/components/ui/Common/ConfirmDialog";
 
 export function SchedulerContextMenu() {
   const {
@@ -16,6 +17,12 @@ export function SchedulerContextMenu() {
     openDetailModal,
   } = useScheduler();
   const menuRef = useRef<HTMLDivElement>(null);
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose,
+  } = useDisclosure();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Close on click outside
   useEffect(() => {
@@ -36,13 +43,21 @@ export function SchedulerContextMenu() {
 
   if (!contextMenu.isOpen) return null;
 
-  const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this schedule?")) {
-      if (contextMenu.schedule) {
+  const handleDelete = () => {
+    closeContextMenu();
+    onDeleteOpen();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (contextMenu.schedule) {
+      setIsDeleting(true);
+      try {
         await deleteSchedule(contextMenu.schedule.id);
+      } finally {
+        setIsDeleting(false);
+        onDeleteClose();
       }
     }
-    closeContextMenu();
   };
 
   const handleEdit = () => {
@@ -138,50 +153,62 @@ export function SchedulerContextMenu() {
   }
 
   return (
-    <div
-      ref={menuRef}
-      className="fixed z-50 min-w-[200px]"
-      style={{
-        top: Math.min(contextMenu.y, window.innerHeight - 250), // Prevent overflow bottom
-        left: Math.min(contextMenu.x, window.innerWidth - 200), // Prevent overflow right
-      }}
-    >
-      <Card className="shadow-xl border border-gray-100 dark:border-gray-700">
-        <Listbox
-          aria-label="Schedule Actions"
-          variant="flat"
-          items={items}
-          onAction={(key) => {
-            if (key === "add-teacher") handleAddTeacher();
-            if (key === "view") handleViewDetails();
-            if (key === "edit") handleEdit();
-            if (key === "delete") handleDelete();
-            if (key === "add") handleAddSchedule();
-          }}
-        >
-          {(item) => (
-            <ListboxItem
-              key={item.key}
-              color={item.color as any}
-              className={
-                item.textColor === "text-danger"
-                  ? "text-danger"
-                  : item.textColor === "text-primary"
-                    ? "text-primary font-bold"
-                    : ""
-              }
-              startContent={
-                <Icon
-                  icon={item.icon}
-                  className={`w-4 h-4 ${item.textColor === "text-danger" ? "text-danger" : item.textColor === "text-primary" ? "text-primary" : "text-gray-500"}`}
-                />
-              }
-            >
-              {item.label}
-            </ListboxItem>
-          )}
-        </Listbox>
-      </Card>
-    </div>
+    <>
+      <ConfirmDialog
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        onConfirm={handleConfirmDelete}
+        title="Delete Schedule"
+        message="Are you sure you want to delete this schedule? This action cannot be undone."
+        confirmLabel="Delete"
+        confirmColor="danger"
+        isLoading={isDeleting}
+      />
+      <div
+        ref={menuRef}
+        className="fixed z-50 min-w-[200px]"
+        style={{
+          top: Math.min(contextMenu.y, window.innerHeight - 250),
+          left: Math.min(contextMenu.x, window.innerWidth - 200),
+        }}
+      >
+        <Card className="shadow-xl border border-gray-100 dark:border-gray-700">
+          <Listbox
+            aria-label="Schedule Actions"
+            variant="flat"
+            items={items}
+            onAction={(key) => {
+              if (key === "add-teacher") handleAddTeacher();
+              if (key === "view") handleViewDetails();
+              if (key === "edit") handleEdit();
+              if (key === "delete") handleDelete();
+              if (key === "add") handleAddSchedule();
+            }}
+          >
+            {(item) => (
+              <ListboxItem
+                key={item.key}
+                color={item.color as any}
+                className={
+                  item.textColor === "text-danger"
+                    ? "text-danger"
+                    : item.textColor === "text-primary"
+                      ? "text-primary font-bold"
+                      : ""
+                }
+                startContent={
+                  <Icon
+                    icon={item.icon}
+                    className={`w-4 h-4 ${item.textColor === "text-danger" ? "text-danger" : item.textColor === "text-primary" ? "text-primary" : "text-gray-500"}`}
+                  />
+                }
+              >
+                {item.label}
+              </ListboxItem>
+            )}
+          </Listbox>
+        </Card>
+      </div>
+    </>
   );
 }
