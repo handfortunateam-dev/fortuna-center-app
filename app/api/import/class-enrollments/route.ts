@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { classEnrollments, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { currentUser } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 
 function extractUUID(value: string): string | null {
   if (!value) return null;
@@ -19,7 +19,7 @@ function extractUUID(value: string): string | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await currentUser();
+    const user = await getAuthUser();
     if (!user) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
