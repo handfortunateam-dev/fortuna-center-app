@@ -1,3 +1,4 @@
+import { getAuthUser } from '@/lib/auth/getAuthUser';
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { teacherClasses, users } from "@/db/schema";
@@ -21,7 +22,8 @@ function extractUUID(value: string): string | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await currentUser();
+
+    const user = await getAuthUser();
     if (!user) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
