@@ -1,24 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Icon } from "@iconify/react";
+import { Heading } from "@/components/heading";
+import { StateMessage } from "@/components/state-message";
+import { Text } from "@/components/text";
+import { Toast } from "@/components/toast";
+import { classEnrollmentKeys } from "@/services/classesService";
+import { useClassesLookup, useStudentsLookup } from "@/services/lookupService";
 import {
+  Autocomplete,
+  AutocompleteItem,
   Button,
   Card,
   CardBody,
   CardHeader,
   ScrollShadow,
-  Autocomplete,
-  AutocompleteItem,
-  Divider,
 } from "@heroui/react";
-import * as XLSX from "xlsx";
-import { Toast } from "@/components/toast";
-import { Heading } from "@/components/heading";
-import { Text } from "@/components/text";
-import { useStudentsLookup, useClassesLookup } from "@/services/lookupService";
+import { Icon } from "@iconify/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { classEnrollmentKeys } from "@/services/classesService";
+import { useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 
 interface ImportResult {
   success: boolean;
@@ -36,6 +36,8 @@ interface EnrollmentRow {
   classId: string;
 }
 
+type ImportMode = "choose" | "file" | "manual";
+
 export default function ImportClassEnrollmentsPage() {
   const resource = "class-enrollments";
   const resourceLabel = "Class Enrollments";
@@ -46,7 +48,7 @@ export default function ImportClassEnrollmentsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  const [mode, setMode] = useState<"choose" | "file" | "manual">("choose");
+  const [mode, setMode] = useState<ImportMode>("choose");
   const queryClient = useQueryClient();
 
   const { data: students = [], isLoading: isLoadingStudents } =
@@ -148,6 +150,20 @@ export default function ImportClassEnrollmentsPage() {
       const result = await response.json();
       setImportResult(result);
 
+      if (result.success) {
+        Toast({
+          title: "Import Completed",
+          description: result.message,
+          color: result.details?.failed > 0 ? "warning" : "success",
+        });
+      } else {
+        Toast({
+          title: "Import Failed",
+          description: result.message || "An error occurred during import",
+          color: "danger",
+        });
+      }
+
       // Invalidate queries to refresh the table data
       await queryClient.invalidateQueries({
         queryKey: classEnrollmentKeys.all,
@@ -203,10 +219,12 @@ export default function ImportClassEnrollmentsPage() {
                   <Icon icon="lucide:mouse-pointer-click" className="w-8 h-8" />
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-semibold">Select Manually</p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <Text size="lg" weight="semibold">
+                    Select Manually
+                  </Text>
+                  <Text size="sm" color="muted">
                     Select students and classes directly from dropdowns.
-                  </p>
+                  </Text>
                 </div>
               </CardBody>
             </Card>
@@ -217,10 +235,12 @@ export default function ImportClassEnrollmentsPage() {
                   <Icon icon="lucide:upload-cloud" className="w-8 h-8" />
                 </div>
                 <div className="text-center">
-                  <p className="text-lg font-semibold">Upload Excel File</p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <Text size="lg" weight="semibold">
+                    Upload Excel File
+                  </Text>
+                  <Text size="sm" color="muted">
                     Upload a spreadsheet with student and class mappings.
-                  </p>
+                  </Text>
                 </div>
                 <input
                   type="file"
@@ -250,13 +270,13 @@ export default function ImportClassEnrollmentsPage() {
                     className="w-5 h-5 text-blue-500 mt-0.5"
                   />
                   <div className="flex flex-col gap-1">
-                    <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                    <Heading size="sm" weight="semibold" color="primary">
                       Need a Template?
-                    </h4>
-                    <p className="text-sm text-blue-600/80 dark:text-blue-400/80">
+                    </Heading>
+                    <Text size="sm" color="muted">
                       You can download an import template which includes valid
                       Student IDs and Class Codes.
-                    </p>
+                    </Text>
                     <Button
                       size="sm"
                       variant="light"
@@ -284,7 +304,9 @@ export default function ImportClassEnrollmentsPage() {
                   <div className="p-2 bg-primary/10 rounded-lg text-primary">
                     <Icon icon="lucide:list-plus" className="w-6 h-6" />
                   </div>
-                  <p className="font-semibold text-md">Manual Entry</p>
+                  <Text size="md" weight="semibold">
+                    Manual Entry
+                  </Text>
                 </div>
                 <Button
                   size="sm"
@@ -304,9 +326,14 @@ export default function ImportClassEnrollmentsPage() {
                         key={row.key}
                         className="flex flex-col md:flex-row gap-4 py-4 items-end"
                       >
-                        <div className="text-sm font-medium text-gray-400 w-8 mb-[10px]">
+                        <Text
+                          size="sm"
+                          weight="medium"
+                          color="muted"
+                          className=" w-8 mb-[10px]"
+                        >
                           {idx + 1}.
-                        </div>
+                        </Text>
                         <div className="flex-1 w-full">
                           <Autocomplete
                             label="Student"
@@ -367,9 +394,12 @@ export default function ImportClassEnrollmentsPage() {
                       </div>
                     ))}
                     {enrollments.length === 0 && (
-                      <div className="py-12 text-center text-gray-500">
-                        No rows added. Click &quot;Add Row&quot; to begin.
-                      </div>
+                      <StateMessage
+                        title="No rows added"
+                        message="Click 'Add Row' to begin."
+                        icon="lucide:list-plus"
+                        type="empty"
+                      />
                     )}
                   </div>
                 </ScrollShadow>
@@ -401,12 +431,16 @@ export default function ImportClassEnrollmentsPage() {
                     <Icon icon="lucide:file-check" className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-md font-semibold text-green-800 dark:text-green-200">
+                    <Heading
+                      size="md"
+                      weight="semibold"
+                      className="text-green-800 dark:text-green-200"
+                    >
                       File Parsed Successfully
-                    </h4>
-                    <p className="text-sm text-green-600 dark:text-green-400">
+                    </Heading>
+                    <Text size="sm" color="success">
                       {file?.name} ({previewData.length} records found)
-                    </p>
+                    </Text>
                   </div>
                 </div>
                 <Button
@@ -423,10 +457,12 @@ export default function ImportClassEnrollmentsPage() {
 
             <Card className="border border-gray-200 dark:border-gray-800 shadow-sm">
               <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-                <p className="font-semibold text-md">Data Preview</p>
-                <p className="text-xs text-gray-500">
+                <Heading size="md" weight="semibold">
+                  Data Preview
+                </Heading>
+                <Text size="sm" color="muted">
                   Review the extracted data before committing the import.
-                </p>
+                </Text>
               </CardHeader>
               <ScrollShadow className="max-h-[500px]">
                 <table className="w-full text-sm text-left">
@@ -483,29 +519,31 @@ export default function ImportClassEnrollmentsPage() {
               <Icon icon="lucide:clipboard-check" className="w-6 h-6" />
             </div>
             <div className="flex flex-col">
-              <p className="text-md font-semibold">Import Results</p>
-              <p className="text-small text-default-500">
+              <Text size="md" weight="semibold">
+                Import Results
+              </Text>
+              <Text size="sm" color="muted">
                 {importResult.message}
-              </p>
+              </Text>
             </div>
           </CardHeader>
           <CardBody className="px-6 py-8 space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 border border-green-200 bg-green-50 dark:bg-green-900/10 rounded-xl text-center">
-                <p className="text-xs font-bold text-green-600 uppercase">
+                <Text size="xs" weight="bold" color="success">
                   Success
-                </p>
-                <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+                </Text>
+                <Text size="lg" weight="bold" color="success">
                   {importResult.details?.success || 0}
-                </p>
+                </Text>
               </div>
               <div className="p-4 border border-red-200 bg-red-50 dark:bg-red-900/10 rounded-xl text-center">
-                <p className="text-xs font-bold text-red-600 uppercase">
+                <Text size="xs" weight="bold" color="danger">
                   Failed
-                </p>
-                <p className="text-2xl font-bold text-red-700 dark:text-red-400">
+                </Text>
+                <Text size="lg" weight="bold" color="danger">
                   {importResult.details?.failed || 0}
-                </p>
+                </Text>
               </div>
             </div>
             {importResult.details?.errors &&

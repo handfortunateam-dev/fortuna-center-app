@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const dbUser = await db
       .select()
       .from(users)
-      .where(eq(users.clerkId, user.id))
+      .where(eq(users.id, user.id))
       .limit(1);
 
     if (!dbUser || dbUser.length === 0) {
