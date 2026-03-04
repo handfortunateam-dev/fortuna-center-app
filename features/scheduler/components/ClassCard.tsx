@@ -125,6 +125,11 @@ export function ClassCard({
           style={{ color: borderCol }}
         >
           {schedule.className}
+          {schedule.classCode && (
+            <span className="opacity-75 font-medium ml-1">
+              ({schedule.classCode})
+            </span>
+          )}
         </h4>
 
         {/* Teachers Avatars - hide if too narrow unless expanded */}

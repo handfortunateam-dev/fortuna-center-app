@@ -37,4 +37,5 @@ export * from './podcast-relations';
 export * from './course-payment.schema';
 export * from './tickets.schema';
 export * from './changelog.schema';
-
+export * from './registration-link.schema';
+export * from './registration.schema';

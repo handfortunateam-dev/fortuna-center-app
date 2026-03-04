@@ -5,6 +5,7 @@ import { useStudents } from "@/services/studentsService";
 import { useTeachers } from "@/services/teachersService";
 import { useUsers } from "@/services/usersService";
 import { useSchedules } from "@/services/schedulerService";
+import { useRegistrations } from "@/features/registration/services/registrationService";
 import { useMemo } from "react";
 
 export function useDashboardStats() {
@@ -16,8 +17,9 @@ export function useDashboardStats() {
     const { data: teachersResponse, isLoading: teachersLoading } = useTeachers(listParams);
     const { data: usersResponse, isLoading: usersLoading } = useUsers(listParams);
     const { data: schedulesResponse, isLoading: schedulesLoading } = useSchedules();
+    const { data: registrationsResponse, isLoading: registrationsLoading } = useRegistrations();
 
-    const isLoading = classesLoading || studentsLoading || teachersLoading || usersLoading || schedulesLoading;
+    const isLoading = classesLoading || studentsLoading || teachersLoading || usersLoading || schedulesLoading || registrationsLoading;
 
     type BasicResponse = { totalCount?: number; data?: { isActive?: boolean }[] };
 
@@ -28,6 +30,9 @@ export function useDashboardStats() {
     const totalTeachers = (teachersResponse as BasicResponse)?.totalCount ?? (teachersResponse as BasicResponse)?.data?.length ?? 0;
     const totalUsers = (usersResponse as BasicResponse)?.totalCount ?? (usersResponse as BasicResponse)?.data?.length ?? 0;
     const totalSchedules = (schedulesResponse as BasicResponse)?.totalCount ?? (schedulesResponse as BasicResponse)?.data?.length ?? 0;
+
+    const totalRegistrations = registrationsResponse?.length || 0;
+    const pendingRegistrations = registrationsResponse?.filter(r => r.status === "pending").length || 0;
 
     return {
         lms: {
@@ -40,7 +45,9 @@ export function useDashboardStats() {
             totalTeachers,
             totalUsers,
             totalSchedules,
-            isLoading: teachersLoading || usersLoading || schedulesLoading,
+            totalRegistrations,
+            pendingRegistrations,
+            isLoading: teachersLoading || usersLoading || schedulesLoading || registrationsLoading,
         },
         overallLoading: isLoading,
     };

@@ -19,6 +19,7 @@ export interface ClassSchedule {
   id: string;
   classId: string;
   className: string;
+  classCode?: string;
 
   // Multiple teachers support
   teachers: {

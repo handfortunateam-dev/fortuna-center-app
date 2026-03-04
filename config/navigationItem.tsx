@@ -337,6 +337,7 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
       },
     ],
   },
+
   {
     name: "LMS",
     href: NAV_URL.ADMIN.LMS.CLASSES,
@@ -420,6 +421,13 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
         ],
       },
     ],
+  },
+  {
+    name: "Registrations",
+    href: NAV_URL.ADMIN.REGISTRATIONS,
+    icon: (props) => (
+      <Icon icon="solar:clipboard-list-bold-duotone" {...props} />
+    ),
   },
 
   {
@@ -742,6 +750,13 @@ export const administrativeEmployeeSidebarNavigation: AdminNavigationItem[] = [
     ],
   },
   {
+    name: "Registrations",
+    href: NAV_URL.ADMINISTRATIVE.REGISTRATIONS,
+    icon: (props) => (
+      <Icon icon="solar:clipboard-list-bold-duotone" {...props} />
+    ),
+  },
+  {
     name: "Class Administration",
     href: NAV_URL.ADMINISTRATIVE.CLASSES,
     icon: (props) => (
@@ -845,7 +860,30 @@ export const getNavigationByRole = (
   switch (role) {
     case "DEVELOPER":
       return [
-        ...adminSidebarNavigation,
+        // Replace flat Registrations with full version (includes Manage Links)
+        ...adminSidebarNavigation.map((item) =>
+          item.name === "Registrations"
+            ? {
+                ...item,
+                children: [
+                  {
+                    name: "Incoming Registrations",
+                    href: NAV_URL.ADMIN.REGISTRATIONS,
+                    icon: (props: { className?: string }) => (
+                      <Icon icon="solar:inbox-in-bold-duotone" {...props} />
+                    ),
+                  },
+                  {
+                    name: "Manage Links",
+                    href: NAV_URL.ADMIN.REGISTRATION_LINKS,
+                    icon: (props: { className?: string }) => (
+                      <Icon icon="solar:link-bold-duotone" {...props} />
+                    ),
+                  },
+                ],
+              }
+            : item,
+        ),
         {
           name: "Change Log",
           href: NAV_URL.ADMIN.CHANGE_LOG,

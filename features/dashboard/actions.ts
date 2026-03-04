@@ -6,6 +6,7 @@ import { students } from "@/db/schema/students.schema";
 import { classes } from "@/db/schema/class.schema";
 import { coursePayments } from "@/db/schema/course-payment.schema";
 import { posts } from "@/db/schema/posts.schema";
+import { registrations } from "@/db/schema/registration.schema";
 import { getAuthUser } from "@/lib/auth/getAuthUser";
 
 export async function getAdministrativeDashboardStats() {
@@ -38,11 +39,18 @@ export async function getAdministrativeDashboardStats() {
             .from(posts)
             .where(eq(posts.status, "published"));
 
+        // Get total pending registrations
+        const [pendingRegistrationsCount] = await db
+            .select({ value: count() })
+            .from(registrations)
+            .where(eq(registrations.status, "pending"));
+
         return {
             students: studentsCount.value || 0,
             classes: classesCount.value || 0,
             pendingPayments: pendingPaymentsCount.value || 0,
             publishedArticles: publishedArticlesCount.value || 0,
+            pendingRegistrations: pendingRegistrationsCount.value || 0,
         };
     } catch (error) {
         console.error("Error fetching administrative stats:", error);
@@ -51,6 +59,7 @@ export async function getAdministrativeDashboardStats() {
             classes: 0,
             pendingPayments: 0,
             publishedArticles: 0,
+            pendingRegistrations: 0,
         };
     }
 }
@@ -61,7 +70,7 @@ export interface RecentActivity {
     date: Date;
     icon: string;
     color: string;
-    type: "student" | "payment" | "post" | "class";
+    type: "student" | "payment" | "post" | "class" | "registration";
 }
 
 export async function getRecentActivity(): Promise<RecentActivity[]> {
@@ -126,6 +135,19 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
             .orderBy(desc(classes.createdAt))
             .limit(20);
 
+        // 5. Latest Registrations
+        const latestRegistrations = await db
+            .select({
+                id: registrations.id,
+                firstName: registrations.firstName,
+                lastName: registrations.lastName,
+                createdAt: registrations.createdAt,
+            })
+            .from(registrations)
+            .where(gt(registrations.createdAt, twoWeeksAgo))
+            .orderBy(desc(registrations.createdAt))
+            .limit(20);
+
         // Transform and combine
         const activities: RecentActivity[] = [
             ...latestStudents.map(s => ({
@@ -159,6 +181,14 @@ export async function getRecentActivity(): Promise<RecentActivity[]> {
                 icon: "solar:calendar-bold-duotone",
                 color: "text-purple-500",
                 type: "class" as const,
+            })),
+            ...latestRegistrations.map(r => ({
+                date: r.createdAt as Date,
+                time: "",
+                text: `New registration from ${r.firstName} ${r.lastName}.`,
+                icon: "solar:clipboard-list-bold-duotone",
+                color: "text-indigo-500",
+                type: "registration" as const,
             })),
         ];
 

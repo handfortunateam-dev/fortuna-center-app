@@ -23,6 +23,7 @@ export default function DashboardEmployee({ user }: DashboardEmployeeProps) {
       classes: 0,
       pendingPayments: 0,
       publishedArticles: 0,
+      pendingRegistrations: 0,
     },
     isLoading,
   } = useQuery({

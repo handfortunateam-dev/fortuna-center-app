@@ -40,6 +40,7 @@ export default function StatisticGeneral() {
             bgColor="bg-blue-500/10"
             textColor="text-blue-600"
             delay={0.1}
+            url="/students"
           />
           <StatCard
             title="Total Classes"
@@ -59,6 +60,7 @@ export default function StatisticGeneral() {
             bgColor="bg-blue-600/10"
             textColor="text-blue-700"
             delay={0.2}
+            url="/classes"
           />
           <StatCard
             title="Active Sessions"
@@ -94,7 +96,7 @@ export default function StatisticGeneral() {
             Staffing
           </Badge>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Teachers"
             value={
@@ -113,6 +115,7 @@ export default function StatisticGeneral() {
             bgColor="bg-purple-500/10"
             textColor="text-purple-600"
             delay={0.4}
+            url="/teachers"
           />
           <StatCard
             title="Total Users Accounts"
@@ -132,6 +135,7 @@ export default function StatisticGeneral() {
             bgColor="bg-purple-600/10"
             textColor="text-purple-700"
             delay={0.5}
+            url="/users"
           />
           <StatCard
             title="Active Schedules"
@@ -151,6 +155,27 @@ export default function StatisticGeneral() {
             bgColor="bg-purple-700/10"
             textColor="text-purple-800"
             delay={0.6}
+            url="/class-scheduler-management"
+          />
+          <StatCard
+            title="Pending Registrations"
+            value={
+              personnel.isLoading ? (
+                <Spinner
+                  classNames={{ label: "text-foreground mt-4" }}
+                  variant="wave"
+                  size="sm"
+                />
+              ) : (
+                personnel.pendingRegistrations.toLocaleString()
+              )
+            }
+            change="New signups waiting"
+            icon="solar:clipboard-list-bold-duotone"
+            bgColor="bg-indigo-500/10"
+            textColor="text-indigo-600"
+            delay={0.7}
+            url="/registrations"
           />
         </div>
       </section>

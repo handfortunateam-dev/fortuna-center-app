@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
                 id: classSchedules.id,
                 classId: classSchedules.classId,
                 className: classes.name,
+                classCode: classes.code,
                 dayOfWeek: classSchedules.dayOfWeek,
                 startTime: classSchedules.startTime,
                 endTime: classSchedules.endTime,
