@@ -8,6 +8,7 @@ interface QuickStatsCardProps {
     classes: number;
     pendingPayments: number;
     publishedArticles: number;
+    pendingRegistrations: number;
   };
   isLoading: boolean;
 }
@@ -17,7 +18,7 @@ export default function QuickStatsCard({
   isLoading,
 }: QuickStatsCardProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       <StatCard
         title="Total Students"
         value={
@@ -93,6 +94,25 @@ export default function QuickStatsCard({
         bgColor="bg-success-500/10"
         textColor="text-success-600"
         delay={0.4}
+      />
+      <StatCard
+        title="Pending Registrations"
+        value={
+          isLoading ? (
+            <Spinner
+              classNames={{ label: "text-foreground mt-4" }}
+              variant="wave"
+              size="sm"
+            />
+          ) : (
+            stats.pendingRegistrations.toLocaleString()
+          )
+        }
+        change="New signups waiting"
+        icon="solar:clipboard-list-bold-duotone"
+        bgColor="bg-indigo-500/10"
+        textColor="text-indigo-600"
+        delay={0.5}
       />
     </div>
   );

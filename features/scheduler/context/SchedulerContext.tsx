@@ -210,6 +210,7 @@ export function SchedulerProvider({
     id: string;
     classId: string;
     className: string;
+    classCode?: string;
     teachers: ApiTeacher[];
     startTime: string;
     endTime: string;
@@ -249,6 +250,7 @@ export function SchedulerProvider({
           // Ensure time format is HH:MM
           startTime: s.startTime.substring(0, 5),
           endTime: s.endTime.substring(0, 5),
+          classCode: s.classCode,
           teachers: groupedTeachers,
           teacherId: primaryTeacher?.id || "",
           teacherName: primaryTeacher?.name || "No Teacher",

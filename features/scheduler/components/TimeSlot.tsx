@@ -62,7 +62,8 @@ export function TimeSlot({
       onDrop={onDrop}
       onContextMenu={onContextMenu}
       className={`
-        relative flex items-center justify-center transition-colors
+        relative flex items-center justify-center transition-colors group
+        hover:bg-gray-100/50 dark:hover:bg-gray-800/50 cursor-pointer
         ${isHourStart ? "border-t border-gray-200 dark:border-gray-700" : "border-t border-gray-100 dark:border-gray-800"}
         ${canDrop ? "bg-success-50 dark:bg-success-900/20 border-l-2 border-l-success z-10" : ""}
       `}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { desc, eq, and } from "drizzle-orm";
 import { db } from "@/db";
-import { classAttendances, classSessions, classSchedules, users, classes } from "@/db/schema";
+import { classAttendances, classSessions, classSchedules, users, classes, students } from "@/db/schema";
 
 export async function GET(request: NextRequest) {
     try {
@@ -57,8 +57,9 @@ export async function GET(request: NextRequest) {
                 sessionTeacherId: classSessions.teacherId,
 
                 // Student info
-                studentName: users.name,
-                studentEmail: users.email,
+                studentFirstName: students.firstName,
+                studentLastName: students.lastName,
+                studentEmail: students.email,
 
                 // Class info
                 className: classes.name,
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
             .from(classAttendances)
             .leftJoin(classSessions, eq(classAttendances.sessionId, classSessions.id))
             .leftJoin(classSchedules, eq(classSessions.scheduleId, classSchedules.id))
-            .leftJoin(users, eq(classAttendances.studentId, users.id))
+            .leftJoin(students, eq(classAttendances.studentId, students.id))
             .leftJoin(classes, eq(classSchedules.classId, classes.id));
 
         // Apply where clause if filters exist
@@ -103,8 +104,11 @@ export async function GET(request: NextRequest) {
                     recordedByName = recorder?.name || null;
                 }
 
+                const studentName = [item.studentFirstName, item.studentLastName].filter(Boolean).join(" ") || null;
+
                 return {
                     ...item,
+                    studentName,
                     teacherName,
                     recordedByName,
                 };

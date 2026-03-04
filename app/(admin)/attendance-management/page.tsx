@@ -16,7 +16,7 @@ import {
   Select,
   SelectItem,
   Input,
-  Spinner,
+  Skeleton,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Heading } from "@/components/heading";
@@ -85,6 +85,70 @@ const statusLabelMap: Record<
   late: "Terlambat",
   excused: "Izin",
   sick: "Sakit",
+};
+
+const AttendanceSkeletonLoader = () => {
+  return (
+    <div className="space-y-6">
+      {[1, 2, 3].map((index) => (
+        <Card key={index} className="shadow-sm">
+          <CardHeader className="flex flex-col items-start gap-2 px-6 py-4 border-b">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3 flex-1">
+                <Skeleton className="w-6 h-6 rounded-lg" />
+                <div className="flex-1">
+                  <Skeleton className="h-6 w-64 rounded-lg mb-2" />
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-32 rounded-lg" />
+                    <Skeleton className="h-4 w-36 rounded-lg" />
+                    <Skeleton className="h-4 w-28 rounded-lg" />
+                    <Skeleton className="h-4 w-24 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+              <Skeleton className="h-8 w-40 rounded-full" />
+            </div>
+          </CardHeader>
+
+          <CardBody className="p-0">
+            <Table removeWrapper>
+              <TableHeader>
+                <TableColumn>STUDENT</TableColumn>
+                <TableColumn>STATUS</TableColumn>
+                <TableColumn>CHECK-IN TIME</TableColumn>
+                <TableColumn>RECORDED BY</TableColumn>
+                <TableColumn>NOTES</TableColumn>
+              </TableHeader>
+              <TableBody>
+                {[1, 2, 3, 4].map((rowIndex) => (
+                  <TableRow key={rowIndex}>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-40 rounded-lg" />
+                        <Skeleton className="h-3 w-48 rounded-lg" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16 rounded-lg" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-24 rounded-lg" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32 rounded-lg" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardBody>
+        </Card>
+      ))}
+    </div>
+  );
 };
 
 export default function AttendanceManagementPage() {
@@ -373,15 +437,13 @@ export default function AttendanceManagementPage() {
 
       {/* Attendance Records Grouped by Session */}
       {isLoading ? (
-        <div className="flex justify-center items-center py-20">
-          <Spinner size="lg" label="Loading attendance records..." />
-        </div>
+        <AttendanceSkeletonLoader />
       ) : filteredAndGroupedData.length === 0 ? (
         <StateMessage
           icon="solar:calendar-mark-bold-duotone"
           title="No Attendance Records"
-          description="No attendance records found. Try adjusting your filters."
-          color="default"
+          message="No attendance records found. Try adjusting your filters."
+          type="empty"
         />
       ) : (
         <div className="space-y-6">

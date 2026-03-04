@@ -1,26 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { UserRole } from "@/enums/common";
-import { getUserByClerkId } from "@/services/userSyncService";
-import { classSessions, classSchedules, classAttendances, classes, posts, coursePayments, scheduleTeachers, students } from "@/db/schema";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
+import { classSessions, classSchedules, classAttendances, classes, posts, coursePayments, scheduleTeachers, students, registrations } from "@/db/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { addDays, subDays } from "date-fns";
 
 export async function GET() {
     try {
-        const { userId } = await auth();
-        
-        let userRole: UserRole | null = null;
-        let userDbId: string | null = null;
-
-        if (userId) {
-            const dbUser = await getUserByClerkId(userId);
-            if (dbUser) {
-                userRole = dbUser.role as UserRole;
-                userDbId = dbUser.id.toString();
-            }
-        }
+        const user = await getAuthUser();
 
         const activities: Array<{
             id: string;
@@ -32,12 +20,15 @@ export async function GET() {
         }> = [];
 
         // If no user found, return empty notifications
-        if (!userId || !userDbId) {
+        if (!user) {
             return NextResponse.json({
                 success: true,
                 data: [],
             });
         }
+
+        const userRole = user.role;
+        const userDbId = user.id;
 
         // STUDENT: Return empty (or student-specific notifications in the future)
         if (userRole === UserRole.STUDENT) {
@@ -48,9 +39,8 @@ export async function GET() {
         }
 
         // TEACHER: Only see notifications related to their own activities
-        if (userRole === UserRole.TEACHER && userDbId) {
-            // TEACHER: Only see notifications related to their own activities
-            
+        if (userRole === UserRole.TEACHER) {
+
             // 1. Sessions assigned to this teacher (through schedule_teachers or direct teacherId)
             const teacherSessions = await db
                 .select({
@@ -152,7 +142,7 @@ export async function GET() {
             const twoDaysLater = addDays(today, 2);
             const todayStr = today.toISOString().split('T')[0];
             const twoDaysLaterStr = twoDaysLater.toISOString().split('T')[0];
-            
+
             const upcomingSessions = await db
                 .select({
                     id: classSessions.id,
@@ -177,7 +167,7 @@ export async function GET() {
                 const sessionDate = new Date(session.date);
                 const daysUntil = Math.ceil((sessionDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                 const dayText = daysUntil === 0 ? "Today" : daysUntil === 1 ? "Tomorrow" : `In ${daysUntil} days`;
-                
+
                 activities.push({
                     id: `reminder-${session.id}`,
                     type: "reminder",
@@ -187,12 +177,11 @@ export async function GET() {
                     isRead: true,
                 });
             }
-
         }
 
-        // ADMIN / ADMINISTRATIVE_EMPLOYEE: See all notifications
-        if (userRole === UserRole.ADMIN || userRole === UserRole.ADMINISTRATIVE_EMPLOYEE) {
-            
+        // ADMIN / ADMINISTRATIVE_EMPLOYEE / DEVELOPER: See all notifications
+        if (userRole === UserRole.ADMIN || userRole === UserRole.ADMINISTRATIVE_EMPLOYEE || userRole === UserRole.DEVELOPER) {
+
             // 1. Recent students (from students table which has firstName/lastName)
             const recentStudents = await db
                 .select({
@@ -254,14 +243,30 @@ export async function GET() {
                     isRead: true,
                 });
             }
-        }
 
-        // If somehow we reach here with no role match, return empty
-        if (userRole !== UserRole.ADMIN && userRole !== UserRole.ADMINISTRATIVE_EMPLOYEE) {
-            return NextResponse.json({
-                success: true,
-                data: [],
-            });
+            // 4. Recent registrations
+            const recentRegistrations = await db
+                .select({
+                    id: registrations.id,
+                    firstName: registrations.firstName,
+                    lastName: registrations.lastName,
+                    createdAt: registrations.createdAt,
+                    status: registrations.status,
+                })
+                .from(registrations)
+                .orderBy(desc(registrations.createdAt))
+                .limit(10);
+
+            for (const reg of recentRegistrations) {
+                activities.push({
+                    id: `registration-${reg.id}`,
+                    type: "registration",
+                    title: "New Registration",
+                    description: `New registration from ${reg.firstName} ${reg.lastName}`,
+                    timestamp: reg.createdAt as Date,
+                    isRead: reg.status !== "pending",
+                });
+            }
         }
 
         activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

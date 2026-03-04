@@ -95,6 +95,8 @@ export const NAV_URL = {
         PAYMENT_COURSE_HISTORY: "/payment-course-history",
         HELP_SUPPORT: "/help-support",
         CHANGE_LOG: "/change-logs",
+        REGISTRATIONS: "/registrations",
+        REGISTRATION_LINKS: "/registration-links",
     },
     TEACHER: {
         DASHBOARD: "/dashboard",
@@ -134,6 +136,8 @@ export const NAV_URL = {
         SETTINGS: "/settings",
         POST_ARTICLES: "/post-articles",
         HELP_SUPPORT: "/help-support",
+        REGISTRATIONS: "/registrations",
+        REGISTRATION_LINKS: "/registration-links",
         ANALYTICS: {
             ROOT: "/analytics",
             USERS: "/analytics/users",
