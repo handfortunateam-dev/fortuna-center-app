@@ -3,7 +3,7 @@ import React from "react";
 
 export interface TextProps extends React.HTMLAttributes<HTMLParagraphElement> {
   as?: "p" | "span" | "div";
-  size?: "xs" | "sm" | "base" | "lg" | "xl";
+  size?: "xs" | "sm" | "base" | "md" | "lg" | "xl";
   weight?: "normal" | "medium" | "semibold" | "bold";
   color?:
     | "default"
@@ -21,6 +21,7 @@ const sizeClasses = {
   xs: "text-xs",
   sm: "text-sm",
   base: "text-base",
+  md: "text-md",
   lg: "text-lg",
   xl: "text-xl",
 };

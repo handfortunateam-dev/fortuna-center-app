@@ -38,10 +38,10 @@ export default function EditEnrollmentPage({ params }: EditPageProps) {
       setTimeout(() => {
         router.push("/class-enrollments");
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Update failed:", err);
       const message =
-        err.response?.data?.message || err.message || "An error occurred";
+        err instanceof Error ? err.message : "An error occurred";
       setError(message);
       throw err;
     }
