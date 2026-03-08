@@ -73,9 +73,6 @@ export const metadata: Metadata = {
       "A leading English course and professional HRD training center in Kupang, NTT.",
     images: ["/og-image.png"],
   },
-  alternates: {
-    canonical: "https://www.fortunacenter.com",
-  },
   icons: {
     icon: [
       { url: "/favicon.ico" },

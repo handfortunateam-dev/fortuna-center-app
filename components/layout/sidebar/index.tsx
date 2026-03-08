@@ -39,10 +39,15 @@ const MenuItem = ({
 }: MenuItemProps) => {
   const hasChildren = item.children && item.children.length > 0;
 
-  // Check if any child is currently selected
-  const isChildSelected = item.children?.some(
-    (child) => child.key === selectedKey,
-  );
+  // Check if any child (recursively) is currently selected
+  const isAnyChildSelected = (menuItem: MenuItemType, key: string): boolean => {
+    if (!menuItem.children) return false;
+    return menuItem.children.some(
+      (child) => child.key === key || isAnyChildSelected(child, key),
+    );
+  };
+
+  const isChildSelected = isAnyChildSelected(item, selectedKey);
 
   const [isExpanded, setIsExpanded] = useState(() => {
     if (hasChildren && item.children) {
@@ -178,7 +183,8 @@ const MenuItem = ({
                 )
               }
               className={
-                selectedKey === child.key
+                selectedKey === child.key ||
+                isAnyChildSelected(child, selectedKey)
                   ? "bg-primary/10 text-primary font-medium"
                   : ""
               }

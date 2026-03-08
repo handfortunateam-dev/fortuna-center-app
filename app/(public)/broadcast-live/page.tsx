@@ -9,8 +9,17 @@ import {
 } from "@/services/azurecast/azuracastService";
 import type { Podcast, PodcastEpisode } from "@/services/azurecast/interfaces";
 import { Icon } from "@iconify/react";
-// import { ShareButton } from "@/components/ui/ShareButton";
 import { formatDistanceToNow } from "date-fns";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Broadcast Live",
+  description:
+    "Tune in to Fortuna Broadcast Center - streaming our latest shows, music, and student-led programming 24/7 in Kupang.",
+  alternates: {
+    canonical: "https://www.fortunacenter.com/broadcast-live",
+  },
+};
 
 export const revalidate = 30;
 
@@ -25,7 +34,7 @@ async function getPodcastEpisodeMap(podcasts: Podcast[]) {
       } catch {
         return [podcast.id, []] as [string, PodcastEpisode[]];
       }
-    })
+    }),
   );
   return new Map<string, PodcastEpisode[]>(entries);
 }
@@ -73,7 +82,7 @@ export default async function BroadcastLivePage() {
     station?.listen_url ||
       streams.find((stream) => stream.is_default)?.url ||
       streams[0]?.url ||
-      ""
+      "",
   );
 
   const episodesByPodcast = await getPodcastEpisodeMap(podcasts);
@@ -322,7 +331,7 @@ export default async function BroadcastLivePage() {
                                   episode.publish_at * 1000,
                                   {
                                     addSuffix: true,
-                                  }
+                                  },
                                 )}
                               </span>
                               <a

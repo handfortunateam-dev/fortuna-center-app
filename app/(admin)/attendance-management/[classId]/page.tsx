@@ -81,6 +81,7 @@ interface TeacherInfo {
 interface ClassOption {
   id: string;
   name: string;
+  code: string | null;
 }
 
 interface ClassDetail {
@@ -217,6 +218,19 @@ export default function ClassAttendancePage() {
     },
   });
 
+  // Fetch all teachers for the edit modal
+  const { data: allTeachers = [] } = useQuery<
+    { id: string; userId: string | null; firstName: string; lastName: string }[]
+  >({
+    queryKey: ["all-teachers"],
+    queryFn: async () => {
+      const response = await fetch("/api/teachers?limit=1000");
+      const data = await response.json();
+      if (!data.success) throw new Error("Failed to fetch teachers");
+      return data.data || [];
+    },
+  });
+
   // Fetch specialized class details (teachers, schedules)
   const { data: classDetail, isLoading: isLoadingDetail } =
     useQuery<ClassDetail>({
@@ -258,14 +272,24 @@ export default function ClassAttendancePage() {
     id: string;
     date: string;
     notes: string;
+    teacherId: string | null;
   } | null>(null);
 
   const updateSessionMutation = useMutation({
-    mutationFn: async (data: { id: string; date: string; notes: string }) => {
+    mutationFn: async (data: {
+      id: string;
+      date: string;
+      notes: string;
+      teacherId?: string | null;
+    }) => {
       const response = await fetch(`/api/class-sessions/${data.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: data.date, notes: data.notes }),
+        body: JSON.stringify({
+          date: data.date,
+          notes: data.notes,
+          teacherId: data.teacherId,
+        }),
       });
       const result = await response.json();
       if (!result.success) throw new Error(result.message || "Update failed");
@@ -289,21 +313,25 @@ export default function ClassAttendancePage() {
     },
   });
 
-  const handleEditSession = (session: any) => {
+  const handleEditSession = (session: {
+    sessionId: string;
+    sessionDate: string;
+    sessionNotes: string | null;
+    attendances: AttendanceRecord[];
+  }) => {
     setEditingSession({
       id: session.sessionId,
       date: session.sessionDate,
       notes: session.sessionNotes || "",
+      teacherId: session.attendances[0]?.sessionTeacherId || null,
     });
     setIsEditModalOpen(true);
   };
 
   const selectedClassName = useMemo(() => {
-    return (
-      classDetail?.name ||
-      classes.find((c) => c.id === classId)?.name ||
-      "Class"
-    );
+    const cls = classDetail || classes.find((c) => c.id === classId);
+    if (!cls) return "Class";
+    return cls.code ? `${cls.code} - ${cls.name}` : cls.name;
   }, [classDetail, classes, classId]);
 
   // Filter and group attendance by session
@@ -597,7 +625,7 @@ export default function ClassAttendancePage() {
                   {classDetail.classSchedules.map((schedule) => (
                     <div
                       key={schedule.id}
-                      className="p-3 rounded-xl border border-default-200 bg-default-50"
+                      className="p-3 rounded-xl border border-default-200 bg-default-50 shadow-sm hover:shadow-md transition-all duration-300"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <Chip
@@ -666,7 +694,19 @@ export default function ClassAttendancePage() {
                 }
               >
                 {classes.map((cls) => (
-                  <SelectItem key={cls.id}>{cls.name}</SelectItem>
+                  <SelectItem
+                    key={cls.id}
+                    textValue={`${cls.code || "No Code"} - ${cls.name}`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold">
+                        {cls.code || "No Code"}
+                      </span>
+                      <span className="text-xs text-default-500">
+                        {cls.name}
+                      </span>
+                    </div>
+                  </SelectItem>
                 ))}
               </Select>
 
@@ -766,10 +806,11 @@ export default function ClassAttendancePage() {
                         />
                       }
                       variant="flat"
-                      color="primary"
-                      className="hidden sm:flex"
+                      color="secondary"
+                      className="hidden sm:flex border-none font-medium"
                     >
-                      Teacher: {session.teacherName || "Unknown"}
+                      <span className="text-xs mr-1 opacity-70">Teacher:</span>
+                      {session.teacherName || "Unassigned"}
                     </Chip>
                   </div>
                 </CardHeader>
@@ -852,6 +893,7 @@ export default function ClassAttendancePage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         session={editingSession}
+        teachers={allTeachers}
         onUpdate={(data) => updateSessionMutation.mutate(data)}
         isLoading={updateSessionMutation.isPending}
       />
@@ -862,8 +904,24 @@ export default function ClassAttendancePage() {
 interface EditSessionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  session: { id: string; date: string; notes: string } | null;
-  onUpdate: (data: { id: string; date: string; notes: string }) => void;
+  session: {
+    id: string;
+    date: string;
+    notes: string;
+    teacherId: string | null;
+  } | null;
+  teachers: {
+    id: string;
+    userId: string | null;
+    firstName: string;
+    lastName: string;
+  }[];
+  onUpdate: (data: {
+    id: string;
+    date: string;
+    notes: string;
+    teacherId: string | null;
+  }) => void;
   isLoading: boolean;
 }
 
@@ -871,6 +929,7 @@ function EditSessionModal({
   isOpen,
   onClose,
   session,
+  teachers,
   onUpdate,
   isLoading,
 }: EditSessionModalProps) {
@@ -885,6 +944,7 @@ function EditSessionModal({
     return null;
   });
   const [notes, setNotes] = useState(session?.notes || "");
+  const [teacherId, setTeacherId] = useState<string>(session?.teacherId || "");
 
   const handleSubmit = () => {
     if (!session || !date) return;
@@ -892,6 +952,7 @@ function EditSessionModal({
       id: session.id,
       date: date.toString(),
       notes: notes,
+      teacherId: teacherId || null,
     });
   };
 
@@ -917,6 +978,31 @@ function EditSessionModal({
               onValueChange={setNotes}
               variant="flat"
             />
+          </div>
+          <div className="space-y-1">
+            <Text className="text-sm font-medium">Assign Teacher</Text>
+            <Select
+              aria-label="Assign Teacher"
+              placeholder="Select a teacher"
+              selectedKeys={teacherId ? [teacherId] : []}
+              onSelectionChange={(keys) =>
+                setTeacherId(Array.from(keys)[0] as string)
+              }
+              variant="flat"
+              startContent={<Icon icon="solar:user-bold" className="w-4 h-4" />}
+            >
+              {teachers.map((t) => (
+                <SelectItem
+                  key={t.userId || ""}
+                  textValue={`${t.firstName} ${t.lastName}`}
+                  description={t.email}
+                >
+                  <span className="font-medium">
+                    {t.firstName} {t.lastName}
+                  </span>
+                </SelectItem>
+              ))}
+            </Select>
           </div>
         </ModalBody>
         <ModalFooter>
