@@ -3,213 +3,98 @@
 import React, { useState } from "react";
 import {
   Button,
-  Card,
-  CardBody,
   Chip,
   Modal,
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Select,
-  SelectItem,
-  Textarea,
-  Input,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
 } from "@heroui/react";
-import { Icon } from "@iconify/react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { TicketStatusChip } from "@/components/ticket/TicketStatusChip";
 import { ITicket } from "../interface";
-import { TICKET_CATEGORIES } from "../constant";
+import { ListGrid, createColumns } from "@/components/table";
+import { Icon } from "@iconify/react";
 
 export function EndUserSupport() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<ITicket | null>(null);
-  const [newTicket, setNewTicket] = useState({
-    subject: "",
-    category: "",
-    description: "",
-  });
 
-  const queryClient = useQueryClient();
-
-  const { data: tickets = [], isLoading } = useQuery({
-    queryKey: ["tickets"],
-    queryFn: async () => {
-      const res = await fetch("/api/tickets");
-      const result = await res.json();
-      return result.data as ITicket[];
+  const columns = createColumns<ITicket>([
+    {
+      key: "id",
+      label: "Ticket ID",
+      value: (ticket) => (
+        <span className="font-mono text-xs">{ticket.id.slice(0, 8)}</span>
+      ),
     },
-  });
-
-  const createTicketMutation = useMutation({
-    mutationFn: async (ticketData: typeof newTicket) => {
-      const res = await fetch("/api/tickets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(ticketData),
-      });
-      return res.json();
+    {
+      key: "subject",
+      label: "Subject",
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tickets"] });
-      setIsModalOpen(false);
-      setNewTicket({ subject: "", category: "", description: "" });
+    {
+      key: "category",
+      label: "Category",
+      value: (ticket) => (
+        <Chip size="sm" variant="flat">
+          {ticket.category.replace("_", " ")}
+        </Chip>
+      ),
     },
-  });
-
-  const handleCreateTicket = () => {
-    if (newTicket.subject && newTicket.category && newTicket.description) {
-      createTicketMutation.mutate(newTicket);
-    }
-  };
+    {
+      key: "status",
+      label: "Status",
+      value: (ticket) => <TicketStatusChip status={ticket.status} />,
+    },
+    {
+      key: "createdAt",
+      label: "Created",
+      value: (ticket) => format(new Date(ticket.createdAt), "MMM dd, yyyy"),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      align: "center",
+      value: (ticket) => (
+        <Button
+          size="sm"
+          variant="light"
+          onPress={() => setSelectedTicket(ticket)}
+        >
+          View
+        </Button>
+      ),
+    },
+  ]);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Help & Support</h1>
-          <p className="text-default-500">Manage your support tickets</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button
-            color="primary"
-            startContent={<Icon icon="lucide:plus" />}
-            onPress={() => setIsModalOpen(true)}
-          >
-            Create New Ticket
-          </Button>
-        </div>
-      </div>
+    <>
+      <ListGrid<ITicket>
+        title="Help & Support"
+        description="Manage your support tickets"
+        resourcePath="/tickets"
+        columns={columns}
+        basePath="/help-support"
+        enableSearch={true}
+        searchPlaceholder="Search tickets..."
+        enableCreate={true}
+        enableShow={false}
+        enableEdit={false}
+        enableDelete={false}
+        actionButtons={{
+          custom: [
+            {
+              key: "view",
+              label: "",
+              icon: <Icon icon="lucide:eye" />,
+              onClick(id, item) {
+                setSelectedTicket(item as never);
+              },
+            },
+          ],
+        }}
+        onRowClick={(item) => setSelectedTicket(item)}
+      />
 
-      <Card>
-        <CardBody>
-          {isLoading ? (
-            <div className="flex justify-center py-8">Loading...</div>
-          ) : tickets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-default-400">
-              <Icon icon="lucide:ticket-x" className="w-12 h-12 mb-2" />
-              <p>No tickets yet</p>
-              <Button
-                variant="light"
-                color="primary"
-                onPress={() => setIsModalOpen(true)}
-              >
-                Create your first ticket
-              </Button>
-            </div>
-          ) : (
-            <Table aria-label="Tickets table">
-              <TableHeader>
-                <TableColumn>Ticket ID</TableColumn>
-                <TableColumn>Subject</TableColumn>
-                <TableColumn>Category</TableColumn>
-                <TableColumn>Status</TableColumn>
-                <TableColumn>Created</TableColumn>
-                <TableColumn>Actions</TableColumn>
-              </TableHeader>
-              <TableBody>
-                {tickets.map((ticket) => (
-                  <TableRow key={ticket.id}>
-                    <TableCell className="font-mono text-xs">
-                      {ticket.id.slice(0, 8)}
-                    </TableCell>
-                    <TableCell>{ticket.subject}</TableCell>
-                    <TableCell>
-                      <Chip size="sm" variant="flat">
-                        {ticket.category.replace("_", " ")}
-                      </Chip>
-                    </TableCell>
-                    <TableCell>
-                      <TicketStatusChip status={ticket.status} />
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(ticket.createdAt), "MMM dd, yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        variant="light"
-                        onPress={() => setSelectedTicket(ticket)}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
-
-      {/* Create Ticket Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        size="lg"
-      >
-        <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">
-            Create New Ticket
-          </ModalHeader>
-          <ModalBody>
-            <div className="flex flex-col gap-4 py-2">
-              <Input
-                label="Subject"
-                placeholder="Enter ticket subject"
-                value={newTicket.subject}
-                onChange={(e) =>
-                  setNewTicket({ ...newTicket, subject: e.target.value })
-                }
-              />
-              <Select
-                label="Category"
-                placeholder="Select a category"
-                selectedKeys={newTicket.category ? [newTicket.category] : []}
-                onSelectionChange={(keys) => {
-                  const selected = Array.from(keys)[0] as string;
-                  setNewTicket({ ...newTicket, category: selected });
-                }}
-              >
-                {TICKET_CATEGORIES.map((opt) => (
-                  <SelectItem key={opt.key}>{opt.label}</SelectItem>
-                ))}
-              </Select>
-              <Textarea
-                label="Description"
-                placeholder="Describe your issue in detail..."
-                minRows={4}
-                value={newTicket.description}
-                onChange={(e) =>
-                  setNewTicket({ ...newTicket, description: e.target.value })
-                }
-              />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              color="primary"
-              isLoading={createTicketMutation.isPending}
-              onPress={handleCreateTicket}
-            >
-              Submit Ticket
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* View Ticket Modal */}
       <Modal
         isOpen={!!selectedTicket}
         onClose={() => setSelectedTicket(null)}
@@ -265,6 +150,6 @@ export function EndUserSupport() {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </div>
+    </>
   );
 }

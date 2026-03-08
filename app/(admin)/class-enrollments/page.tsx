@@ -28,6 +28,8 @@ export default function ClassEnrollmentsPage() {
       columns={columnsClassEnrollments}
       pageSize={10}
       showPagination
+      serverSide={true}
+      paginationType="page"
     />
   );
 }

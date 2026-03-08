@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth/getAuthUser";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { teacherClasses, classes } from "@/db/schema";
 import { users } from "@/db/schema/users.schema";
@@ -15,6 +15,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const classId = searchParams.get("classId");
     const teacherId = searchParams.get("teacherId");
+    const limit = searchParams.get("limit");
+    const page = searchParams.get("page");
+    const fields = searchParams.get("fields");
+
+    const offset = limit && page ? (Number(page) - 1) * Number(limit) : 0;
 
     const filters = [];
     if (classId) {
@@ -26,8 +31,20 @@ export async function GET(request: NextRequest) {
 
     const where = filters.length ? and(...filters) : undefined;
 
+    // Helper to filter object fields
+    const filterFields = (obj: Record<string, unknown>, fields: string[] | null) => {
+      if (!fields) return obj;
+      const filtered: Record<string, unknown> = {};
+      fields.forEach((f: string) => {
+        if (f in obj) filtered[f] = obj[f];
+      });
+      return filtered;
+    };
+
+    const fieldList = fields ? fields.split(",").map((f: string) => f.trim()) : null;
+
     // Join with users (teacher) and classes to get names
-    const data = await db
+    const dbData = await db
       .select({
         id: teacherClasses.id,
         teacherId: teacherClasses.teacherId,
@@ -36,33 +53,29 @@ export async function GET(request: NextRequest) {
         className: classes.name,
         assignedAt: teacherClasses.assignedAt,
         assignedBy: teacherClasses.assignedBy,
+        assignedByName: sql<string>`(SELECT name FROM users WHERE id = ${teacherClasses.assignedBy} LIMIT 1)`,
       })
       .from(teacherClasses)
       .leftJoin(users, eq(teacherClasses.teacherId, users.id))
       .leftJoin(classes, eq(teacherClasses.classId, classes.id))
       .where(where)
-      .orderBy(desc(teacherClasses.assignedAt));
+      .orderBy(desc(teacherClasses.assignedAt))
+      .limit(limit ? Number(limit) : 1000)
+      .offset(offset);
 
-    // Fetch assignedBy names separately
-    const dataWithAssignedBy = await Promise.all(
-      data.map(async (item) => {
-        let assignedByName = null;
-        if (item.assignedBy) {
-          const [assignedUser] = await db
-            .select({ name: users.name })
-            .from(users)
-            .where(eq(users.id, item.assignedBy))
-            .limit(1);
-          assignedByName = assignedUser?.name || null;
-        }
-        return {
-          ...item,
-          assignedByName,
-        };
-      })
-    );
+    // Get total count for pagination
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(teacherClasses)
+      .where(where);
 
-    return NextResponse.json({ success: true, data: dataWithAssignedBy });
+    const data = dbData.map((item) => filterFields(item, fieldList));
+
+    return NextResponse.json({
+      success: true,
+      data,
+      totalCount: Number(total)
+    });
   } catch (error) {
     console.error("Error fetching teacher assignments:", error);
     return NextResponse.json(

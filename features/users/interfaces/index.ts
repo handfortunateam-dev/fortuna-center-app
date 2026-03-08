@@ -32,6 +32,7 @@ export interface UsersListParams {
   orderBy?: string;
   role?: string;
   source?: string;
+  fields?: string;
   excludeLinkedStudents?: boolean;
   excludeLinkedTeachers?: boolean;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Button,
   Autocomplete,
@@ -33,6 +33,8 @@ export function SchedulerHeader({
     goToToday,
     openCreateModal,
     readOnly,
+    isWideMode,
+    setIsWideMode,
   } = useScheduler();
 
   // Format display text based on view
@@ -145,6 +147,21 @@ export function SchedulerHeader({
               Add Schedule
             </Button>
           )}
+
+          <Button
+            isIconOnly
+            variant="bordered"
+            size="sm"
+            color={isWideMode ? "primary" : "default"}
+            onPress={() => setIsWideMode(!isWideMode)}
+            aria-label="Toggle Wide Mode"
+            title={isWideMode ? "Fit to Screen" : "Wide View"}
+          >
+            <Icon
+              icon={isWideMode ? "lucide:minimize-2" : "lucide:maximize-2"}
+              className="w-4 h-4"
+            />
+          </Button>
 
           <Tabs
             selectedKey={currentView}

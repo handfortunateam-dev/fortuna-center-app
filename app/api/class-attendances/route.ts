@@ -3,6 +3,8 @@ import { desc, eq, and } from "drizzle-orm";
 import { db } from "@/db";
 import { classAttendances, classSessions, classSchedules, users, classes, students } from "@/db/schema";
 
+
+export const maxDuration = 60;
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
         if (classId) {
             scheduleFilters.push(eq(classSchedules.classId, classId));
         }
-
+        
         // Combine all filters
         const allFilters = [...attendanceFilters, ...scheduleFilters];
         const whereClause = allFilters.length > 0 ? and(...allFilters) : undefined;

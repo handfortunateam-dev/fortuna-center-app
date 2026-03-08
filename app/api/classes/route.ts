@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 // import { auth } from "@clerk/nextjs/server";
 import { getAuthUser } from "@/lib/auth/getAuthUser";
 
-import { and, desc, eq, ilike } from "drizzle-orm";
+import { and, desc, eq, ilike, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { classes, users } from "@/db/schema";
 
@@ -20,6 +20,11 @@ export async function GET(request: NextRequest) {
     const isActiveParam = searchParams.get("isActive");
     const createdBy = searchParams.get("createdBy");
     const query = searchParams.get("q");
+    const limit = searchParams.get("limit");
+    const page = searchParams.get("page");
+    const fields = searchParams.get("fields");
+
+    const offset = limit && page ? (Number(page) - 1) * Number(limit) : 0;
 
     const filters = [];
     if (isActiveParam !== null) {
@@ -35,16 +40,41 @@ export async function GET(request: NextRequest) {
     }
 
     const where = filters.length ? and(...filters) : undefined;
-    const data = await db
+
+    // Helper to filter object fields
+    const filterFields = (obj: Record<string, unknown>, fields: string[] | null) => {
+      if (!fields) return obj;
+      const filtered: Record<string, unknown> = {};
+      fields.forEach((f: string) => {
+        if (f in obj) filtered[f] = obj[f];
+      });
+      return filtered;
+    };
+
+    const fieldList = fields ? fields.split(",").map((f: string) => f.trim()) : null;
+
+    const dbData = await db
       .select()
       .from(classes)
       .where(where)
-      .orderBy(desc(classes.createdAt));
+      .orderBy(desc(classes.createdAt))
+      .limit(limit ? Number(limit) : 1000)
+      .offset(offset);
+
+    // Get total count
+    const totalCountResult = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(classes)
+      .where(where);
+
+    const totalCount = Number(totalCountResult[0]?.total || 0);
+
+    const data = dbData.map((item) => filterFields(item as unknown as Record<string, unknown>, fieldList));
 
     return NextResponse.json({
       success: true,
       data,
-      totalCount: data.length,
+      totalCount,
     });
   } catch (error) {
     console.error("Error fetching classes:", error);

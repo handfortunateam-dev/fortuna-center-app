@@ -56,15 +56,22 @@ export interface ClassListParams {
   isActive?: boolean;
   createdBy?: string;
   limit?: number;
+  fields?: string;
   page?: number;
 }
 
 export interface TeacherClassFilters {
   classId?: string;
   teacherId?: string;
+  fields?: string;
+  limit?: number;
+  page?: number;
 }
 
 export interface ClassEnrollmentFilters {
   classId?: string;
   studentId?: string;
+  fields?: string;
+  limit?: number;
+  page?: number;
 }

@@ -26,6 +26,8 @@ export default function ClassesPage() {
       columns={columnsClasses}
       pageSize={10}
       showPagination
+      serverSide={true}
+      paginationType="page"
     />
   );
 }

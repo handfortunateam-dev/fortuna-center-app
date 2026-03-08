@@ -34,7 +34,7 @@ export function useGetIdentity() {
         queryKey: ["identity"],
         queryFn: fetchIdentity,
         staleTime: 1000 * 60 * 5, // 5 minutes cache
-        retry: false,
+        retry: 3,
         refetchOnWindowFocus: false,
     });
 

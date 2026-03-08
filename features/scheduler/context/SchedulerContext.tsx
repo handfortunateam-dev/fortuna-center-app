@@ -76,6 +76,10 @@ interface SchedulerContextType {
   expandedScheduleId: string | null;
   setExpandedScheduleId: (id: string | null) => void;
 
+  // View settings
+  isWideMode: boolean;
+  setIsWideMode: (val: boolean) => void;
+
   // Create Modal state
   createModalState: {
     isOpen: boolean;
@@ -152,6 +156,8 @@ interface SchedulerContextType {
     time: string,
   ) => void;
   closeContextMenu: () => void;
+  scrollContainer: HTMLDivElement | null;
+  setScrollContainer: (element: HTMLDivElement | null) => void;
 }
 
 const SchedulerContext = createContext<SchedulerContextType | null>(null);
@@ -167,18 +173,34 @@ export function SchedulerProvider({
 }) {
   const queryClient = useQueryClient();
 
-  // Helper for consistent colors
+  // Navigation Refs
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(
+    null,
+  );
+
+  // Helper for consistent colors from a curated "safe" palette
   const stringToColor = (str: string) => {
+    const palette = [
+      "#3b82f6", // Blue 500
+      "#10b981", // Emerald 500
+      "#6366f1", // Indigo 500
+      "#f43f5e", // Rose 500
+      "#8b5cf6", // Violet 500
+      "#06b6d4", // Cyan 500
+      "#f59e0b", // Amber 500 (Golden, more readable than pure yellow)
+      "#ec4899", // Pink 500
+      "#14b8a6", // Teal 500
+      "#7c3aed", // Violet 600
+    ];
+
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-    let color = "#";
-    for (let i = 0; i < 3; i++) {
-      const value = (hash >> (i * 8)) & 0xff;
-      color += ("00" + value.toString(16)).substr(-2);
-    }
-    return color;
+
+    // Pick from palette using hash
+    const index = Math.abs(hash) % palette.length;
+    return palette[index];
   };
 
   // Filters
@@ -189,7 +211,11 @@ export function SchedulerProvider({
     data: teachersData,
     isLoading: isTeachersLoading,
     isFetching: isTeachersFetching,
-  } = useUsers({ role: "TEACHER", limit: 100 });
+  } = useUsers({
+    role: "TEACHER",
+    limit: 100,
+    fields: "id,fullName,role,email", //we can add fields to the api call, customize it
+  });
   const teachers: Teacher[] = useMemo(() => {
     return (teachersData?.data || []).map((t) => ({
       id: t.id,
@@ -266,7 +292,7 @@ export function SchedulerProvider({
     data: classesData,
     isLoading: isClassesLoading,
     isFetching: isClassesFetching,
-  } = useClasses({ isActive: true });
+  } = useClasses({ isActive: true, fields: "id,name,code" });
   const classes: ClassRoom[] = useMemo(() => {
     return (classesData?.data || []).map((c) => ({
       id: c.id,
@@ -311,6 +337,9 @@ export function SchedulerProvider({
   const [expandedScheduleId, setExpandedScheduleId] = useState<string | null>(
     null,
   );
+
+  // Wide mode state
+  const [isWideMode, setIsWideMode] = useState(false);
 
   // Create Modal state
   const [createModalState, setCreateModalState] = useState<{
@@ -699,6 +728,8 @@ export function SchedulerProvider({
     contextMenu,
     expandedScheduleId,
     setExpandedScheduleId,
+    isWideMode,
+    setIsWideMode,
     createModalState,
     editModalState,
     openEditModal,
@@ -715,6 +746,8 @@ export function SchedulerProvider({
     closeCreateModal,
     navigateWeek,
     goToToday,
+    scrollContainer,
+    setScrollContainer,
     checkScheduleConflict,
     handleDragStart,
     handleDragEnd,

@@ -9,8 +9,8 @@ interface ContextMenuProps {
   enableEdit: boolean;
   enableDelete: boolean;
   finalActionButtons: {
-    show?: { onClick: (id: string) => void };
-    edit?: { onClick: (id: string) => void };
+    show?: { onClick?: (id: string) => void; href?: string };
+    edit?: { onClick?: (id: string) => void; href?: string };
   } | null;
   onSelect: (row: Row) => void;
   onDelete: (row: Row) => void;
@@ -41,7 +41,14 @@ export function ContextMenu({
         <button
           className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default-700 hover:bg-default-100 dark:hover:bg-default-800 transition-colors text-left"
           onClick={() => {
-            finalActionButtons.show!.onClick(String(row.id || row.key));
+            if (finalActionButtons.show!.onClick) {
+              finalActionButtons.show!.onClick(String(row.id || row.key));
+            } else if (
+              finalActionButtons.show!.href &&
+              typeof window !== "undefined"
+            ) {
+              window.location.href = finalActionButtons.show!.href;
+            }
             onClose();
           }}
         >
@@ -53,7 +60,14 @@ export function ContextMenu({
         <button
           className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-default-700 hover:bg-default-100 dark:hover:bg-default-800 transition-colors text-left"
           onClick={() => {
-            finalActionButtons.edit!.onClick(String(row.id || row.key));
+            if (finalActionButtons.edit!.onClick) {
+              finalActionButtons.edit!.onClick(String(row.id || row.key));
+            } else if (
+              finalActionButtons.edit!.href &&
+              typeof window !== "undefined"
+            ) {
+              window.location.href = finalActionButtons.edit!.href;
+            }
             onClose();
           }}
         >

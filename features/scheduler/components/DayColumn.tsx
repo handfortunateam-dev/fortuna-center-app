@@ -26,7 +26,7 @@ export function DayColumn({
   schedules,
   onScheduleClick,
 }: DayColumnProps) {
-  const { config, isLoading } = useScheduler();
+  const { config, isLoading, isWideMode } = useScheduler();
   const dayOfWeek = date.getDay();
   const dayInfo = DAYS_OF_WEEK[dayOfWeek];
   const timeSlots = generateTimeSlots(config);
@@ -38,7 +38,9 @@ export function DayColumn({
   const positionedSchedules = getPositionedSchedules(schedules);
 
   return (
-    <div className="flex-1 min-w-[150px]">
+    <div
+      className={`flex-1 transition-all duration-300 ${isWideMode ? "min-w-[800px]" : "min-w-[150px]"}`}
+    >
       {/* Day Header - fixed height 68px to match TimeColumn */}
       <div
         className={`

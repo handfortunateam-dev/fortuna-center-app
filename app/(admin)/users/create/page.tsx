@@ -109,7 +109,7 @@ export default function CreateUserPage() {
         color: "success",
       });
 
-      // Invalidate users list
+      // Invalidate users list -> should be same as resource path
       await queryClient.invalidateQueries({ queryKey: ["users"] });
 
       // Redirect based on checkbox

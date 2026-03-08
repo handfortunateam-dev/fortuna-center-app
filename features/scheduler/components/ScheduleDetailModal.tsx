@@ -33,6 +33,7 @@ export function ScheduleDetailModal({
   const { data: enrollmentsData, isLoading: isLoadingStudents } =
     useClassEnrollments({
       classId: schedule?.classId,
+      fields: "id,studentName,studentId",
     });
 
   if (!schedule) return null;

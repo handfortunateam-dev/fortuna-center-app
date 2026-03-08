@@ -49,8 +49,14 @@ export function ClassCard({
   const primaryColor = isPreview
     ? "#3b82f6"
     : schedule.teacherColor || "#3b82f6";
-  const bgColor = isPreview ? "#3b82f630" : primaryColor + "20"; // 20% opacity
+
+  // Use a more solid background for better visibility
+  const bgColor = isPreview ? "#3b82f660" : primaryColor + "99"; // 60% opacity (Hex: 99)
   const borderCol = isPreview ? "#3b82f6" : primaryColor;
+
+  // Ensure text is very dark on light backgrounds and very light on dark backgrounds
+  const textColor = isPreview ? "#1e40af" : "currentColor";
+  const textStyle = { color: isPreview ? textColor : undefined };
 
   const isExpanded = !isPreview && expandedScheduleId === schedule.id;
 
@@ -121,12 +127,11 @@ export function ClassCard({
       <div className="h-full flex flex-col relative w-full">
         {/* Class Name */}
         <h4
-          className={`font-bold ${!isExpanded ? "truncate pr-4" : "pr-6 mb-1 whitespace-normal"} ${!isExpanded && width < 30 ? "text-[10px]" : "text-xs"} ${isExpanded ? "text-sm" : ""}`}
-          style={{ color: borderCol }}
+          className={`font-[900] text-gray-900 dark:text-white ${!isExpanded ? "truncate pr-4" : "pr-6 mb-1 whitespace-normal"} ${!isExpanded && width < 30 ? "text-[10px]" : "text-[11px]"} ${isExpanded ? "text-sm" : ""}`}
         >
           {schedule.className}
           {schedule.classCode && (
-            <span className="opacity-75 font-medium ml-1">
+            <span className="opacity-80 font-semibold ml-1">
               ({schedule.classCode})
             </span>
           )}
@@ -162,17 +167,17 @@ export function ClassCard({
         {/* Time - adaptable size */}
         <div className={`flex flex-col ${isExpanded ? "mt-4" : "mt-auto"}`}>
           <p
-            className={`font-medium text-gray-600 dark:text-gray-400 leading-tight ${!isExpanded && width < 30 ? "text-[8px]" : "text-[10px]"} ${isExpanded ? "text-xs" : ""}`}
+            className={`font-bold text-gray-700 dark:text-gray-200 leading-tight ${!isExpanded && width < 30 ? "text-[9px]" : "text-[11px]"} ${isExpanded ? "text-xs" : ""}`}
           >
             {schedule.startTime} - {schedule.endTime}
           </p>
 
           {((cardHeight >= 70 && width > 40) || isExpanded) && (
             <div
-              className={`flex items-center gap-1.5 opacity-60 mt-0.5 ${isExpanded ? "mt-2" : ""}`}
+              className={`flex items-center gap-1.5 opacity-80 mt-0.5 ${isExpanded ? "mt-2" : ""}`}
             >
               <div
-                className={`flex items-center gap-0.5 text-gray-500 ${isExpanded ? "text-xs" : "text-[9px]"}`}
+                className={`flex items-center gap-0.5 text-gray-700 dark:text-gray-300 font-medium ${isExpanded ? "text-xs" : "text-[10px]"}`}
               >
                 <Icon
                   icon="lucide:users"

@@ -206,7 +206,7 @@ export function RegistrationForm({ slug, linkLabel }: RegistrationFormProps) {
                     <TextInput
                       name="nickname"
                       label="Nickname"
-                      placeholder="Nickname (optional)"
+                      placeholder="Nickname"
                       required={true}
                     />
                   </div>
@@ -269,14 +269,14 @@ export function RegistrationForm({ slug, linkLabel }: RegistrationFormProps) {
                   <TextInput
                     name="email"
                     label="Email"
-                    placeholder="email@example.com (optional)"
+                    placeholder="email@example.com"
                     type="email"
                     required={true}
                   />
                   <TextareaInput
                     name="address"
                     label="Address"
-                    placeholder="Full address (optional)"
+                    placeholder="Full address"
                     minRows={2}
                     required={true}
                   />
@@ -306,7 +306,7 @@ export function RegistrationForm({ slug, linkLabel }: RegistrationFormProps) {
                   <SelectInput
                     name="occupation"
                     label="Occupation"
-                    placeholder="Current occupation (optional)"
+                    placeholder="Current occupation"
                     options={OCCUPATION_TYPES}
                     required={true}
                   />
