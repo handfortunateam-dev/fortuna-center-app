@@ -23,6 +23,12 @@ export interface BlogPost {
         name: string;
         slug: string;
     }>;
+    tags?: Array<{
+        tag: {
+            id: string;
+            name: string;
+        };
+    }>;
 }
 
 // Admin CMS interface with minimal fields for performance

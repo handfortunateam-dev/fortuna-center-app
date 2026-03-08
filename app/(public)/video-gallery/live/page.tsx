@@ -4,6 +4,9 @@ import YouTubePublicGallery from "@/features/public/home/YouTubePublicGallery";
 export const metadata = {
   title: "Live Broadcasts | Fortuna Center",
   description: "Watch our past live streams.",
+  alternates: {
+    canonical: "https://www.fortunacenter.com/video-gallery/live",
+  },
 };
 
 export default function LivePage() {

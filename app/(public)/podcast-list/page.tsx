@@ -6,6 +6,16 @@ import {
 } from "@/db/schema/podcast.schema";
 import { eq, desc } from "drizzle-orm";
 import { PodcastShowDetail } from "@/features/podcast-cms/interfaces";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Podcasts",
+  description:
+    "Listen to our collection of podcasts featuring student stories, interviews, and educational content from Fortuna Center Kupang.",
+  alternates: {
+    canonical: "https://www.fortunacenter.com/podcast-list",
+  },
+};
 
 export const revalidate = 120;
 

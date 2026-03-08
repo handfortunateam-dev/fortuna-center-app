@@ -9,6 +9,8 @@ import {
   PodcastEpisodeDetail,
 } from "@/features/podcast-cms/interfaces";
 
+import type { Metadata, ResolvingMetadata } from "next";
+
 interface PodcastDetailPageProps {
   params: Promise<{
     podcastId: string;
@@ -18,6 +20,37 @@ interface PodcastDetailPageProps {
     query?: string;
     season?: string;
   }>;
+}
+
+export async function generateMetadata(
+  { params }: PodcastDetailPageProps,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
+  const { podcastId: slug } = await params;
+
+  const podcast = await db.query.podcasts.findFirst({
+    where: eq(podcastsTable.slug, slug),
+  });
+
+  if (!podcast) {
+    return {
+      title: "Podcast Not Found",
+    };
+  }
+
+  return {
+    title: podcast.title,
+    description: podcast.description || podcast.title,
+    alternates: {
+      canonical: `https://www.fortunacenter.com/podcast-list/${slug}`,
+    },
+    openGraph: {
+      title: podcast.title,
+      description: podcast.description || podcast.title,
+      url: `https://www.fortunacenter.com/podcast-list/${slug}`,
+      images: podcast.coverImage ? [podcast.coverImage] : [],
+    },
+  };
 }
 
 export default async function PodcastDetailPage({
@@ -116,7 +149,9 @@ export default async function PodcastDetailPage({
       query={query}
       seasons={allSeasons}
       currentSeason={
-        resolvedSearchParams?.season ? Number(resolvedSearchParams.season) : undefined
+        resolvedSearchParams?.season
+          ? Number(resolvedSearchParams.season)
+          : undefined
       }
     />
   );

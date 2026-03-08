@@ -19,6 +19,9 @@ export async function generateMetadata({
       : "Live Stream | Fortuna Center",
     description:
       video?.snippet.description?.slice(0, 160) || "Watch our live broadcast.",
+    alternates: {
+      canonical: `https://www.fortunacenter.com/video-gallery/live/${params.videoId}`,
+    },
   };
 }
 
