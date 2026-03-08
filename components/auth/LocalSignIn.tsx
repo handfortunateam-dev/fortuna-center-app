@@ -192,24 +192,14 @@ export default function LocalSignIn() {
               </Button>
             </form>
           </FormProvider>
-
-          {/* <div className="mt-6 text-center text-small text-default-500">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/auth/signup"
-              className="text-primary font-semibold hover:underline ml-1"
-            >
-              Sign up
-            </Link>
-          </div> */}
         </CardBody>
 
-        <div className="bg-default-50/50 py-4 text-center border-t border-default-100 rounded-b-2xl">
+        {/* <div className="bg-default-50/50 py-4 text-center border-t border-default-100 rounded-b-2xl">
           <div className="flex items-center justify-center gap-2 text-tiny text-default-400 font-medium">
             <Icon icon="solar:shield-check-bold" className="text-default-400" />
             Secured by Fortuna Center
           </div>
-        </div>
+        </div> */}
       </Card>
     </>
   );

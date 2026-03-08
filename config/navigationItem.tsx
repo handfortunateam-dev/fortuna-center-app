@@ -379,7 +379,7 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
             ),
           },
           {
-            name: "Attendance",
+            name: "Attendance Management",
             href: NAV_URL.ADMIN.LMS.ATTENDANCE,
             icon: (props) => (
               <Icon icon="solar:calendar-mark-bold-duotone" {...props} />
@@ -387,7 +387,7 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
           },
         ],
       },
-      {
+    {
         name: "Coursework & Grading",
         href: NAV_URL.ADMIN.LMS.LESSONS,
         icon: (props) => <Icon icon="solar:notebook-bold-duotone" {...props} />,

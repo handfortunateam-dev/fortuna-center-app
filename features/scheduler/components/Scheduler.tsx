@@ -11,6 +11,8 @@ import { EditScheduleModal } from "./EditScheduleModal";
 import { SchedulerContextMenu } from "./SchedulerContextMenu";
 import { ScheduleDetailModal } from "./ScheduleDetailModal";
 import { LoadingScreen } from "@/components/loading/LoadingScreen";
+import { Icon } from "@iconify/react";
+import { ScrollNavigator } from "./ScrollNavigator";
 
 interface SchedulerProps {
   onScheduleClick?: (schedule: ClassSchedule) => void;
@@ -33,6 +35,11 @@ function SchedulerContent({
     openDetailModal,
     readOnly,
     isUpdating,
+    isWideMode,
+    setIsWideMode,
+    weekDates,
+    currentView,
+    currentDate,
   } = useScheduler();
 
   const handleScheduleClick = (schedule: ClassSchedule) => {
@@ -69,6 +76,37 @@ function SchedulerContent({
             schedule={editModalState.schedule}
           />
         </>
+      )}
+
+      {/* Truly Floating Wide Mode Toggle */}
+      <div className="fixed bottom-8 right-8 z-50 flex flex-col gap-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsWideMode(!isWideMode);
+          }}
+          className={`
+            w-14 h-14 rounded-full flex items-center justify-center shadow-[0_10px_40px_rgba(0,0,0,0.2)] transition-all active:scale-90 hover:scale-105
+            ${
+              isWideMode
+                ? "bg-primary text-white hover:bg-primary-600"
+                : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-primary/20"
+            }
+          `}
+          title={isWideMode ? "Fit to Screen" : "Switch to Wide Mode"}
+        >
+          <Icon
+            icon={isWideMode ? "lucide:minimize-2" : "lucide:maximize-2"}
+            className="w-6 h-6"
+          />
+        </button>
+      </div>
+
+      {/* Truly Floating Scroll Navigator */}
+      {currentView !== "month" && (
+        <ScrollNavigator
+          days={currentView === "day" ? [currentDate] : weekDates}
+        />
       )}
     </div>
   );

@@ -37,7 +37,8 @@ apiClient.interceptors.response.use(
       return Promise.reject(new Error(message));
     } else if (error.request) {
       // Request was made but no response
-      return Promise.reject(new Error("Network error. Please try again."));
+      error.message = "Network error. Please try again.";
+      return Promise.reject(error);
     } else {
       // Something else happened
       return Promise.reject(error);

@@ -4,6 +4,8 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { classEnrollments, users, classes, students } from "@/db/schema";
 
+export const maxDuration = 60;
+
 type CreateEnrollmentPayload = {
   studentId?: string;
   classId?: string;
@@ -14,6 +16,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const classId = searchParams.get("classId");
     const studentId = searchParams.get("studentId");
+    const limit = searchParams.get("limit");
+    const page = searchParams.get("page");
+    const fields = searchParams.get("fields");
+
+    const offset = limit && page ? (Number(page) - 1) * Number(limit) : 0;
 
     const filters = [];
     if (classId) {
@@ -25,8 +32,20 @@ export async function GET(request: NextRequest) {
 
     const where = filters.length ? and(...filters) : undefined;
 
-    // Join with students table (not users) to get student name
-    const data = await db
+    // Helper to filter object fields
+    const filterFields = (obj: Record<string, unknown>, fields: string[] | null) => {
+      if (!fields) return obj;
+      const filtered: Record<string, unknown> = {};
+      fields.forEach((f: string) => {
+        if (f in obj) filtered[f] = obj[f];
+      });
+      return filtered;
+    };
+
+    const fieldList = fields ? fields.split(",").map((f: string) => f.trim()) : null;
+
+    // Optimized query with proper joins
+    const dbData = await db
       .select({
         id: classEnrollments.id,
         studentId: classEnrollments.studentId,
@@ -36,30 +55,30 @@ export async function GET(request: NextRequest) {
         className: classes.name,
         enrolledAt: classEnrollments.enrolledAt,
         enrolledBy: classEnrollments.enrolledBy,
+        enrolledByName: users.name, // Direct join to get admin name
       })
       .from(classEnrollments)
       .leftJoin(students, eq(classEnrollments.studentId, students.id))
       .leftJoin(classes, eq(classEnrollments.classId, classes.id))
+      .leftJoin(users, eq(classEnrollments.enrolledBy, users.id))
       .where(where)
-      .orderBy(desc(classEnrollments.enrolledAt));
+      .orderBy(desc(classEnrollments.enrolledAt))
+      .limit(limit ? Number(limit) : 1000)
+      .offset(offset);
 
-    // Fetch enrolledBy names (admin) from users table
-    const dataWithEnrolledBy = await Promise.all(
-      data.map(async (item) => {
-        let enrolledByName = null;
-        if (item.enrolledBy) {
-          const [enrolledUser] = await db
-            .select({ name: users.name })
-            .from(users)
-            .where(eq(users.id, item.enrolledBy))
-            .limit(1);
-          enrolledByName = enrolledUser?.name || null;
-        }
-        return { ...item, enrolledByName };
-      })
-    );
+    // Get total count
+    const [{ total }] = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(classEnrollments)
+      .where(where);
 
-    return NextResponse.json({ success: true, data: dataWithEnrolledBy });
+    const data = dbData.map(item => filterFields(item, fieldList));
+
+    return NextResponse.json({
+      success: true,
+      data,
+      totalCount: Number(total)
+    });
   } catch (error) {
     console.error("Error fetching class enrollments:", error);
     return NextResponse.json(

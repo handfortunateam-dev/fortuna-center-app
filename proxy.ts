@@ -19,7 +19,14 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     const isProtected = protectedPaths.some(path => pathname.startsWith(path))
 
     // Explicitly allow public API routes that don't need auth protection here
-    // or handle them via matcher exclusions.
+    // https://vercel.com/docs/routing-middleware
+    // or handle them via matcher exclusions
+    if (pathname.startsWith("/auth/signup")) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/auth/login";
+        return NextResponse.redirect(url);
+    }
+    
     if (
         pathname.startsWith('/api/auth') ||
         pathname.startsWith('/api/webhooks/clerk') ||

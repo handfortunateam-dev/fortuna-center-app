@@ -19,6 +19,7 @@ export function SchedulerGrid({ onScheduleClick }: SchedulerGridProps) {
     currentView,
     currentDate,
     setExpandedScheduleId,
+    setScrollContainer,
   } = useScheduler();
 
   // Month view has its own component
@@ -31,10 +32,13 @@ export function SchedulerGrid({ onScheduleClick }: SchedulerGridProps) {
 
   return (
     <div
-      className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900"
+      className="relative border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-900 shadow-sm"
       onClick={() => setExpandedScheduleId(null)}
     >
-      <div className="flex overflow-x-auto">
+      <div
+        ref={setScrollContainer}
+        className="flex overflow-x-auto scrollbar-hide"
+      >
         {/* Time column */}
         <TimeColumn />
 

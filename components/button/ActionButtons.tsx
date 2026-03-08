@@ -401,9 +401,8 @@ export const createActionButtons = (
           // Convert to Link for auto-routing
           const href = getAutoRoute(config.show.onClick, item.id);
           buttons.push(
-            <Tooltip content={config.show.label || "Detail"}>
+            <Tooltip key="show" content={config.show.label || "Detail"}>
               <LinkButton
-                key="show"
                 color="primary"
                 href={href}
                 size="lg"
@@ -421,9 +420,8 @@ export const createActionButtons = (
         } else {
           // Regular onClick handler (backward compatible)
           buttons.push(
-            <Tooltip content={config.show.label || "Detail"}>
+            <Tooltip key="show" content={config.show.label || "Detail"}>
               <button
-                key="show"
                 className="text-blue-600 hover:text-blue-700 transition-colors p-3 rounded-md hover:bg-blue-50"
                 onClick={() => config.show?.onClick?.(item.id)}
                 title={config.show.label || "Detail"}
@@ -439,9 +437,8 @@ export const createActionButtons = (
         // Manual href provided (old way)
         const showHref = config.show.href || "#";
         buttons.push(
-          <Tooltip content={config.show.label || "Detail"}>
+          <Tooltip key="show" content={config.show.label || "Detail"}>
             <LinkButton
-              key="show"
               color="primary"
               href={showHref}
               size="lg"
@@ -467,9 +464,8 @@ export const createActionButtons = (
           // Convert to Link for auto-routing
           const href = getAutoRoute(config.edit.onClick, item.id);
           buttons.push(
-            <Tooltip content={config.edit.label || "Edit"}>
+            <Tooltip key="edit" content={config.edit.label || "Edit"}>
               <LinkButton
-                key="edit"
                 color="warning"
                 href={href}
                 size="lg"
@@ -487,9 +483,8 @@ export const createActionButtons = (
         } else {
           // Regular onClick handler (backward compatible)
           buttons.push(
-            <Tooltip content={config.edit.label || "Edit"}>
+            <Tooltip key="edit" content={config.edit.label || "Edit"}>
               <button
-                key="edit"
                 className="text-yellow-600 hover:text-yellow-700 transition-colors p-3 rounded-md hover:bg-yellow-50"
                 onClick={() => config.edit?.onClick?.(item.id)}
                 title={config.edit.label || "Edit"}
@@ -505,9 +500,8 @@ export const createActionButtons = (
         // Manual href provided (old way)
         const editHref = config.edit.href || "#";
         buttons.push(
-          <Tooltip content={config.edit.label || "Edit"}>
+          <Tooltip key="edit" content={config.edit.label || "Edit"}>
             <LinkButton
-              key="edit"
               color="warning"
               href={editHref}
               size="lg"
@@ -601,9 +595,8 @@ export const createActionButtons = (
     // Delete button
     if (config.delete) {
       buttons.push(
-        <Tooltip content={config.delete.label || "Delete"}>
+        <Tooltip key="delete" content={config.delete.label || "Delete"}>
           <button
-            key="delete"
             className="text-red-600 hover:text-red-700 transition-colors p-3 rounded-md hover:bg-red-50"
             title={config.delete.label || "Delete"}
             onClick={() => openDeleteDialog(item.id, item)}

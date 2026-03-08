@@ -25,6 +25,8 @@ export default function TeacherClassesPage() {
       columns={columnsTeacherClasses}
       pageSize={10}
       showPagination
+      serverSide={true}
+      paginationType="page"
     />
   );
 }

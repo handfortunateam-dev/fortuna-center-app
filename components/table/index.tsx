@@ -405,7 +405,7 @@ export function ListGrid<T = unknown>({
   });
 
   const actualData = data || fetchedData;
-  const actualLoading = loading || isLoading || isFetching;
+  const actualLoading = loading || isLoading || isFetching || isDeleting;
   const actualError = isError || isFetchError;
   const actualErrorObj = error || fetchError;
 

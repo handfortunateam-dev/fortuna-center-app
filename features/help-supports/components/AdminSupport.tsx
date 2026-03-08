@@ -3,8 +3,6 @@
 import React, { useState } from "react";
 import {
   Button,
-  Card,
-  CardBody,
   Chip,
   Divider,
   Modal,
@@ -12,35 +10,22 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
   Textarea,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { TicketStatusChip } from "@/components/ticket/TicketStatusChip";
 import { ITicket } from "../interface";
 import { TICKET_STATUSES } from "../constant";
+import { ListGrid, createColumns } from "@/components/table";
+import apiClient from "@/lib/axios";
 
 export function AdminSupport() {
   const [selectedTicket, setSelectedTicket] = useState<ITicket | null>(null);
   const [adminResponse, setAdminResponse] = useState("");
 
   const queryClient = useQueryClient();
-
-  const { data: tickets = [], isLoading } = useQuery({
-    queryKey: ["tickets"],
-    queryFn: async () => {
-      const res = await fetch("/api/tickets");
-      const result = await res.json();
-      return result.data as ITicket[];
-    },
-  });
 
   const updateTicketMutation = useMutation({
     mutationFn: async ({
@@ -56,12 +41,8 @@ export function AdminSupport() {
       if (status) payload.status = status;
       if (response !== undefined) payload.adminResponse = response;
 
-      const res = await fetch(`/api/tickets/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      return res.json();
+      const { data } = await apiClient.patch(`/tickets/${id}`, payload);
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
@@ -83,71 +64,67 @@ export function AdminSupport() {
     setAdminResponse(ticket.adminResponse || "");
   };
 
-  return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Help & Support (Admin)</h1>
-          <p className="text-default-500">
-            Manage all student and staff support tickets
-          </p>
-        </div>
-      </div>
+  const columns = createColumns<ITicket>([
+    {
+      key: "id",
+      label: "Ticket ID",
+      value: (ticket) => (
+        <span className="font-mono text-xs">{ticket.id.slice(0, 8)}</span>
+      ),
+    },
+    {
+      key: "subject",
+      label: "Subject",
+    },
+    {
+      key: "category",
+      label: "Category",
+      value: (ticket) => (
+        <Chip size="sm" variant="flat">
+          {ticket.category.replace("_", " ")}
+        </Chip>
+      ),
+    },
+    {
+      key: "status",
+      label: "Status",
+      value: (ticket) => <TicketStatusChip status={ticket.status} />,
+    },
+    {
+      key: "createdAt",
+      label: "Created",
+      value: (ticket) => format(new Date(ticket.createdAt), "MMM dd, yyyy"),
+    },
+  ]);
 
-      <Card>
-        <CardBody>
-          {isLoading ? (
-            <div className="flex justify-center py-8">Loading...</div>
-          ) : tickets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-default-400">
-              <Icon icon="lucide:ticket-x" className="w-12 h-12 mb-2" />
-              <p>No tickets to review</p>
-            </div>
-          ) : (
-            <Table aria-label="Tickets table">
-              <TableHeader>
-                <TableColumn>Ticket ID</TableColumn>
-                <TableColumn>Subject</TableColumn>
-                <TableColumn>Category</TableColumn>
-                <TableColumn>Status</TableColumn>
-                <TableColumn>Created</TableColumn>
-                <TableColumn>Actions</TableColumn>
-              </TableHeader>
-              <TableBody>
-                {tickets.map((ticket) => (
-                  <TableRow key={ticket.id}>
-                    <TableCell className="font-mono text-xs">
-                      {ticket.id.slice(0, 8)}
-                    </TableCell>
-                    <TableCell>{ticket.subject}</TableCell>
-                    <TableCell>
-                      <Chip size="sm" variant="flat">
-                        {ticket.category.replace("_", " ")}
-                      </Chip>
-                    </TableCell>
-                    <TableCell>
-                      <TicketStatusChip status={ticket.status} />
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(ticket.createdAt), "MMM dd, yyyy")}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        color="primary"
-                        variant="flat"
-                        onPress={() => openTicketModal(ticket)}
-                      >
-                        Review
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+  return (
+    <>
+      <ListGrid<ITicket>
+        title="Help & Support (Admin)"
+        description="Manage all student and staff support tickets"
+        resourcePath="/tickets"
+        columns={columns}
+        basePath="/help-support"
+        enableSearch={true}
+        searchPlaceholder="Search tickets..."
+        enableCreate={false}
+        enableShow={false}
+        enableEdit={false}
+        enableDelete={true}
+        actionButtons={{
+          custom: [
+            {
+              key: "review",
+              label: "",
+              icon: <Icon icon="lucide:eye" />,
+              onClick(id, item) {
+                openTicketModal(item as ITicket);
+              },
+            },
+          ],
+        }}
+        onRowClick={(item) => openTicketModal(item)}
+      />
 
       {/* View/Review Ticket Modal */}
       <Modal
@@ -257,6 +234,6 @@ export function AdminSupport() {
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </div>
+    </>
   );
 }

@@ -1,575 +1,341 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-  Chip,
-  Select,
-  SelectItem,
-  Input,
-  Skeleton,
-} from "@heroui/react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardBody, Input, Skeleton, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
 import { StateMessage } from "@/components/state-message";
-import { format } from "date-fns";
-
-interface AttendanceRecord {
-  id: string;
-  sessionId: string;
-  studentId: string;
-  status: "present" | "absent" | "late" | "excused" | "sick";
-  notes: string | null;
-  checkedInAt: string | null;
-  recordedBy: string | null;
-  recordedAt: string;
-  updatedAt: string | null;
-
-  // Session info
-  sessionDate: string;
-  sessionStatus: string;
-  sessionNotes: string | null;
-
-  // Schedule info
-  scheduleId: string;
-  scheduleStartTime: string;
-  scheduleEndTime: string;
-  scheduleLocation: string | null;
-  scheduleClassId: string;
-  scheduleTeacherId: string;
-
-  // Student info
-  studentName: string;
-  studentEmail: string;
-
-  // Class info
-  className: string;
-
-  // Additional names
-  teacherName: string | null;
-  recordedByName: string | null;
-}
+import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
+import { useAsyncList } from "react-stately";
 
 interface ClassOption {
   id: string;
   name: string;
+  code?: string;
+  teacherClasses: {
+    teacher: {
+      name: string;
+    };
+  }[];
+  classSchedules: {
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+  }[];
+  sessionCount: number;
 }
 
-const statusColorMap: Record<
-  "present" | "absent" | "late" | "excused" | "sick",
-  "success" | "danger" | "warning" | "default" | "primary"
-> = {
-  present: "success",
-  absent: "danger",
-  late: "warning",
-  excused: "default",
-  sick: "primary",
-};
+interface PaginationData {
+  totalCount: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+  nextPage: number | null;
+}
 
-const statusLabelMap: Record<
-  "present" | "absent" | "late" | "excused" | "sick",
-  string
-> = {
-  present: "Hadir",
-  absent: "Tidak Hadir",
-  late: "Terlambat",
-  excused: "Izin",
-  sick: "Sakit",
-};
+interface ApiResponse {
+  success: boolean;
+  data: ClassOption[];
+  pagination: PaginationData;
+}
 
-const AttendanceSkeletonLoader = () => {
-  return (
-    <div className="space-y-6">
-      {[1, 2, 3].map((index) => (
-        <Card key={index} className="shadow-sm">
-          <CardHeader className="flex flex-col items-start gap-2 px-6 py-4 border-b">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3 flex-1">
-                <Skeleton className="w-6 h-6 rounded-lg" />
-                <div className="flex-1">
-                  <Skeleton className="h-6 w-64 rounded-lg mb-2" />
-                  <div className="flex items-center gap-4">
-                    <Skeleton className="h-4 w-32 rounded-lg" />
-                    <Skeleton className="h-4 w-36 rounded-lg" />
-                    <Skeleton className="h-4 w-28 rounded-lg" />
-                    <Skeleton className="h-4 w-24 rounded-lg" />
-                  </div>
-                </div>
-              </div>
-              <Skeleton className="h-8 w-40 rounded-full" />
-            </div>
-          </CardHeader>
-
-          <CardBody className="p-0">
-            <Table removeWrapper>
-              <TableHeader>
-                <TableColumn>STUDENT</TableColumn>
-                <TableColumn>STATUS</TableColumn>
-                <TableColumn>CHECK-IN TIME</TableColumn>
-                <TableColumn>RECORDED BY</TableColumn>
-                <TableColumn>NOTES</TableColumn>
-              </TableHeader>
-              <TableBody>
-                {[1, 2, 3, 4].map((rowIndex) => (
-                  <TableRow key={rowIndex}>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-40 rounded-lg" />
-                        <Skeleton className="h-3 w-48 rounded-lg" />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-6 w-20 rounded-full" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-16 rounded-lg" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-24 rounded-lg" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-32 rounded-lg" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardBody>
-        </Card>
-      ))}
-    </div>
-  );
-};
+const dayNamesShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function AttendanceManagementPage() {
-  const [selectedClass, setSelectedClass] = useState<string>("");
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [hasMore, setHasMore] = useState(true);
 
-  // Fetch classes for filter
-  const { data: classes = [] } = useQuery<ClassOption[]>({
-    queryKey: ["classes-attendance"],
-    queryFn: async () => {
-      const response = await fetch("/api/classes");
-      const data = await response.json();
-      if (!data.success) throw new Error("Failed to fetch classes");
-      return data.data || [];
-    },
-  });
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  // Fetch attendance records
-  const {
-    data: attendanceData,
-    isLoading,
-    error,
-  } = useQuery<AttendanceRecord[]>({
-    queryKey: ["attendances", selectedClass],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (selectedClass) params.append("classId", selectedClass);
+  // Using useAsyncList for data fetching and state management
+  const list = useAsyncList<ClassOption>({
+    async load({ cursor, items }) {
+      const page = cursor || "1";
+      const limit = 8; // User requested limit 8
 
       const response = await fetch(
-        `/api/class-attendances?${params.toString()}`,
+        `/api/attendance-management/classes?page=${page}&limit=${limit}&search=${debouncedSearch}`,
       );
-      const data = await response.json();
-      if (!data.success)
-        throw new Error(data.message || "Failed to fetch attendance");
-      return data.data || [];
+      const json: ApiResponse = await response.json();
+
+      if (!json.success) {
+        throw new Error("Failed to fetch classes");
+      }
+
+      setHasMore(json.pagination.hasMore);
+
+      // Deduplicate items just in case the server returns overlapping data or the hook triggers twice
+      const existingIds = new Set(items.map((item) => item.id));
+      const newItems = json.data.filter((item) => !existingIds.has(item.id));
+
+      return {
+        items: newItems,
+        cursor: json.pagination.nextPage?.toString(),
+      };
     },
   });
 
-  // Filter and group attendance by session
-  const filteredAndGroupedData = useMemo(() => {
-    if (!attendanceData) return [];
+  // Reload the list when debounced search changes
+  useEffect(() => {
+    // Only reload if the search term has actually changed
+    // We exclude 'list' from dependencies to prevent an infinite loop
+    // because calling list.reload() updates the list state, which would re-trigger this effect.
+    list.reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
 
-    // Filter by search query
-    let filtered = attendanceData;
-    if (searchQuery) {
-      filtered = attendanceData.filter(
-        (record) =>
-          record.studentName
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          record.className.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          record.scheduleLocation
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          record.teacherName?.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    }
+  // Using useInfiniteScroll for scroll-triggered fetching
+  const [loaderRef, scrollerRef] = useInfiniteScroll({
+    hasMore: hasMore && !list.isLoading && list.items.length > 0,
+    distance: 400,
+    onLoadMore: list.loadMore,
+  });
 
-    // Group by session
-    const grouped = filtered.reduce(
-      (acc, record) => {
-        const sessionKey = record.sessionId;
-        if (!acc[sessionKey]) {
-          acc[sessionKey] = {
-            sessionId: record.sessionId,
-            sessionDate: record.sessionDate,
-            scheduleStartTime: record.scheduleStartTime,
-            scheduleEndTime: record.scheduleEndTime,
-            scheduleLocation: record.scheduleLocation,
-            sessionNotes: record.sessionNotes,
-            className: record.className,
-            teacherName: record.teacherName,
-            scheduleClassId: record.scheduleClassId,
-            attendances: [],
-          };
-        }
-        acc[sessionKey].attendances.push(record);
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          sessionId: string;
-          sessionDate: string;
-          scheduleStartTime: string;
-          scheduleEndTime: string;
-          scheduleLocation: string | null;
-          sessionNotes: string | null;
-          className: string;
-          teacherName: string | null;
-          scheduleClassId: string;
-          attendances: AttendanceRecord[];
-        }
-      >,
-    );
-
-    return Object.values(grouped).sort(
-      (a, b) =>
-        new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime(),
-    );
-  }, [attendanceData, searchQuery]);
-
-  // Calculate statistics
-  const statistics = useMemo(() => {
-    if (!attendanceData)
-      return { total: 0, present: 0, absent: 0, late: 0, excused: 0, sick: 0 };
-
-    return {
-      total: attendanceData.length,
-      present: attendanceData.filter((r) => r.status === "present").length,
-      absent: attendanceData.filter((r) => r.status === "absent").length,
-      late: attendanceData.filter((r) => r.status === "late").length,
-      excused: attendanceData.filter((r) => r.status === "excused").length,
-      sick: attendanceData.filter((r) => r.status === "sick").length,
-    };
-  }, [attendanceData]);
-
-  if (error) {
+  if (list.error) {
     return (
       <StateMessage
         icon="solar:danger-circle-bold-duotone"
-        title="Failed to Load Attendance"
-        description={error instanceof Error ? error.message : "Unknown error"}
-        color="danger"
+        title="Error Loading Classes"
+        message={
+          list.error instanceof Error ? list.error.message : "Unknown error"
+        }
+        type="error"
       />
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <Heading className="text-3xl font-bold">Attendance Management</Heading>
-        <Text className="text-default-500 mt-1">
-          Monitor student attendance across all classes and sessions
-        </Text>
-      </div>
+    <div className="flex flex-col h-[calc(100vh-140px)] w-full overflow-hidden">
+      {/* Header section - stays at top */}
+      <div className="space-y-6 pb-6 shrink-0">
+        <div>
+          <Heading className="text-3xl font-bold">
+            Attendance Management
+          </Heading>
+          <Text className="text-default-500 mt-1">
+            Monitor student attendance across all classes and sessions
+          </Text>
+        </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-        <Card className="shadow-sm">
-          <CardBody className="p-4">
-            <div className="flex items-center gap-2">
-              <Icon
-                icon="solar:clipboard-list-bold-duotone"
-                className="w-8 h-8 text-default-400"
-              />
-              <div>
-                <Text className="text-xs text-default-500">Total Records</Text>
-                <Heading className="text-2xl font-bold">
-                  {statistics.total}
-                </Heading>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardBody className="p-4">
-            <div className="flex items-center gap-2">
-              <Icon
-                icon="solar:check-circle-bold-duotone"
-                className="w-8 h-8 text-success"
-              />
-              <div>
-                <Text className="text-xs text-default-500">Present</Text>
-                <Heading className="text-2xl font-bold text-success">
-                  {statistics.present}
-                </Heading>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardBody className="p-4">
-            <div className="flex items-center gap-2">
-              <Icon
-                icon="solar:close-circle-bold-duotone"
-                className="w-8 h-8 text-danger"
-              />
-              <div>
-                <Text className="text-xs text-default-500">Absent</Text>
-                <Heading className="text-2xl font-bold text-danger">
-                  {statistics.absent}
-                </Heading>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardBody className="p-4">
-            <div className="flex items-center gap-2">
-              <Icon
-                icon="solar:clock-circle-bold-duotone"
-                className="w-8 h-8 text-warning"
-              />
-              <div>
-                <Text className="text-xs text-default-500">Late</Text>
-                <Heading className="text-2xl font-bold text-warning">
-                  {statistics.late}
-                </Heading>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardBody className="p-4">
-            <div className="flex items-center gap-2">
-              <Icon
-                icon="solar:document-bold-duotone"
-                className="w-8 h-8 text-default-400"
-              />
-              <div>
-                <Text className="text-xs text-default-500">Excused</Text>
-                <Heading className="text-2xl font-bold">
-                  {statistics.excused}
-                </Heading>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardBody className="p-4">
-            <div className="flex items-center gap-2">
-              <Icon
-                icon="solar:health-bold-duotone"
-                className="w-8 h-8 text-primary"
-              />
-              <div>
-                <Text className="text-xs text-default-500">Sick</Text>
-                <Heading className="text-2xl font-bold text-primary">
-                  {statistics.sick}
-                </Heading>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card className="shadow-sm">
-        <CardBody className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Filter by Class"
-              placeholder="All Classes"
-              selectedKeys={selectedClass ? [selectedClass] : []}
-              onSelectionChange={(keys) => {
-                const selected = Array.from(keys)[0] as string;
-                setSelectedClass(selected || "");
-              }}
-              startContent={
-                <Icon
-                  icon="solar:book-bookmark-bold-duotone"
-                  className="w-4 h-4"
-                />
-              }
-            >
-              <SelectItem key="" value="">
-                All Classes
-              </SelectItem>
-              {classes.map((cls) => (
-                <SelectItem key={cls.id} value={cls.id}>
-                  {cls.name}
-                </SelectItem>
-              ))}
-            </Select>
-
+        <div className="flex items-center justify-between gap-4">
+          <Heading className="text-xl font-semibold">Select a Class</Heading>
+          <div className="w-full max-w-xs">
             <Input
-              placeholder="Search by student, class, location, or teacher..."
+              placeholder="Search classes..."
               value={searchQuery}
               onValueChange={setSearchQuery}
               startContent={
                 <Icon icon="solar:magnifer-bold-duotone" className="w-4 h-4" />
               }
               isClearable
-              onClear={() => setSearchQuery("")}
+              onClear={() => {
+                setSearchQuery("");
+                setDebouncedSearch("");
+              }}
             />
           </div>
-        </CardBody>
-      </Card>
+        </div>
+      </div>
 
-      {/* Attendance Records Grouped by Session */}
-      {isLoading ? (
-        <AttendanceSkeletonLoader />
-      ) : filteredAndGroupedData.length === 0 ? (
-        <StateMessage
-          icon="solar:calendar-mark-bold-duotone"
-          title="No Attendance Records"
-          message="No attendance records found. Try adjusting your filters."
-          type="empty"
-        />
-      ) : (
-        <div className="space-y-6">
-          {filteredAndGroupedData.map((session) => (
-            <Card key={session.sessionId} className="shadow-sm">
-              <CardHeader className="flex flex-col items-start gap-2 px-6 py-4 border-b">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      icon="solar:video-library-bold-duotone"
-                      className="w-6 h-6 text-primary"
-                    />
-                    <div>
-                      <Heading className="text-lg font-semibold">
-                        {session.sessionNotes ||
-                          `${session.className} Class Session`}
-                      </Heading>
-                      <div className="flex items-center gap-4 mt-1">
-                        <Text className="text-sm text-default-500">
-                          <Icon
-                            icon="solar:book-bold-duotone"
-                            className="inline w-4 h-4 mr-1"
-                          />
-                          {session.className}
-                        </Text>
-                        <Text className="text-sm text-default-500">
-                          <Icon
-                            icon="solar:calendar-bold-duotone"
-                            className="inline w-4 h-4 mr-1"
-                          />
-                          {format(new Date(session.sessionDate), "dd MMM yyyy")}
-                        </Text>
-                        <Text className="text-sm text-default-500">
-                          <Icon
-                            icon="solar:clock-circle-bold-duotone"
-                            className="inline w-4 h-4 mr-1"
-                          />
-                          {session.scheduleStartTime} -{" "}
-                          {session.scheduleEndTime}
-                        </Text>
-                        {session.scheduleLocation && (
-                          <Text className="text-sm text-default-500">
-                            <Icon
-                              icon="solar:map-point-bold-duotone"
-                              className="inline w-4 h-4 mr-1"
-                            />
-                            {session.scheduleLocation}
+      {/* Main Grid Content - This is the scrollable area */}
+      <div
+        ref={scrollerRef as React.RefObject<HTMLDivElement>}
+        className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+      >
+        {list.isLoading && list.items.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <Card key={i} className="h-48 shadow-sm">
+                <CardBody className="p-4 flex flex-col justify-between">
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                    <Skeleton className="h-6 w-3/4 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-4 w-1/2 rounded-lg" />
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+              {list.items.map((cls) => (
+                <Card
+                  key={cls.id}
+                  isPressable
+                  onPress={() =>
+                    router.push(`/attendance-management/${cls.id}`)
+                  }
+                  className="group hover:scale-[1.00] active:scale-[0.98] border-2 border-transparent hover:border-primary transition-all shadow-sm h-full min-h-[220px]"
+                >
+                  <CardBody className="p-6 flex flex-col items-start gap-4 h-full">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                        <Icon
+                          icon="solar:book-bookmark-bold-duotone"
+                          width={28}
+                        />
+                      </div>
+                      <div className="flex gap-1">
+                        {cls.sessionCount > 0 && (
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color="success"
+                            className="font-mono text-[10px]"
+                            startContent={
+                              <Icon
+                                icon="solar:calendar-check-bold-duotone"
+                                width={12}
+                              />
+                            }
+                          >
+                            {cls.sessionCount}{" "}
+                            {cls.sessionCount === 1 ? "Session" : "Sessions"}
+                          </Chip>
+                        )}
+                        {cls.classSchedules?.length > 0 && (
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color="primary"
+                            className="font-mono text-[10px]"
+                            startContent={
+                              <Icon
+                                icon="solar:alarm-bold-duotone"
+                                width={12}
+                              />
+                            }
+                          >
+                            {cls.classSchedules.length}{" "}
+                            {cls.classSchedules.length === 1 ? "Slot" : "Slots"}
+                          </Chip>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="w-full">
+                      <Text className="font-bold text-xl leading-tight uppercase tracking-tight line-clamp-1">
+                        {cls.name}
+                      </Text>
+                      <Text className="text-xs text-default-400 mt-1 font-medium italic">
+                        {cls.code || "N/A"}
+                      </Text>
+                    </div>
+
+                    {/* Lecturers */}
+                    <div className="flex flex-col gap-1 w-full">
+                      <Text className="text-[10px] uppercase font-bold text-default-400 tracking-wider">
+                        Lecturers
+                      </Text>
+                      <div className="flex flex-wrap gap-1">
+                        {cls.teacherClasses?.length ? (
+                          cls.teacherClasses.map(({ teacher }, idx) => (
+                            <Chip
+                              key={idx}
+                              size="sm"
+                              variant="flat"
+                              color="primary"
+                              className="h-5 text-[10px]"
+                            >
+                              {teacher.name}
+                            </Chip>
+                          ))
+                        ) : (
+                          <Text className="text-[10px] text-default-400 italic">
+                            No lecturers assigned
                           </Text>
                         )}
                       </div>
                     </div>
-                  </div>
-                  <Chip
-                    startContent={
-                      <Icon
-                        icon="solar:user-bold-duotone"
-                        className="w-4 h-4"
-                      />
-                    }
-                    variant="flat"
-                    color="primary"
-                  >
-                    Teacher: {session.teacherName || "Unknown"}
-                  </Chip>
-                </div>
-              </CardHeader>
 
-              <CardBody className="p-0">
-                <Table removeWrapper>
-                  <TableHeader>
-                    <TableColumn>STUDENT</TableColumn>
-                    <TableColumn>STATUS</TableColumn>
-                    <TableColumn>CHECK-IN TIME</TableColumn>
-                    <TableColumn>RECORDED BY</TableColumn>
-                    <TableColumn>NOTES</TableColumn>
-                  </TableHeader>
-                  <TableBody>
-                    {session.attendances.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>
-                          <div>
-                            <Text className="font-medium">
-                              {record.studentName}
+                    {/* Next Schedules */}
+                    {cls.classSchedules?.length > 0 && (
+                      <div className="flex flex-col gap-1 w-full">
+                        <Text className="text-[10px] uppercase font-bold text-default-400 tracking-wider">
+                          Schedule
+                        </Text>
+                        <div className="flex flex-wrap gap-1">
+                          {cls.classSchedules.slice(0, 2).map((sched, idx) => (
+                            <div
+                              key={idx}
+                              className="bg-default-100 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"
+                            >
+                              <span className="text-primary font-bold">
+                                {dayNamesShort[sched.dayOfWeek]}
+                              </span>
+                              <span>{sched.startTime.substring(0, 5)}</span>
+                            </div>
+                          ))}
+                          {cls.classSchedules.length > 2 && (
+                            <Text className="text-[10px] text-default-400">
+                              +{cls.classSchedules.length - 2} more
                             </Text>
-                            <Text className="text-xs text-default-400">
-                              {record.studentEmail}
-                            </Text>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            color={statusColorMap[record.status]}
-                            variant="flat"
-                            size="sm"
-                          >
-                            {statusLabelMap[record.status]}
-                          </Chip>
-                        </TableCell>
-                        <TableCell>
-                          {record.checkedInAt ? (
-                            <Text className="text-sm">
-                              {format(new Date(record.checkedInAt), "HH:mm:ss")}
-                            </Text>
-                          ) : (
-                            <Text className="text-sm text-default-400">-</Text>
                           )}
-                        </TableCell>
-                        <TableCell>
-                          <Text className="text-sm">
-                            {record.recordedByName || "System"}
-                          </Text>
-                        </TableCell>
-                        <TableCell>
-                          <Text className="text-sm text-default-500">
-                            {record.notes || "-"}
-                          </Text>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardBody>
-            </Card>
-          ))}
-        </div>
-      )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="w-full pt-2 flex justify-end mt-auto">
+                      <div className="flex items-center text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                        View Sessions
+                        <Icon
+                          icon="solar:arrow-right-bold-duotone"
+                          className="ml-1"
+                        />
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              ))}
+            </div>
+
+            {/* Load more indicator - placed AFTER the grid */}
+            {hasMore && (
+              <div
+                ref={loaderRef as React.RefObject<HTMLDivElement>}
+                className="w-full flex justify-center py-8"
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Text className="text-sm text-default-400">
+                    Loading more classes...
+                  </Text>
+                </div>
+              </div>
+            )}
+
+            {!hasMore && list.items.length > 0 && (
+              <div className="w-full text-center py-10 opacity-50">
+                <Text className="text-sm italic">
+                  You&apos;ve reached the end of the list.
+                </Text>
+              </div>
+            )}
+          </>
+        )}
+
+        {!list.isLoading && list.items.length === 0 && (
+          <div className="text-center py-20 w-full col-span-full">
+            <StateMessage
+              icon="solar:info-circle-bold-duotone"
+              title="No Classes Found"
+              message="There are no classes available to track attendance."
+              type="empty"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
