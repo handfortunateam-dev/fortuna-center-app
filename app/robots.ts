@@ -25,6 +25,9 @@ export default function robots(): MetadataRoute.Robots {
                 "/v1/",
             ],
         },
-        sitemap: "https://www.fortunacenter.com/sitemap.xml",
+        sitemap: [
+            "https://www.fortunacenter.com/sitemap.xml",
+            "https://www.fortunacenter.com/image-sitemap.xml",
+        ],
     };
 }
