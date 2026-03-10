@@ -41,9 +41,10 @@ export default function DashboardAdmin({ user }: DashboardAdminProps) {
           color="primary"
           variant="underlined"
         >
-          <Tab key="dashboard" title="Dashboard" />
-          <Tab key="sessions" title="Recent Sessions" />
-          {/* Add more tabs as needed for specific data views */}
+          <Tab key="dashboard" title="Overview" />
+          <Tab key="finance" title="Finance" />
+          <Tab key="personnel" title="Personnel" />
+          <Tab key="sessions" title="Class Sessions" />
         </Tabs>
       </div>
 
@@ -56,23 +57,26 @@ export default function DashboardAdmin({ user }: DashboardAdminProps) {
       >
         {activeTab === "dashboard" && (
           <div className="space-y-6">
-            {/* Stats Overview */}
-            <StatisticGeneral />
+            {/* Stats Overview - Only LMS for main dashboard */}
+            <StatisticGeneral view="lms" />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column: Stats & Actions */}
-              <div className="lg:col-span-2 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-6">
-                  <QuickActions />
-                  <RecentSessions limit={5} />
-                </div>
-              </div>
-
-              {/* Right Column: Recent Activity */}
-              <div className="lg:col-span-1">
-                <RecentActivity />
-              </div>
+              <QuickActions />
+              <RecentSessions limit={5} />
+              <RecentActivity />
             </div>
+          </div>
+        )}
+
+        {activeTab === "finance" && (
+          <div className="space-y-6">
+            <StatisticGeneral view="finance" />
+          </div>
+        )}
+
+        {activeTab === "personnel" && (
+          <div className="space-y-6">
+            <StatisticGeneral view="personnel" />
           </div>
         )}
 
