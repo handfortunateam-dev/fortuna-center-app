@@ -11,7 +11,7 @@ export default function ClassEnrollmentsPage() {
       idField="id"
       nameField="studentName"
       // Header
-      title="Class Enrollments"
+      title="Student Class Enrollments"
       description="Manage student enrollments in classes"
       // Resource configuration
       resourcePath="/class-enrollments"
