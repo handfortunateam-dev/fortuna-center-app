@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useTransition,
+} from "react";
 import { Modal, ModalContent, ModalBody, Input, Kbd } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
@@ -28,10 +34,13 @@ export default function CommandBar({ userRole }: CommandBarProps) {
 
   // Detect OS for keyboard shortcut display
   const [isMac, setIsMac] = useState(false);
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
-    setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
-  }, []);
+    startTransition(() => {
+      setIsMac(navigator.platform.toUpperCase().indexOf("MAC") >= 0);
+    });
+  }, [startTransition]);
 
   // Flatten navigation items with breadcrumb (regular function to avoid hoisting issues)
   const flattenNavigation = (
@@ -139,8 +148,10 @@ export default function CommandBar({ userRole }: CommandBarProps) {
 
   // Reset selected index when search changes
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [search]);
+    startTransition(() => {
+      setSelectedIndex(0);
+    });
+  }, [search, startTransition]);
 
   return (
     <>
@@ -221,7 +232,7 @@ export default function CommandBar({ userRole }: CommandBarProps) {
                     const IconComponent = item.icon;
                     return (
                       <button
-                        key={item.href}
+                        key={item.breadcrumb}
                         onClick={() => handleNavigate(item.href)}
                         onMouseEnter={() => setSelectedIndex(index)}
                         className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${

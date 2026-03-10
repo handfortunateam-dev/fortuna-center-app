@@ -9,8 +9,8 @@ export default function TeacherClassesPage() {
       idField="id"
       nameField="teacherName"
       // Header
-      title="Teacher Class Assignments"
-      description="Manage teacher assignments to classes"
+      title="Teacher Allocations Classes"
+      description="Manage teacher allocations to classes"
       // Resource configuration for auto-fetching and CRUD
       resourcePath="/teacher-classes"
       // Auto-generated actions
