@@ -239,6 +239,13 @@
       "when": 1772644132942,
       "tag": "0033_giant_brood",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1773134597783,
+      "tag": "0034_dashing_toad_men",
+      "breakpoints": true
     }
   ]
 }

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://www.fortunacenter.com"),
   title: {
     default: "Fortuna Center Kupang",
-    template: "%s | Fortuna Center Kupang",
+    template: "Fortuna Center Kupang - %s",
   },
   description:
     "Fortuna English & Human Resources Development (HRD) Training Centre is a distinguished institution in Kupang, NTT. We offer comprehensive English courses, broadcast training, and professional HRD programs.",

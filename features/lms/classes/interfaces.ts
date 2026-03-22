@@ -6,6 +6,7 @@ export interface ClassItem {
   description?: string | null;
   code: string;
   isActive: boolean;
+  level?: string | null;
   createdBy: string;
   createdByName?: string | null;
   createdAt: string;
@@ -17,6 +18,7 @@ export interface ClassFormValues {
   description?: string | null;
   code: string;
   isActive: boolean;
+  level?: string | null;
 }
 
 export interface TeacherClassItem {
@@ -25,6 +27,7 @@ export interface TeacherClassItem {
   teacherName?: string | null;
   classId: string;
   className?: string | null;
+  classLevel?: string | null;
   assignedAt: string;
   assignedBy?: string | null;
   assignedByName?: string | null;
@@ -42,6 +45,7 @@ export interface ClassEnrollmentItem {
   classId: string;
   className?: string | null;
   enrolledAt: string;
+  status: "active" | "completed" | "dropped";
   enrolledBy?: string | null;
   enrolledByName?: string | null;
 }

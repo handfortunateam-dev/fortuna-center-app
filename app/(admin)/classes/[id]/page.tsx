@@ -39,15 +39,23 @@ export default function ClassDetailPage({ params }: ClassDetailPageProps) {
       >
         <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TextShow label="Class Name" value={classData.name} />
-
           <TextShow label="Class Code" value={classData.code} />
+          <TextShow
+            label="Level"
+            value={classData.level}
+            renderValue={(val) => (
+              <Chip color="primary" variant="flat" size="sm" className="font-bold">
+                {typeof val === "string" ? val : "Unspecified"}
+              </Chip>
+            )}
+          />
 
           <TextShow
             label="Status"
             value={classData.isActive}
             renderValue={(val) => (
               <Chip color={val ? "success" : "default"} size="sm">
-                {val ? "Active" : "Inactive"}
+                {val === true ? "Active" : "Inactive"}
               </Chip>
             )}
           />

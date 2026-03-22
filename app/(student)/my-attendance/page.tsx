@@ -36,7 +36,7 @@ export default function StudentAttendancePage() {
   const { data: attendanceData, isLoading } = useQuery({
     queryKey: ["student-attendance-v2"],
     // In a real app, we'd pass the actual user ID from the session
-    queryFn: () => getStudentAttendance("current-user-id"),
+    queryFn: () => getStudentAttendance(),
   });
 
   if (isLoading) {

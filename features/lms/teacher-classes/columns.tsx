@@ -15,6 +15,10 @@ export const columnsTeacherClasses: Columns<TeacherClassItem> = [
     label: "Class",
   },
   {
+    key: "classLevel",
+    label: "Level",
+  },
+  {
     key: "assignedAt",
     label: "Assigned Date",
     value: (item: TeacherClassItem) => formatDateLong(item.assignedAt),

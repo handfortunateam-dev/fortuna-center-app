@@ -11,6 +11,8 @@ import { CreateOrEditFormWrapper } from "@/components/form/CreateOrEditFormWrapp
 import { TeacherClassForm } from "@/features/lms/teacher-classes/forms/TeacherClassForm";
 import { TeacherClassFormValues } from "@/features/lms/classes/interfaces";
 import { createTeacherClass } from "@/services/classesService";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 
 export default function CreateTeacherClassPage() {
   const router = useRouter();
@@ -43,8 +45,7 @@ export default function CreateTeacherClassPage() {
       });
 
       router.push("/teacher-classes");
-    } catch (err: any) {
-      console.error("Create failed:", err);
+    } catch (err: unknown) {
       // Handle axios error or standard error
       const message =
         err.response?.data?.message || err.message || "An error occurred";
@@ -64,10 +65,12 @@ export default function CreateTeacherClassPage() {
     <div className="max-w-4xl mx-auto">
       <Card>
         <CardHeader className="flex flex-col items-start px-6 py-6 border-b border-default-200">
-          <h1 className="text-2xl font-bold">Assign Teacher to Class</h1>
-          <p className="text-sm text-default-500 mt-1">
+          <Heading size="2xl" weight="bold">
+            Assign Teacher to Class
+          </Heading>
+          <Text size="sm" className="mt-1 default-500">
             Create a new teacher assignment record
-          </p>
+          </Text>
         </CardHeader>
         <CardBody className="p-6">
           {error && (
@@ -76,7 +79,9 @@ export default function CreateTeacherClassPage() {
                 icon="lucide:alert-circle"
                 className="w-5 h-5 text-danger-600 shrink-0 mt-0.5"
               />
-              <p className="text-sm text-danger-800">{error}</p>
+              <Text size="sm" className="text-danger-800">
+                {error}
+              </Text>
             </div>
           )}
 

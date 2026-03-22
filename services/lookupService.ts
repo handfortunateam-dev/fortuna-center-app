@@ -9,7 +9,7 @@ export interface LookupOption {
     key: string;
     value: string;
     disabled?: boolean;
-    originalData?: any;
+    originalData?: unknown;
 }
 
 export type LookupType = "teachers" | "students" | "classes";

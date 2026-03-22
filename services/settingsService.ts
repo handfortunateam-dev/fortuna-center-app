@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 
 export const settingsService = {
     // Get a setting by key
-    get: async <T = any>(key: string, defaultValue: T | null = null): Promise<T | null> => {
+    get: async <T = unknown>(key: string, defaultValue: T | null = null): Promise<T | null> => {
         try {
             const setting = await db.query.systemSettings.findFirst({
                 where: eq(systemSettings.key, key),
@@ -26,7 +26,7 @@ export const settingsService = {
     },
 
     // Set a setting (always stores as JSON string for consistency if possible)
-    set: async (key: string, value: any, description?: string) => {
+    set: async (key: string, value: unknown, description?: string) => {
         try {
             // Always stringify to ensure consistent retrieval
             // If value is a string "foo", it becomes "\"foo\""
@@ -61,10 +61,10 @@ export const settingsService = {
     },
 
     // Get all settings map
-    getAll: async (): Promise<Record<string, any>> => {
+    getAll: async (): Promise<Record<string, unknown>> => {
         try {
             const allSettings = await db.query.systemSettings.findMany();
-            const settingsMap: Record<string, any> = {};
+            const settingsMap: Record<string, unknown> = {};
 
             for (const s of allSettings) {
                 if (s.value === null) {
@@ -74,6 +74,7 @@ export const settingsService = {
                 try {
                     settingsMap[s.key] = JSON.parse(s.value);
                 } catch {
+                    
                     settingsMap[s.key] = s.value;
                 }
             }

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth/getAuthUser";
-import { eq } from "drizzle-orm";
+import { students, classEnrollments, classes } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { students } from "@/db/schema";
-import { IStudent } from "@/features/lms/students/interface";
 
 export async function GET(
     request: NextRequest,
@@ -11,18 +10,36 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
-        const [student] = await db
-            .select()
+        const [result] = await db
+            .select({
+                student: students,
+                classId: classes.id,
+                className: classes.name,
+                classCode: classes.code,
+                classLevel: classes.level,
+            })
             .from(students)
+            .leftJoin(classEnrollments, and(eq(classEnrollments.studentId, students.id), eq(classEnrollments.status, 'active')))
+            .leftJoin(classes, eq(classEnrollments.classId, classes.id))
             .where(eq(students.id, id))
             .limit(1);
 
-        if (!student) {
+        if (!result) {
             return NextResponse.json(
                 { success: false, message: "Student not found" },
                 { status: 404 }
             );
         }
+
+        const student = {
+            ...result.student,
+            enrolledClass: result.classId ? {
+                id: result.classId,
+                name: result.className,
+                code: result.classCode,
+                level: result.classLevel,
+            } : null
+        };
 
         return NextResponse.json({ success: true, data: student });
     } catch (error) {

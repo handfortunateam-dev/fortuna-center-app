@@ -3,8 +3,11 @@
 import React from "react";
 import { useFormContext, Controller } from "react-hook-form";
 import { Switch } from "@heroui/react";
-import { TextInput, TextareaInput } from "@/components/inputs";
+import { TextInput, TextareaInput, SelectInput } from "@/components/inputs";
 import { ClassFormValues } from "@/features/lms/classes/interfaces";
+import { CLASS_LEVEL_OPTIONS } from "../constants";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
 
 interface ClassFormProps {
   mode?: "create" | "edit";
@@ -19,12 +22,12 @@ export function ClassForm({}: ClassFormProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <TextInput
-          label="Class Code"
+          label="Class Code dfdf"
           name="code"
           placeholder="e.g., MATH101"
-          helperText="Use a unique identifier for this class."
+          helperText="Unique identifier."
           validation={{
             required: "Class code is required",
           }}
@@ -33,10 +36,18 @@ export function ClassForm({}: ClassFormProps) {
           label="Class Name"
           name="name"
           placeholder="e.g., Mathematics 101"
-          helperText="Friendly name students will see."
+          helperText="Friendly name."
           validation={{
             required: "Class name is required",
           }}
+        />
+        <SelectInput
+          label="Level"
+          name="level"
+          placeholder="Select academic tier/level"
+          options={CLASS_LEVEL_OPTIONS}
+          description="Classification for student grouping."
+          required={false}
         />
       </div>
 
@@ -52,12 +63,16 @@ export function ClassForm({}: ClassFormProps) {
       <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <Heading
+              size="lg"
+              weight="semibold"
+              className=" text-gray-900 dark:text-gray-100"
+            >
               Class Status
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            </Heading>
+            <Text size="sm" className=" text-gray-500 dark:text-gray-400">
               Determine if this class is visible to students and teachers.
-            </p>
+            </Text>
           </div>
 
           <Controller

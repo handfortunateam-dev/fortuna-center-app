@@ -11,7 +11,7 @@ type CreateClassPayload = {
   description?: string | null;
   code?: string;
   isActive?: boolean;
-  // createdBy is no longer expected in payload
+  level?: string | null;
 };
 
 export async function GET(request: NextRequest) {
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await request.json()) as CreateClassPayload;
-    const { name, description = null, code, isActive = true } = body;
+    const { name, description = null, code, isActive = true, level = null } = body;
 
     if (!name || !code) {
       return NextResponse.json(
@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
         description,
         code,
         isActive,
+        level,
         createdBy: user.id,
       })
       .returning();
