@@ -40,6 +40,22 @@ export const OCCUPATION_TYPES = [
 
 ];
 
+// Course levels (Tingkatan) for promotion
+export const COURSE_LEVELS = [
+    "Kids",
+    "Children A B1",
+    "Children A B2",
+    "Children B B1",
+    "Children B B2",
+    "Youth B1",
+    "Youth B2",
+    "General B1",
+    "General B2",
+    "Prepartory",
+    "Extraordinary C1-C2"
+];
+
 // Export types for TypeScript
 export type EducationLevel = typeof EDUCATION_LEVELS[number]["value"];
 export type OccupationType = typeof OCCUPATION_TYPES[number]["value"];
+export type CourseLevel = typeof COURSE_LEVELS[number];

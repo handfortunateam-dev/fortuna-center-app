@@ -1,4 +1,4 @@
-import { pgTable, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, timestamp, uuid, text } from 'drizzle-orm/pg-core';
 import { students } from './students.schema';
 import { classes } from './class.schema';
 import { users } from './users.schema';
@@ -9,6 +9,7 @@ export const classEnrollments = pgTable('class_enrollments', {
   ...id,
   studentId: uuid('student_id').references(() => students.id, { onDelete: 'cascade' }).notNull(),
   classId: uuid('class_id').references(() => classes.id, { onDelete: 'cascade' }).notNull(),
+  status: text('status', { enum: ['active', 'completed', 'dropped'] }).default('active').notNull(),
   enrolledAt: timestamp('enrolled_at').defaultNow().notNull(),
   enrolledBy: uuid('enrolled_by').references(() => users.id), // Admin who enrolled
 });

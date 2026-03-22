@@ -8,6 +8,7 @@ type UpdateClassPayload = {
   description?: string | null;
   code?: string;
   isActive?: boolean;
+  level?: string | null;
   createdBy?: string;
 };
 
@@ -27,6 +28,7 @@ export async function GET(
         name: classes.name,
         description: classes.description,
         code: classes.code,
+        level: classes.level,
         isActive: classes.isActive,
         createdBy: classes.createdBy,
         createdAt: classes.createdAt,
@@ -64,13 +66,14 @@ export async function PATCH(
 
   try {
     const body = (await request.json()) as UpdateClassPayload;
-    const { name, description, code, isActive, createdBy } = body;
+    const { name, description, code, isActive, level, createdBy } = body;
 
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
     if (code !== undefined) updates.code = code;
     if (isActive !== undefined) updates.isActive = isActive;
+    if (level !== undefined) updates.level = level;
     if (createdBy !== undefined) updates.createdBy = createdBy;
     updates.updatedAt = new Date();
 

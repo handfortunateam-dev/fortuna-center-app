@@ -561,7 +561,7 @@ export default function ImportUsersPage() {
       <div className="flex flex-col gap-2">
         <Heading size="2xl">Import Data: {resourceLabel}</Heading>
         <p className="text-gray-500 dark:text-gray-400">
-          Import user accounts — tersimpan di Clerk dan database sistem.
+          Import user accounts — saved in Clerk and system database.
         </p>
       </div>
 
@@ -587,7 +587,7 @@ export default function ImportUsersPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Berhasil Dibuat
+                    Successfully Created
                   </p>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                     {importResult.details?.success || 0}
@@ -601,7 +601,7 @@ export default function ImportUsersPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Gagal
+                    Failed
                   </p>
                   <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                     {importResult.details?.failed || 0}
@@ -652,7 +652,7 @@ export default function ImportUsersPage() {
                 Return to List
               </Button>
               <Button color="primary" onPress={handleReset}>
-                Buat Lagi
+                Create More
               </Button>
             </div>
           </CardBody>
@@ -861,8 +861,8 @@ export default function ImportUsersPage() {
                       color="primary"
                     >
                       <span className="text-sm font-medium">
-                        Buat akun user juga (untuk login sistem) – password
-                        wajib diisi
+                      Also create user accounts (for system login) - password
+                      is required
                       </span>
                     </Checkbox>
                     <div className="flex gap-3 ml-auto">
@@ -903,12 +903,12 @@ export default function ImportUsersPage() {
                   />
                   <div className="text-sm text-blue-700 dark:text-blue-300 space-y-0.5">
                     <p className="font-semibold">
-                      Akun tersimpan di Clerk + Database
+                      Account saved in Clerk + Database
                     </p>
                     <p className="text-blue-600/80 dark:text-blue-400/80">
                       Setiap user yang berhasil dibuat akan langsung terdaftar
-                      di Clerk (untuk login) dan juga disimpan di database
-                      sistem. Password di-generate otomatis — kamu bisa salin
+                      in Clerk (for login) and also saved in the database
+                      system. Passwords are auto-generated — you can copy
                       atau ubah sebelum submit. Kolom wajib:{" "}
                       <strong>Email, First Name, Role</strong>.
                     </p>
@@ -934,7 +934,7 @@ export default function ImportUsersPage() {
 
                   <div className="flex items-center gap-2 ml-auto shrink-0">
                     <Chip color="default" variant="flat" size="sm">
-                      {manualRows.length} baris
+                      {manualRows.length} rows
                     </Chip>
                     {validManualRows.length > 0 && (
                       <Chip color="success" variant="flat" size="sm">
@@ -1029,7 +1029,7 @@ export default function ImportUsersPage() {
                       +10 Rows
                     </Button>
                     <span className="text-xs text-gray-400 ml-auto">
-                      Rows dengan kolom wajib terisi akan disubmit
+                      Rows with required fields filled will be submitted
                     </span>
                   </div>
                 </CardBody>
@@ -1040,12 +1040,12 @@ export default function ImportUsersPage() {
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center gap-1.5 text-sm text-green-600 dark:text-green-400 font-medium">
                     <Icon icon="lucide:shield-check" className="w-4 h-4" />
-                    Disimpan ke Clerk + Database
+                    Saved to Clerk + Database
                   </div>
                   <p className="text-xs text-gray-400">
                     {validManualRows.length === 0
-                      ? "Belum ada baris yang valid"
-                      : `${validManualRows.length} dari ${manualRows.length} baris siap disubmit`}
+                      ? "No valid rows yet"
+                      : `${validManualRows.length} of ${manualRows.length} rows ready to submit`}
                   </p>
                   {/* Save to Excel option */}
                   <Checkbox
@@ -1056,13 +1056,13 @@ export default function ImportUsersPage() {
                     classNames={{ label: "text-xs" }}
                   >
                     <span className="text-xs font-medium">
-                      Simpan data akun ke Excel (termasuk password)
+                      Save account data to Excel (including password)
                     </span>
                   </Checkbox>
                   {saveToExcel && (
                     <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
                       <Icon icon="lucide:triangle-alert" className="w-3 h-3 shrink-0" />
-                      File Excel berisi password polos — simpan dengan aman
+                      Excel file contains plain-text passwords — save securely
                     </p>
                   )}
                 </div>
@@ -1085,10 +1085,8 @@ export default function ImportUsersPage() {
                     }
                   >
                     {isUploading
-                      ? "Membuat..."
-                      : validManualRows.length > 0
-                        ? `Buat ${validManualRows.length} User`
-                        : "Buat Users"}
+                        ? `Create ${validManualRows.length} Users`
+                        : "Create Users"}
                   </Button>
                 </div>
               </div>

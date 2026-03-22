@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Table,
   TableHeader,
@@ -23,9 +24,7 @@ import {
   ModalFooter,
   useDisclosure,
 } from "@heroui/react";
-import { parseDate } from "@internationalized/date";
-import type { CalendarDate } from "@internationalized/date";
-import { useState, useMemo, useCallback } from "react";
+import { parseDate, type CalendarDate } from "@internationalized/date";
 import { Icon } from "@iconify/react";
 
 // ==================== TYPES ====================
@@ -37,8 +36,8 @@ export interface FormTableColumn {
   label: string;
   /** Tipe input yang dirender di cell */
   type?: "text" | "email" | "number" | "date" | "select" | "autocomplete";
-  /** Opsi untuk type="select" */
-  options?: { label: string; value: string }[];
+  /** Opsi jika tipenya 'select' atau 'autocomplete' */
+  options?: Array<{ label: string; value: string }> | ((row: any, index: number) => Array<{ label: string; value: string }>);
   /** Wajib diisi? (default: false) */
   required?: boolean;
   /** Bisa diedit? (default: true) */
@@ -68,6 +67,7 @@ interface FormTableProps<T extends Record<string, unknown>> {
   pageSize?: number;
   showPagination?: boolean;
   enableUnsavedChangesWarning?: boolean;
+  isDisabled?: boolean;
 }
 
 // ==================== HELPERS ====================
@@ -99,6 +99,7 @@ export function FormTable<T extends Record<string, unknown>>({
   pageSize = 20,
   showPagination = true,
   enableUnsavedChangesWarning = false,
+  isDisabled = false,
 }: FormTableProps<T>) {
   const [internalPageSize, setInternalPageSize] = useState(pageSize);
   const [currentPage, setCurrentPage] = useState(1);
@@ -111,8 +112,10 @@ export function FormTable<T extends Record<string, unknown>>({
     const start = (currentPage - 1) * internalPageSize;
     const end = start + internalPageSize;
     let hasEditsOnCurrentPage = false;
-    for (let i = start; i < end; i++) {
-      if (editedRows.has(i)) {
+
+    const editedRowsArray = Array.from(editedRows);
+    for (const i of editedRowsArray) {
+      if (i >= start && i < end) {
         hasEditsOnCurrentPage = true;
         break;
       }
@@ -137,6 +140,7 @@ export function FormTable<T extends Record<string, unknown>>({
   const handleCellChange = useCallback(
     (globalIndex: number, field: string, value: unknown) => {
       const newData = [...data];
+
       newData[globalIndex] = { ...newData[globalIndex], [field]: value };
       onChange(newData);
       setEditedRows((prev) => new Set([...prev, globalIndex]));
@@ -147,13 +151,16 @@ export function FormTable<T extends Record<string, unknown>>({
   const handleDeleteRow = useCallback(
     (globalIndex: number) => {
       const newData = data.filter((_, i) => i !== globalIndex);
+
       onChange(newData);
       setEditedRows((prev) => {
         const next = new Set<number>();
+
         prev.forEach((i) => {
           if (i < globalIndex) next.add(i);
           else if (i > globalIndex) next.add(i - 1);
         });
+
         return next;
       });
     },
@@ -165,8 +172,10 @@ export function FormTable<T extends Record<string, unknown>>({
       ...(emptyRowTemplate ?? {}),
       [keyField]: `new-${Date.now()}`,
     } as T;
+
     onChange([...data, newRow]);
     const newTotal = data.length + 1;
+
     setCurrentPage(Math.ceil(newTotal / internalPageSize));
   }, [data, onChange, emptyRowTemplate, internalPageSize, keyField]);
 
@@ -193,128 +202,139 @@ export function FormTable<T extends Record<string, unknown>>({
 
   const paginatedData = useMemo((): PaginatedItem<T>[] => {
     const start = (currentPage - 1) * internalPageSize;
+
     return data.slice(start, start + internalPageSize).map((row, i) => ({
       key: String(row[keyField] ?? start + i),
       row,
       globalIndex: start + i,
     }));
-  }, [data, currentPage, internalPageSize, keyField]);
+  }, [data, currentPage, internalPageSize, keyField, columns, isDisabled]);
 
   // ==================== CELL RENDERER ====================
 
-  const renderCell = useCallback(
-    (row: T, globalIndex: number, column: FormTableColumn) => {
-      // Row number
-      if (column.key === "_rowNum") {
-        return (
-          <span className="text-xs text-default-400 font-mono tabular-nums select-none">
-            {globalIndex + 1}
-          </span>
-        );
-      }
-
-      // Delete button
-      if (column.key === "_delete") {
-        return (
-          <Button
-            isIconOnly
-            size="sm"
-            color="danger"
-            variant="light"
-            onPress={() => handleDeleteRow(globalIndex)}
-            aria-label={`Hapus baris ${globalIndex + 1}`}
-          >
-            <Icon icon="lucide:trash-2" className="w-4 h-4" />
-          </Button>
-        );
-      }
-
-      const value = row[column.key];
-      const strValue =
-        value === null || value === undefined ? "" : String(value);
-
-      // Non-editable
-      if (column.editable === false) {
-        return <span className="text-sm">{strValue || "-"}</span>;
-      }
-
-      // ── Date picker ──────────────────────────────────────
-      if (column.type === "date") {
-        const dateValue = safeParseDate(strValue);
-        return (
-          <DatePicker
-            aria-label={column.label}
-            size="md"
-            granularity="day"
-            value={dateValue ?? undefined}
-            onChange={(d) =>
-              handleCellChange(globalIndex, column.key, d ? toIsoDate(d) : "")
-            }
-            isRequired={column.required}
-            classNames={{ base: "w-full" }}
-          />
-        );
-      }
-
-      // ── Select ───────────────────────────────────────────
-      if (column.type === "select" && column.options) {
-        return (
-          <Select
-            aria-label={column.label}
-            size="md"
-            selectedKeys={strValue ? new Set([strValue]) : new Set<string>()}
-            onSelectionChange={(keys) => {
-              const arr = Array.from(keys as Set<string>);
-              handleCellChange(globalIndex, column.key, arr[0] ?? "");
-            }}
-            disallowEmptySelection={column.required}
-            className="w-full"
-          >
-            {column.options.map((opt) => (
-              <SelectItem key={opt.value}>{opt.label}</SelectItem>
-            ))}
-          </Select>
-        );
-      }
-
-      // ── Autocomplete ───────────────────────────────────────
-      if (column.type === "autocomplete" && column.options) {
-        return (
-          <Autocomplete
-            aria-label={column.label}
-            size="md"
-            selectedKey={strValue || null}
-            onSelectionChange={(key) => {
-              handleCellChange(globalIndex, column.key, (key as string) ?? "");
-            }}
-            allowsCustomValue
-            className="w-full"
-            placeholder={column.placeholder ?? column.label}
-          >
-            {column.options.map((opt) => (
-              <AutocompleteItem key={opt.value}>{opt.label}</AutocompleteItem>
-            ))}
-          </Autocomplete>
-        );
-      }
-
-      // ── Text / email / number ────────────────────────────
+  const renderCell = (row: T, globalIndex: number, column: FormTableColumn) => {
+    // Row number
+    if (column.key === "_rowNum") {
       return (
-        <Input
-          size="md"
-          type={column.type ?? "text"}
-          value={strValue}
-          placeholder={column.placeholder ?? column.label}
-          onValueChange={(val) =>
-            handleCellChange(globalIndex, column.key, val)
-          }
+        <span className="text-xs text-default-400 font-mono tabular-nums select-none">
+          {globalIndex + 1}
+        </span>
+      );
+    }
+
+    // Delete button
+    if (column.key === "_delete") {
+      return (
+        <Button
+          isIconOnly
+          aria-label={`Delete row ${globalIndex + 1}`}
+          color="danger"
+          isDisabled={isDisabled}
+          size="sm"
+          variant="light"
+          onPress={() => handleDeleteRow(globalIndex)}
+        >
+          <Icon className="w-4 h-4" icon="lucide:trash-2" />
+        </Button>
+      );
+    }
+
+    const value = row[column.key];
+    const strValue =
+      value === null || value === undefined ? "" : String(value);
+
+    // Non-editable
+    if (column.editable === false) {
+      return <span className="text-sm">{strValue || "-"}</span>;
+    }
+
+    // ── Date picker ──────────────────────────────────────
+    if (column.type === "date") {
+      const dateValue = safeParseDate(strValue);
+
+      return (
+        <DatePicker
+          aria-label={column.label}
+          classNames={{ base: "w-full" }}
+          granularity="day"
+          isDisabled={isDisabled || (column.editable as any) === false}
           isRequired={column.required}
-          className="w-full"
+          size="md"
+          value={dateValue ?? undefined}
+          onChange={(d) =>
+            handleCellChange(globalIndex, column.key, d ? toIsoDate(d) : "")
+          }
         />
       );
-    },
-    [handleCellChange, handleDeleteRow],
-  );
+    }
+
+    // Resolve options (could be static array or function)
+    const resolvedOptions = typeof column.options === "function" 
+      ? column.options(row, globalIndex) 
+      : (column.options || []);
+
+    // ── Select ───────────────────────────────────────────
+    if (column.type === "select") {
+      return (
+        <Select
+          aria-label={column.label}
+          className="w-full"
+          disallowEmptySelection={column.required}
+          isDisabled={isDisabled || (column.editable as any) === false}
+          selectedKeys={strValue ? new Set([strValue]) : new Set<string>()}
+          size="md"
+          onSelectionChange={(keys) => {
+            const arr = Array.from(keys as Set<string>);
+
+            handleCellChange(globalIndex, column.key, arr[0] ?? "");
+          }}
+        >
+          {resolvedOptions.map((opt) => (
+            <SelectItem key={opt.value}>{opt.label}</SelectItem>
+          ))}
+        </Select>
+      );
+    }
+
+    // ── Autocomplete ───────────────────────────────────────
+    if (column.type === "autocomplete") {
+      return (
+        <Autocomplete
+          key={`${column.key}-${resolvedOptions.length}`}
+          allowsCustomValue
+          aria-label={column.label}
+          className="w-full"
+          isDisabled={isDisabled || (column.editable as any) === false}
+          placeholder={column.placeholder ?? column.label}
+          selectedKey={strValue || null}
+          size="md"
+          onSelectionChange={(key) => {
+            handleCellChange(globalIndex, column.key, (key as string) ?? "");
+          }}
+        >
+          {resolvedOptions.map((opt) => (
+            <AutocompleteItem key={opt.value}>{opt.label}</AutocompleteItem>
+          ))}
+        </Autocomplete>
+      );
+    }
+
+    // ── Text / email / number ────────────────────────────
+    return (
+      <Input
+        className="w-full"
+        isDisabled={isDisabled || (column.editable as any) === false}
+        isRequired={column.required}
+        placeholder={column.placeholder ?? column.label}
+        size="md"
+        type={column.type ?? "text"}
+        value={strValue}
+        onValueChange={(val) =>
+          handleCellChange(globalIndex, column.key, val)
+        }
+      />
+    );
+  };
 
   // ==================== RENDER ====================
 
@@ -330,27 +350,28 @@ export function FormTable<T extends Record<string, unknown>>({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Chip size="sm" variant="flat" color="default">
-            {data.length} baris
+          <Chip color="default" size="sm" variant="flat">
+            {data.length} rows
           </Chip>
           {editedRows.size > 0 && (
-            <Chip size="sm" variant="flat" color="warning">
+            <Chip color="warning" size="sm" variant="flat">
               <Icon
-                icon="lucide:pencil"
                 className="w-3 h-3 inline-block mr-1"
+                icon="lucide:pencil"
               />
-              {editedRows.size} diubah
+              {editedRows.size} modified
             </Chip>
           )}
           {enableAdd && (
             <Button
-              size="sm"
               color="primary"
+              isDisabled={isDisabled}
+              size="sm"
+              startContent={<Icon className="w-4 h-4" icon="lucide:plus" />}
               variant="flat"
               onPress={handleAddRow}
-              startContent={<Icon icon="lucide:plus" className="w-4 h-4" />}
             >
-              Tambah Baris
+              Add Row
             </Button>
           )}
         </div>
@@ -359,8 +380,8 @@ export function FormTable<T extends Record<string, unknown>>({
       {/* Table — overflow-x-auto agar bisa scroll horizontal */}
       <div className="overflow-x-auto rounded-lg border border-divider">
         <Table
-          aria-label="Editable data preview table"
           removeWrapper
+          aria-label="Editable data preview table"
           classNames={{
             th: "text-xs py-2.5 px-3 bg-default-100",
             td: "py-2 px-2 align-middle",
@@ -393,13 +414,13 @@ export function FormTable<T extends Record<string, unknown>>({
           </TableHeader>
 
           <TableBody<PaginatedItem<T>>
-            items={paginatedData}
             emptyContent={
               <div className="flex flex-col items-center gap-2 py-8 text-default-400">
-                <Icon icon="lucide:table-2" className="w-8 h-8" />
-                <p className="text-sm">Tidak ada data</p>
+                <Icon className="w-8 h-8" icon="lucide:table-2" />
+                <p className="text-sm">No data available</p>
               </div>
             }
+            items={paginatedData}
           >
             {(item) => (
               <TableRow
@@ -412,6 +433,7 @@ export function FormTable<T extends Record<string, unknown>>({
               >
                 {(columnKey) => {
                   const col = columnMap[String(columnKey)];
+
                   return (
                     <TableCell>
                       {col ? renderCell(item.row, item.globalIndex, col) : null}
@@ -429,18 +451,19 @@ export function FormTable<T extends Record<string, unknown>>({
         <div className="flex flex-col sm:flex-row items-center justify-between px-1 gap-3 sm:gap-0 mt-3">
           <div className="flex items-center gap-3">
             <p className="text-xs text-default-400">
-              Halaman {currentPage} dari {totalPages} ({data.length} total
-              baris)
+              Page {currentPage} of {totalPages} ({data.length} total
+              rows)
             </p>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-default-400">Per halaman:</span>
+              <span className="text-xs text-default-400">Per page:</span>
               <Select
                 aria-label="Items per page"
-                size="sm"
                 className="w-20"
                 selectedKeys={new Set([String(internalPageSize)])}
+                size="sm"
                 onSelectionChange={(keys) => {
                   const val = Array.from(keys as Set<string>)[0];
+
                   if (val) {
                     setInternalPageSize(Number(val));
                     setCurrentPage(1);
@@ -458,11 +481,11 @@ export function FormTable<T extends Record<string, unknown>>({
           {totalPages > 1 && (
             <Pagination
               showControls
+              color="primary"
               page={currentPage}
+              size="sm"
               total={totalPages}
               onChange={handlePageChangeRequest}
-              size="sm"
-              color="primary"
             />
           )}
         </div>

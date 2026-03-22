@@ -16,6 +16,7 @@ import {
 import CardWrapper from "@/components/wrappers/card-wrappers";
 import { SkeletonCard } from "@/components/skeletons/SkeletonCard";
 import { StateMessage } from "@/components/state-message";
+import { Toast } from "@/components/toast";
 
 interface ClassEditPageProps {
   params: Promise<{ id: string }>;
@@ -42,6 +43,7 @@ export default function ClassEditPage({ params }: ClassEditPageProps) {
       reset({
         name: record.name,
         code: record.code,
+        level: record.level ?? "",
         description: record.description ?? "",
         isActive: !!record.isActive,
       });
@@ -55,9 +57,12 @@ export default function ClassEditPage({ params }: ClassEditPageProps) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: classKeys.all });
-      setTimeout(() => {
-        router.push("/classes");
-      }, 2000);
+
+      Toast({
+        title: "Class updated successfully",
+        color: "success",
+      });
+      router.push("/classes");
     },
     onError: (error: unknown) => {
       setError("root", {

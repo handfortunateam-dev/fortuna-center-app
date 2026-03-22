@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { students } from "@/db/schema";
+import { students, classEnrollments, classes } from "@/db/schema";
 
 export async function GET(request: NextRequest) {
     try {
@@ -27,6 +27,9 @@ export async function GET(request: NextRequest) {
                     ilike(students.middleName, dbQuery),
                     ilike(students.lastName, dbQuery),
                     ilike(students.nickname, dbQuery),
+                    // Full name search
+                    sql`CONCAT_WS(' ', ${students.firstName}, ${students.middleName}, ${students.lastName}) ILIKE ${dbQuery}`,
+
                     // Contact & location
                     ilike(students.email, dbQuery),
                     ilike(students.phone, dbQuery),
@@ -42,6 +45,14 @@ export async function GET(request: NextRequest) {
         // Add dynamic filters from query params (e.g., ?gender=male)
         searchParams.forEach((value, key) => {
             if (!["q", "query", "limit", "page", "offset"].includes(key) && value) {
+                if (key === "isEnrolled") {
+                    if (value === "true") {
+                        filters.push(sql`${classEnrollments.id} IS NOT NULL`);
+                    } else if (value === "false") {
+                        filters.push(sql`${classEnrollments.id} IS NULL`);
+                    }
+                    return;
+                }
                 if (key === "year") {
                     // Special handling for registration year
                     filters.push(sql`EXTRACT(YEAR FROM ${students.registrationDate}) = ${parseInt(value)}`);
@@ -62,16 +73,43 @@ export async function GET(request: NextRequest) {
         const where = filters.length ? and(...filters) : undefined;
 
         // Run count and data queries in parallel
-        const [countResult, data] = await Promise.all([
-            db.select({ total: count() }).from(students).where(where),
+        const [countResult, dbData] = await Promise.all([
             db
-                .select()
+                .select({ total: count() })
                 .from(students)
+                .leftJoin(classEnrollments, and(eq(students.id, classEnrollments.studentId), eq(classEnrollments.status, "active")))
+                .leftJoin(classes, eq(classEnrollments.classId, classes.id))
+                .where(where),
+            db
+                .select({
+                    student: students,
+                    enrollment: {
+                        id: classEnrollments.id,
+                        classId: classes.id,
+                        className: classes.name,
+                        classCode: classes.code,
+                        classLevel: classes.level,
+                    }
+                })
+                .from(students)
+                .leftJoin(classEnrollments, and(eq(students.id, classEnrollments.studentId), eq(classEnrollments.status, "active")))
+                .leftJoin(classes, eq(classEnrollments.classId, classes.id))
                 .where(where)
                 .orderBy(desc(students.createdAt))
                 .limit(limit)
                 .offset(offset),
         ]);
+
+        const data = dbData.map(item => ({
+            ...item.student,
+            isEnrolled: !!item.enrollment.classId,
+            enrolledClass: item.enrollment.classId ? {
+                id: item.enrollment.classId,
+                name: item.enrollment.className,
+                code: item.enrollment.classCode,
+                level: item.enrollment.classLevel,
+            } : null
+        }));
 
         const totalCount = countResult[0]?.total ?? 0;
         const totalPages = Math.ceil(totalCount / limit);

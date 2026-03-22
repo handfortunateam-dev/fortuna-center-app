@@ -365,7 +365,7 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
             ),
           },
           {
-            name: "Enrollments",
+            name: "Student Class Enrollments",
             href: NAV_URL.ADMIN.LMS.CLASS_ENROLLMENTS,
             icon: (props) => (
               <Icon icon="solar:layers-minimalistic-bold-duotone" {...props} />

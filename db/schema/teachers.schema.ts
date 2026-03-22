@@ -27,6 +27,9 @@ export const teachers = pgTable("teachers", {
     // Pendidikan terakhir
     education: text("education"), // Pendidikan terakhir
 
+    // Status
+    // status: text("status", { enum: ["active", "inactive"] }).default("active"),
+
     userId: uuid("user_id").references(() => users.id).unique(),
     ...timestamps,
 });

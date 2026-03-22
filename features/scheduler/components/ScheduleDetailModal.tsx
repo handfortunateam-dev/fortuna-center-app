@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import {
   Modal,
   ModalContent,
@@ -209,11 +210,21 @@ export function ScheduleDetailModal({
             </div>
           </div>
         </ModalBody>
-        <ModalFooter className="border-t dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+        <ModalFooter className="border-t dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-between gap-3">
+          <Button
+            as={Link}
+            href={`/classes/${schedule.classId}/edit`}
+            color="warning"
+            variant="flat"
+            className="font-bold gap-2 px-6"
+            startContent={<Icon icon="lucide:edit-3" className="w-4 h-4" />}
+          >
+            Edit Class
+          </Button>
           <Button
             color="primary"
             variant="flat"
-            className="font-bold px-8"
+            className="font-bold px-12"
             onPress={onClose}
           >
             Close

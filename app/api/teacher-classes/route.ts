@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
         teacherName: users.name,
         classId: teacherClasses.classId,
         className: classes.name,
+        classLevel: classes.level,
         assignedAt: teacherClasses.assignedAt,
         assignedBy: teacherClasses.assignedBy,
         assignedByName: sql<string>`(SELECT name FROM users WHERE id = ${teacherClasses.assignedBy} LIMIT 1)`,

@@ -30,6 +30,7 @@ export const students = pgTable("students", {
     // Pendidikan/pekerjaan
     education: text("education"), // Pendidikan terakhir
     occupation: text("occupation"), // Pekerjaan
+    currentLevel: text("current_level"), // Level saat ini
     status: text("status", { enum: ["active", "inactive", "on_leave"] }).notNull().default("active"),
 
     userId: uuid("user_id").references(() => users.id).unique(),

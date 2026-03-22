@@ -1,32 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
+import { apiClient } from "@/lib/axios";
 import {
   Card,
+  CardBody,
   Input,
   Select,
   SelectItem,
-  Button,
-  useDisclosure,
+  Chip,
+  Skeleton,
 } from "@heroui/react";
-import { Toast } from "@/components/toast";
 import { Icon } from "@iconify/react";
-import { apiClient } from "@/lib/axios";
+import { useQuery } from "@tanstack/react-query";
 import { getMonth, getYear } from "date-fns";
-import { Heading } from "@/components/heading";
-import { Text } from "@/components/text";
-import { SkeletonTable } from "@/components/skeletons/SkeletonTable";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 // Features Imports
-import { ClassPaymentCard } from "@/features/finance/payment-history/components/ClassPaymentCard";
-import { PaymentModal } from "@/features/finance/payment-history/components/PaymentModal";
 import { MONTHS, YEARS } from "@/features/finance/payment-history/constants";
-import {
-  ClassSummary,
-  StudentPaymentInfo,
-} from "@/features/finance/payment-history/types";
+import { ClassSummary } from "@/features/finance/payment-history/types";
+import { StateMessage } from "@/components/state-message";
 
 export default function PaymentCourseHistoryPage() {
   const router = useRouter();
@@ -36,7 +31,7 @@ export default function PaymentCourseHistoryPage() {
   const [selectedYear, setSelectedYear] = useState(String(getYear(new Date())));
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch Data
+  // Fetch Summary Data
   const {
     data: summaryData,
     isLoading,
@@ -58,106 +53,50 @@ export default function PaymentCourseHistoryPage() {
     },
   });
 
-  // Modal State
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
-  const [paymentTarget, setPaymentTarget] = useState<{
-    student: StudentPaymentInfo;
-    classItem: ClassSummary;
-  } | null>(null);
-
-  const queryClient = useQueryClient();
-
-  const payMutation = useMutation({
-    mutationFn: async ({
-      amount,
-      paidAt,
-    }: {
-      amount: number;
-      paidAt: string;
-    }) => {
-      if (!paymentTarget) return;
-
-      const payload = {
-        studentId: paymentTarget.student.id,
-        classId: paymentTarget.classItem.id,
-        month: Number(selectedMonth),
-        year: Number(selectedYear),
-        amount,
-        status: "paid",
-        paidAt: new Date(paidAt),
-        notes: "Quick Payment",
-      };
-
-      await apiClient.post("/course-payments", payload);
-    },
-    onSuccess: () => {
-      Toast({
-        title: "Success",
-        description: "Payment recorded successfully",
-        color: "success",
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["payment-summary"],
-      });
-      onClose();
-    },
-    onError: (err: unknown) => {
-      const msg =
-        (err as { response?: { data?: { message?: string } } }).response?.data
-          ?.message ||
-        (err as { message?: string }).message ||
-        "Failed to create payment";
-      Toast({
-        title: "Error",
-        description: msg,
-        color: "danger",
-      });
-    },
-  });
-
-  const handlePay = (student: StudentPaymentInfo, classItem: ClassSummary) => {
-    setPaymentTarget({ student, classItem });
-    onOpen();
-  };
-
-  const handleConfirmPayment = (amount: number, paidAt: string) => {
-    payMutation.mutate({ amount, paidAt });
-  };
+  if (isError) {
+    return (
+      <StateMessage
+        icon="solar:danger-circle-bold-duotone"
+        title="Failed to load payment data"
+        message="Please try again later"
+        type="error"
+      />
+    );
+  }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-8">
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="flex flex-col h-[calc(100vh-140px)] w-full overflow-hidden">
+      {/* Header section */}
+      <div className="space-y-6 pb-6 shrink-0">
         <div>
-          <Heading size="2xl">Payment Course History</Heading>
-          <Text className="text-default-500">
-            Monitor monthly payments per class
+          <Heading className="text-3xl font-bold">
+            Payment Course History
+          </Heading>
+          <Text className="text-default-500 mt-1">
+            Monitor monthly payments across all classes
           </Text>
         </div>
-      </div>
 
-      {/* Filters Toolbar */}
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <Input
-            placeholder="Search student name..."
-            startContent={
-              <Icon icon="lucide:search" className="text-default-400" />
-            }
-            value={searchQuery}
-            onValueChange={setSearchQuery}
-            className="flex-1"
-            size="sm"
-            isClearable
-          />
-          <div className="flex gap-2 min-w-[300px]">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <Heading className="text-xl font-semibold">Select a Class</Heading>
+          <div className="flex gap-2 w-full max-w-2xl">
+            <Input
+              placeholder="Search classes or students..."
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+              startContent={
+                <Icon icon="solar:magnifer-bold-duotone" className="w-4 h-4" />
+              }
+              isClearable
+              className="flex-1"
+            />
             <Select
               label="Month"
-              placeholder="Select Month"
-              value={selectedMonth}
               selectedKeys={[selectedMonth]}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="flex-1"
+              onSelectionChange={(keys) =>
+                setSelectedMonth(Array.from(keys)[0] as string)
+              }
+              className="w-40"
               size="sm"
             >
               {MONTHS.map((m) => (
@@ -166,10 +105,10 @@ export default function PaymentCourseHistoryPage() {
             </Select>
             <Select
               label="Year"
-              placeholder="Select Year"
-              value={selectedYear}
               selectedKeys={[selectedYear]}
-              onChange={(e) => setSelectedYear(e.target.value)}
+              onSelectionChange={(keys) =>
+                setSelectedYear(Array.from(keys)[0] as string)
+              }
               className="w-32"
               size="sm"
             >
@@ -179,46 +118,107 @@ export default function PaymentCourseHistoryPage() {
             </Select>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Content Grid */}
-      {isLoading ? (
-        <div className="space-y-6">
-          <SkeletonTable rows={3} columns={3} />
-          <SkeletonTable rows={3} columns={3} />
-        </div>
-      ) : isError ? (
-        <div className="text-center py-10 text-danger">
-          <Icon icon="lucide:alert-circle" className="w-10 h-10 mx-auto mb-2" />
-          <p>Failed to load payment data</p>
-        </div>
-      ) : summaryData?.length === 0 ? (
-        <div className="text-center py-10 text-default-400">
-          <p>No classes or students found matching your criteria.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-8">
-          {summaryData?.map((classItem) => (
-            <ClassPaymentCard
-              key={classItem.id}
-              classItem={classItem}
-              onPay={handlePay}
-            />
-          ))}
-        </div>
-      )}
+      {/* Grid Content */}
+      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <Card key={i} className="h-48 shadow-sm">
+                <CardBody className="p-4 flex flex-col justify-between">
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                    <Skeleton className="h-6 w-3/4 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-4 w-1/2 rounded-lg" />
+                </CardBody>
+              </Card>
+            ))}
+          </div>
+        ) : summaryData?.length === 0 ? (
+          <StateMessage
+            icon="solar:danger-circle-bold-duotone"
+            title="No payment history found"
+            message="Please try again later"
+            type="empty"
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+            {summaryData?.map((classItem) => {
+              const paidCount = classItem.students.filter(
+                (s) => s.payment?.status === "paid",
+              ).length;
+              const unpaidCount = classItem.students.length - paidCount;
 
-      {/* Pay Now Modal */}
-      <PaymentModal
-        isOpen={isOpen}
-        onOpenChange={onOpenChange}
-        onClose={onClose}
-        target={paymentTarget}
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
-        isLoading={payMutation.isPending}
-        onConfirm={handleConfirmPayment}
-      />
+              return (
+                <Card
+                  key={classItem.id}
+                  isPressable
+                  onPress={() =>
+                    router.push(`/payment-course-history/${classItem.id}`)
+                  }
+                  className="group hover:scale-[1.00] active:scale-[0.98] border-2 border-transparent hover:border-primary transition-all shadow-sm h-full min-h-[200px]"
+                >
+                  <CardBody className="p-6 flex flex-col items-start gap-4 h-full">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                        <Icon icon="solar:bank-note-bold-duotone" width={28} />
+                      </div>
+                      <div className="flex gap-1">
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color="success"
+                          className="font-mono text-[10px]"
+                        >
+                          {paidCount} Paid
+                        </Chip>
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color="danger"
+                          className="font-mono text-[10px]"
+                        >
+                          {unpaidCount} Unpaid
+                        </Chip>
+                      </div>
+                    </div>
+
+                    <div className="w-full">
+                      <Text className="font-bold text-xl leading-tight uppercase tracking-tight line-clamp-1">
+                        {classItem.name}
+                      </Text>
+                      <Text className="text-xs text-default-400 mt-1 font-medium italic">
+                        {classItem.code || "N/A"}
+                      </Text>
+                    </div>
+
+                    <div className="flex flex-col gap-1 w-full">
+                      <Text className="text-[10px] uppercase font-bold text-default-400 tracking-wider">
+                        Enrolled Students
+                      </Text>
+                      <Text className="font-bold text-primary">
+                        {classItem.students.length} Students
+                      </Text>
+                    </div>
+
+                    <div className="w-full pt-2 flex justify-end mt-auto">
+                      <div className="flex items-center text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                        View Details
+                        <Icon
+                          icon="solar:arrow-right-bold-duotone"
+                          className="ml-1"
+                        />
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

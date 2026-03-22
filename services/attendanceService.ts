@@ -1,7 +1,7 @@
 import { StudentAttendanceSummary } from "@/features/attendance/types";
 import { apiClient } from "@/lib/axios";
 
-export const getStudentAttendance = async (studentId: string): Promise<StudentAttendanceSummary[]> => {
+export const getStudentAttendance = async (): Promise<StudentAttendanceSummary[]> => {
     try {
         // Current implementation ignores studentId param as the API route handles the "current user" logic (mocked to first student)
         const response = await apiClient.get<StudentAttendanceSummary[]>("/student/attendance");
@@ -167,7 +167,7 @@ export const updateSessionAttendance = async (
 export const updateSessionStatus = async (
     sessionId: string,
     status: 'scheduled' | 'not_started' | 'in_progress' | 'completed' | 'cancelled'
-): Promise<{ success: boolean; message: string; data: any }> => {
+): Promise<{ success: boolean; message: string; data: unknown }> => {
     try {
         const response = await apiClient.patch(`/teacher/sessions/${sessionId}/status`, {
             status,
@@ -204,13 +204,18 @@ export interface CreateSessionPayload {
     notes?: string;
 }
 
-export const createSession = async (payload: CreateSessionPayload): Promise<{ success: boolean; message: string; session: any }> => {
+export const createSession = async (payload: CreateSessionPayload): Promise<{ success: boolean; message: string; session: unknown }> => {
     try {
         const response = await apiClient.post("/teacher/sessions/create", payload);
         return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Failed to create session:", error);
-        throw new Error(error.response?.data?.error || "Failed to create session");
+        const errorMessage =
+            error instanceof Error ? error.message : "Failed to create session";
+
+        // If error has a response property (axios style)
+        const axiosError = error as { response?: { data?: { error?: string } } };
+        throw new Error(axiosError.response?.data?.error || errorMessage);
     }
 };
 

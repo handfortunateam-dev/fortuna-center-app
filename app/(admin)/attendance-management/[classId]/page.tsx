@@ -34,6 +34,7 @@ import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
 import { StateMessage } from "@/components/state-message";
 import { format } from "date-fns";
+import * as XLSX from "xlsx";
 
 interface AttendanceRecord {
   id: string;
@@ -58,6 +59,7 @@ interface AttendanceRecord {
   scheduleLocation: string | null;
   scheduleClassId: string;
   scheduleTeacherId: string;
+  sessionTeacherId: string;
 
   // Student info
   studentName: string;
@@ -220,7 +222,13 @@ export default function ClassAttendancePage() {
 
   // Fetch all teachers for the edit modal
   const { data: allTeachers = [] } = useQuery<
-    { id: string; userId: string | null; firstName: string; lastName: string }[]
+    {
+      id: string;
+      userId: string | null;
+      firstName: string;
+      lastName: string;
+      email: string;
+    }[]
   >({
     queryKey: ["all-teachers"],
     queryFn: async () => {
@@ -411,6 +419,50 @@ export default function ClassAttendancePage() {
     };
   }, [attendanceData]);
 
+  const handleExportToExcel = () => {
+    if (!attendanceData || attendanceData.length === 0) {
+      Toast({
+        title: "No data to export",
+        description: "There are no attendance records to export.",
+        color: "warning",
+      });
+      return;
+    }
+
+    // Prepare data for export
+    const exportData = filteredAndGroupedData.flatMap((session) =>
+      session.attendances.map((record) => ({
+        Date: format(new Date(session.sessionDate), "dd MMM yyyy"),
+        Session: session.sessionNotes || `${session.className} Session`,
+        "Start Time": session.scheduleStartTime,
+        "End Time": session.scheduleEndTime,
+        Location: session.scheduleLocation || "N/A",
+        Student: record.studentName,
+        Email: record.studentEmail,
+        Status: statusLabelMap[record.status],
+        "Check-in": record.checkedInAt
+          ? format(new Date(record.checkedInAt), "HH:mm")
+          : "-",
+        "Recorded By": record.recordedByName || "N/A",
+        Notes: record.notes || "-",
+      })),
+    );
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
+
+    // Generate and download file
+    const fileName = `Attendance_${selectedClassName.replace(/\s+/g, "_")}_${format(new Date(), "yyyyMMdd")}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+
+    Toast({
+      title: "Export Success",
+      description: `Attendance data exported to ${fileName}`,
+      color: "success",
+    });
+  };
+
   if (error) {
     return (
       <StateMessage
@@ -434,16 +486,28 @@ export default function ClassAttendancePage() {
             Viewing all attendance sessions for this class
           </Text>
         </div>
-        <Button
-          variant="flat"
-          color="primary"
-          onPress={() => router.push("/attendance-management")}
-          startContent={
-            <Icon icon="solar:arrow-left-bold-duotone" width={18} />
-          }
-        >
-          Back to Classes
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="flat"
+            color="success"
+            onPress={handleExportToExcel}
+            startContent={
+              <Icon icon="solar:file-download-bold-duotone" width={18} />
+            }
+          >
+            Export to Excel
+          </Button>
+          <Button
+            variant="flat"
+            color="primary"
+            onPress={() => router.push("/attendance-management")}
+            startContent={
+              <Icon icon="solar:arrow-left-bold-duotone" width={18} />
+            }
+          >
+            Back to Classes
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -913,6 +977,7 @@ interface EditSessionModalProps {
   teachers: {
     id: string;
     userId: string | null;
+    email: string;
     firstName: string;
     lastName: string;
   }[];

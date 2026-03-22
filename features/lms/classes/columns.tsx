@@ -25,6 +25,20 @@ export const columnsClasses: Columns<ClassItem> = [
     ),
   },
   {
+    key: "level",
+    label: "Level",
+    value: (item) => (
+      <Chip
+        size="sm"
+        color="primary"
+        variant="dot"
+        className="font-semibold"
+      >
+        {item.level || "Unset"}
+      </Chip>
+    ),
+  },
+  {
     key: "isActive",
     label: "Status",
     value: (item) => (

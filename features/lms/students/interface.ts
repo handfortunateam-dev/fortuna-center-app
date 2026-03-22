@@ -17,7 +17,15 @@ export interface IStudent extends BaseEntity {
     education?: string;
     occupation?: string;
     userId?: string;
+    currentLevel?: string;
     status?: "active" | "inactive" | "on_leave";
+    isEnrolled?: boolean;
+    enrolledClass?: {
+        id: string;
+        name: string;
+        code: string;
+        level?: string | null;
+    } | null;
 }
 
 export interface StudentFormValues {

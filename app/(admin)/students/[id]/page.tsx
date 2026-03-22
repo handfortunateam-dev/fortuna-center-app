@@ -12,6 +12,7 @@ import { SkeletonCard } from "@/components/skeletons/SkeletonCard";
 import { StateMessage } from "@/components/state-message";
 import { StudentStatusChip } from "@/components/student-status-chip";
 import { StatusChip } from "@/components/status-chip";
+import { useClassEnrollments } from "@/services/classesService";
 
 interface StudentDetailPageProps {
   params: Promise<{ id: string }>;
@@ -21,6 +22,10 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
   const resolvedParams = use(params);
   const router = useRouter();
   const { data, isLoading } = useStudentDetail(resolvedParams.id);
+  const { data: historyData, isLoading: isLoadingHistory } =
+    useClassEnrollments({
+      studentId: resolvedParams.id,
+    });
 
   if (isLoading) {
     return (
@@ -97,6 +102,12 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
           {/* Education & Occupation */}
           <TextShow label="Education" value={s.education || "-"} />
           <TextShow label="Occupation" value={s.occupation || "-"} />
+          <div className="md:col-span-2">
+            <TextShow
+              label="Current Level"
+              value={s.currentLevel || ""}
+            />
+          </div>
 
           {/* Timestamps */}
           <TextShow
@@ -125,6 +136,72 @@ export default function StudentDetailPage({ params }: StudentDetailPageProps) {
             />
           </div>
         </dl>
+      </CardWrapper>
+
+      {/* Enrollment History */}
+      <CardWrapper
+        title="Enrollment History"
+        description="History of classes and promotions for this student"
+      >
+        <div className="space-y-4">
+          {isLoadingHistory ? (
+            <div className="flex justify-center p-8">
+              <Icon
+                icon="solar:round-transfer-vertical-bold"
+                className="animate-spin text-4xl text-primary"
+              />
+            </div>
+          ) : historyData?.data && historyData.data.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-default-200">
+                    <th className="pb-3 font-semibold">Class Name</th>
+                    <th className="pb-3 font-semibold">Enrolled At</th>
+                    <th className="pb-3 font-semibold text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-default-100">
+                  {historyData.data.map((h) => (
+                    <tr key={h.id} className="group">
+                      <td className="py-3">
+                        <p className="font-medium text-default-900">
+                          {h.className}
+                        </p>
+                      </td>
+                      <td className="py-3 text-default-500">
+                        {h.enrolledAt
+                          ? format(new Date(h.enrolledAt), "PPP")
+                          : "-"}
+                      </td>
+                      <td className="py-3 text-center">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                            h.status === "active"
+                              ? "bg-success/10 text-success"
+                              : h.status === "completed"
+                                ? "bg-primary/10 text-primary"
+                                : "bg-default-100 text-default-500"
+                          }`}
+                        >
+                          {h.status || "Active"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-default-50 rounded-xl border border-dashed border-default-300">
+              <Icon
+                icon="lucide:history"
+                className="mx-auto text-4xl text-default-300 mb-2"
+              />
+              <p className="text-default-400">No enrollment history found</p>
+            </div>
+          )}
+        </div>
       </CardWrapper>
     </div>
   );

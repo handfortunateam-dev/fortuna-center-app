@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.max(1, Number(searchParams.get("limit") || 10));
     const page = Math.max(1, Number(searchParams.get("page") || 1));
     const fields = searchParams.get("fields");
+    const level = searchParams.get("level");
 
     const offset = limit && page ? (Number(page) - 1) * Number(limit) : 0;
 
@@ -29,6 +30,9 @@ export async function GET(request: NextRequest) {
     }
     if (studentId) {
       filters.push(eq(classEnrollments.studentId, studentId));
+    }
+    if (level) {
+      filters.push(eq(classes.level, level));
     }
 
     if (query) {
