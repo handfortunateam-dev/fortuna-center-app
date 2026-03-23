@@ -23,7 +23,7 @@ export const classKeys = {
 };
 
 export const teacherClassKeys = {
-  all: ["teacher-classes"] as const,
+  all: ["/teacher-classes"] as const,
   lists: () => [...teacherClassKeys.all, "list"] as const,
   list: (filters?: TeacherClassFilters) =>
     [...teacherClassKeys.lists(), filters] as const,
@@ -31,7 +31,7 @@ export const teacherClassKeys = {
 };
 
 export const classEnrollmentKeys = {
-  all: ["class-enrollments"] as const,
+  all: ["/class-enrollments"] as const,
   lists: () => [...classEnrollmentKeys.all, "list"] as const,
   list: (filters?: ClassEnrollmentFilters) =>
     [...classEnrollmentKeys.lists(), filters] as const,
@@ -146,7 +146,7 @@ export function useTeacherClassDetail(id?: string) {
   return useQuery({
     queryKey: id
       ? teacherClassKeys.detail(id)
-      : ["teacher-classes", "detail", "unknown"],
+      : ["/teacher-classes", "detail", "unknown"],
     queryFn: () => fetchTeacherClass(id as string),
     enabled: !!id,
   });
@@ -156,7 +156,7 @@ export function useClassEnrollmentDetail(id?: string) {
   return useQuery({
     queryKey: id
       ? classEnrollmentKeys.detail(id)
-      : ["class-enrollments", "detail", "unknown"],
+      : ["/class-enrollments", "detail", "unknown"],
     queryFn: () => fetchClassEnrollment(id as string),
     enabled: !!id,
   });
