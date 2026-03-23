@@ -20,6 +20,7 @@ export default function TeacherClassesPage() {
       enableDelete={true}
       enableExport={true}
       enableImport={true}
+      enableSearch
       // Search & Table
       searchPlaceholder="Search by teacher or class..."
       columns={columnsTeacherClasses}
