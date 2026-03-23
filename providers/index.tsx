@@ -8,6 +8,7 @@ import { SearchProvider } from "./SearchProvider";
 import { NotificationProvider } from "./NotificationProvider";
 import { ThemeProvider } from "./ThemeProvider";
 import { AudioPlayerProvider } from "./AudioPlayerContext";
+import { UIProvider } from "./UIProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,11 +29,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <HeroUIProvider navigate={router.push}>
         <ToastProvider placement="top-right" />
         <QueryClientProvider client={queryClient}>
-          <NotificationProvider>
-            <SearchProvider>
-              <AudioPlayerProvider>{children}</AudioPlayerProvider>
-            </SearchProvider>
-          </NotificationProvider>
+          <UIProvider>
+            <NotificationProvider>
+              <SearchProvider>
+                <AudioPlayerProvider>{children}</AudioPlayerProvider>
+              </SearchProvider>
+            </NotificationProvider>
+          </UIProvider>
         </QueryClientProvider>
       </HeroUIProvider>
     </ThemeProvider>

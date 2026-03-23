@@ -7,8 +7,11 @@ import Image from "next/image";
 import PatternBackground from "@/components/backgrounds/PatternBackground";
 import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
- 
+import { Button } from "@heroui/react";
+import { useUI } from "@/providers/UIProvider";
+
 export default function ProgramsSection() {
+  const { triggerProgramsMenu } = useUI();
   return (
     <section
       id="programs"
@@ -22,16 +25,19 @@ export default function ProgramsSection() {
               as="h2"
               className="text-3xl md:text-4xl font-bold text-foreground mb-4"
             >
-              Our Core Programs
+              Our Core <span className="text-primary">Programs</span>
             </Heading>
             <Text className="text-muted-foreground text-lg">
               Specialized training designed to equip you with modern skills for
               the digital age.
             </Text>
           </div>
-          <button className="px-6 py-3 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-all duration-300">
+          <Button 
+            onPress={triggerProgramsMenu}
+            className="px-6 py-3 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-all duration-300"
+          >
             View All Programs
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-24">
