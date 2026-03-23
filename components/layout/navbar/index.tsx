@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useTransition } from "react";
+import React, { useEffect, useTransition } from "react";
 import Image from "next/image";
 import { Button, Skeleton } from "@heroui/react";
 import { UserButton, useUser, SignedIn } from "@clerk/nextjs";
@@ -12,6 +12,7 @@ import {
   systemMenuItems,
 } from "@/config/navigationItem";
 import { useSearchContext } from "@/providers/SearchProvider";
+import { useUI } from "@/providers/UIProvider";
 import { Text } from "@/components/text";
 import AuthButtons from "./AuthButtons";
 import { Icon } from "@iconify/react";
@@ -59,9 +60,18 @@ export default function Navbar({
   const { authProvider } = useAuthProvider();
   const { user, isLoaded, isSignedIn } = useUser();
   const { user: localUser, loading: localLoading } = useGetIdentity();
-  const { setIsOpen: openSearch } = useSearchContext();
+  useSearchContext();
   const { theme, setTheme } = useTheme();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const {
+    isMobileMenuOpen,
+    setIsMobileMenuOpen,
+    expandedMobileMenuKeys,
+    toggleMobileMenuExpanded,
+    openDesktopMenuKey,
+    setOpenDesktopMenuKey,
+  } = useUI();
+
   const [, startTransition] = useTransition();
 
   const isActive = (href: string) => {
@@ -82,7 +92,7 @@ export default function Navbar({
     startTransition(() => {
       setIsMobileMenuOpen(false);
     });
-  }, [router]);
+  }, [router, setIsMobileMenuOpen]);
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -96,8 +106,6 @@ export default function Navbar({
     };
   }, [isMobileMenuOpen]);
 
-  const [openMenuKey, setOpenMenuKey] = React.useState<string | null>(null);
-  const [activeSubmenu, setActiveSubmenu] = React.useState<string | null>(null);
   const menuCloseTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -111,24 +119,24 @@ export default function Navbar({
 
   const openMenu = (key: string) => {
     clearMenuCloseTimeout();
-    setOpenMenuKey(key);
+    setOpenDesktopMenuKey(key);
   };
 
   const closeMenuImmediately = () => {
     clearMenuCloseTimeout();
-    setOpenMenuKey(null);
+    setOpenDesktopMenuKey(null);
     setActiveSubmenu(null);
   };
 
   const scheduleMenuClose = () => {
     clearMenuCloseTimeout();
     menuCloseTimeout.current = setTimeout(() => {
-      setOpenMenuKey(null);
+      setOpenDesktopMenuKey(null);
       setActiveSubmenu(null);
     }, 180);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       clearMenuCloseTimeout();
     };
@@ -143,20 +151,10 @@ export default function Navbar({
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
-  const [expandedKeys, setExpandedKeys] = React.useState<Set<string>>(
-    new Set(),
-  );
+  const [activeSubmenu, setActiveSubmenu] = React.useState<string | null>(null);
 
   const toggleExpanded = (key: string) => {
-    setExpandedKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
+    toggleMobileMenuExpanded(key);
   };
 
   const renderMobileMenuItems = (
@@ -166,7 +164,7 @@ export default function Navbar({
     return items.flatMap((item) => {
       const indentClass = depth === 0 ? "" : depth === 1 ? "pl-4" : "pl-8";
       const hasChildren = item.children && item.children.length > 0;
-      const isExpanded = expandedKeys.has(item.key);
+      const isExpanded = expandedMobileMenuKeys.has(item.key);
       const active = isActive(item.href) || isChildActive(item.children);
 
       const entry = (
@@ -278,7 +276,7 @@ export default function Navbar({
                 isIconOnly
                 variant="light"
                 aria-label="Toggle theme"
-                onClick={toggleTheme}
+                onPress={toggleTheme}
                 className="text-gray-500 dark:text-gray-400 hover:text-secondary dark:hover:text-secondary hover:bg-secondary/10 dark:hover:bg-secondary/20 rounded-full w-10 h-10"
               >
                 {theme === "dark" ? (
@@ -364,14 +362,16 @@ export default function Navbar({
             <div className="flex items-center gap-12">
               {/* Logo */}
               <NextLink href="/" className="flex items-center gap-3 group">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden transition-transform group-hover:scale-105 shadow-sm bg-white p-1">
+                <div className="relative w-16 h-16  overflow-hidden transition-transform group-hover:scale-105   p-1">
                   <div className="relative w-full h-full">
                     <Image
                       src={logo || logoDark || "/apple-touch-icon.png"}
                       alt={brandName}
-                      fill
+                      width={120}
+                      height={120}
                       className="object-contain"
                       priority
+                      quality={100}
                     />
                   </div>
                 </div>
@@ -388,7 +388,7 @@ export default function Navbar({
 
                   // Handle items with children (Dropdown)
                   if (item.children && item.children.length > 0) {
-                    const isMenuOpen = openMenuKey === item.key;
+                    const isMenuOpen = openDesktopMenuKey === item.key;
 
                     return (
                       <div

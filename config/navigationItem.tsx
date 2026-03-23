@@ -181,30 +181,10 @@ export const systemMenuItems: NavigationItem[] = [
     icon: <Icon icon="lucide:home" className="w-4 h-4" />,
     description: "Go to dashboard",
   },
-  {
-    key: "my-posts",
-    label: "My Posts",
-    href: NAV_URL.SYSTEM.MY_POSTS,
-    icon: <Icon icon="lucide:pen-square" className="w-4 h-4" />,
-    description: "Manage your posts",
-  },
-  {
-    key: "drafts",
-    label: "Drafts",
-    href: NAV_URL.SYSTEM.DRAFTS,
-    icon: <Icon icon="lucide:book-open" className="w-4 h-4" />,
-    description: "View your drafts",
-  },
-  {
-    key: "profile",
-    label: "Profile",
-    href: NAV_URL.SYSTEM.PROFILE,
-    icon: <Icon icon="lucide:user" className="w-4 h-4" />,
-    description: "View your profile",
-  },
+
   {
     key: "settings",
-    label: "Settings",
+    label: "My Settings",
     href: NAV_URL.SYSTEM.SETTINGS,
     icon: <Icon icon="lucide:settings" className="w-4 h-4" />,
     description: "Account settings",
@@ -387,7 +367,7 @@ export const adminSidebarNavigation: AdminNavigationItem[] = [
           },
         ],
       },
-    {
+      {
         name: "Coursework & Grading",
         href: NAV_URL.ADMIN.LMS.LESSONS,
         icon: (props) => <Icon icon="solar:notebook-bold-duotone" {...props} />,

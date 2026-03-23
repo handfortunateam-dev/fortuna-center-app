@@ -45,7 +45,10 @@ export default function HeroSection() {
               as="h1"
               className="text-5xl lg:text-7xl font-extrabold text-foreground leading-tight mb-6 tracking-tight"
             >
-              Fortuna Center <span className="text-primary">Kupang</span>
+              Fortuna Center{" "}
+              <span className="lg:text-primary md:text-amber-400 sm:text-amber-400">
+                Kupang
+              </span>
             </Heading>
 
             <Text className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-xl">
@@ -77,7 +80,7 @@ export default function HeroSection() {
                 href="#contact"
                 variant="bordered"
                 color="primary"
-                className="px-8 py-4 rounded-xl font-bold hover:text-primary! hover:opacity-100! data-[hover=true]:text-primary! data-[hover=true]:opacity-100! duration-300 shadow-xl shadow-red-600/5 hover:-translate-y-1 active:scale-95"
+                className="px-8 py-4 rounded-xl font-bold text-amber-400 border-amber-300 hover:text-amber-400! hover:border-amber-400! hover:opacity-100! data-[hover=true]:text-amber-400! data-[hover=true]:border-amber-400! data-[hover=true]:opacity-100! duration-300 shadow-xl shadow-red-600/5 hover:-translate-y-1 active:scale-95"
               >
                 Contact Us
               </Button>
