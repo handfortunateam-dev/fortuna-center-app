@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Heading } from "@/components/heading";
 import { Text } from "@/components/text";
 import { Card, CardBody, Button, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { AlertDialog } from "@/components/alert-dialog";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
@@ -60,6 +61,18 @@ export default function CreateSessionPage() {
   const selectedDate = watch("date");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const notes = watch("notes");
+  
+  const [isPastDateAlertOpen, setIsPastDateAlertOpen] = useState(false);
+
+  // Check if selected date is in the past
+  useEffect(() => {
+    if (selectedDate) {
+      const todayDateStr = today(getLocalTimeZone()).toString();
+      if (selectedDate < todayDateStr) {
+        setIsPastDateAlertOpen(true);
+      }
+    }
+  }, [selectedDate]);
 
   const { data: classes, isLoading: loadingClasses } = useQuery({
     queryKey: ["teacher-classes"],
@@ -212,7 +225,6 @@ export default function CreateSessionPage() {
                 <DatePickerInput
                   label="Session Date"
                   name="date"
-                  minValue={today(getLocalTimeZone())}
                   required
                 />
               )}
@@ -321,6 +333,13 @@ export default function CreateSessionPage() {
           </FormProvider>
         </CardBody>
       </Card>
+      <AlertDialog
+        isOpen={isPastDateAlertOpen}
+        onClose={() => setIsPastDateAlertOpen(false)}
+        title="Past Date Selected"
+        message="You are creating a session in the past. Please ensure this is intentional (e.g., for a makeup class that already occurred)."
+        type="warning"
+      />
     </div>
   );
 }
