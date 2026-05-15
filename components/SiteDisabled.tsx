@@ -347,6 +347,13 @@ export default function SiteDisabled() {
               </div>
 
               <div className="bank-item">
+                <span className="bank-item-label">Total Outstanding</span>
+                <span className="bank-item-value" style={{color: "#fca5a5", fontSize: "1.25rem", fontWeight: "800"}}>
+                  Rp 8.000.000
+                </span>
+              </div>
+
+              <div className="bank-item">
                 <span className="bank-item-label">Account Number</span>
                 <div className="account-number-wrapper">
                   <span className="account-number">3141472915</span>
