@@ -6,6 +6,7 @@ import { ClerkProviderWrapper } from "@/lib/ClerkProviderWrapper";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
 import { LoadingBar } from "@/components/loading/LoadingBar";
 import { Suspense } from "react";
+import SiteDisabled from "@/components/SiteDisabled";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -97,12 +98,17 @@ export const metadata: Metadata = {
 };
 
 import { checkMaintenanceMode } from "@/lib/maintenance";
+const siteEnabled = process.env.NEXT_PUBLIC_SITE_ENABLED !== "false";
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+    if (!siteEnabled) {
+    return <SiteDisabled />;
+  }
+
   // Check maintenance mode on every request blockable by middleware
   await checkMaintenanceMode();
 
