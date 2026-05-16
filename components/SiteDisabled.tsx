@@ -260,7 +260,7 @@ export default function SiteDisabled() {
 
           <div className="header-group">
             <span className="status-badge">Suspended / Pending Upgrade</span>
-            <h1>Premium Lifetime Package</h1>
+            <h1>Payment Lifetime</h1>
             <p className="subtitle">
               Elevate your system infrastructure with permanent access and professional management.
             </p>
