@@ -286,7 +286,7 @@ export default function SiteDisabled() {
             </div>
 
             <ul className="benefits-list">
-              <li className="benefit-item">
+              {/* <li className="benefit-item">
                 <div className="benefit-icon">
                   <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
                 </div>
@@ -294,8 +294,8 @@ export default function SiteDisabled() {
                   <h4>Premium Lifetime Package</h4>
                   <p>A single, one-time payment ensuring permanent server access with zero recurring annual fees.</p>
                 </div>
-              </li>
-              <li className="benefit-item">
+              </li> */}
+              {/* <li className="benefit-item">
                 <div className="benefit-icon">
                   <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 15l-5-5 1.41-1.41L12 15.17l7.59-7.59L21 9l-9 9z"/></svg>
                 </div>
@@ -303,7 +303,7 @@ export default function SiteDisabled() {
                   <h4>Full Maintenance Service</h4>
                   <p>24/7 dedicated technical support and complete backend management.</p>
                 </div>
-              </li>
+              </li> */}
               <li className="benefit-item">
                 <div className="benefit-icon">
                   <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M21 10.12h-6.78l2.74-2.82c-2.73-2.7-7.15-2.8-9.88-.1-2.73 2.71-2.73 7.08 0 9.79s7.15 2.71 9.88 0C18.32 15.65 19 14.08 19 12.1h2c0 1.98-.8 4.59-2.58 6.39-3.54 3.54-9.25 3.54-12.78 0-3.54-3.54-3.54-9.25 0-12.78 3.54-3.54 9.25-3.54 12.78 0L21 3v7.12zM12.5 7v5.25l4.5 2.67-.75 1.23L11 13V7h1.5z"/></svg>
