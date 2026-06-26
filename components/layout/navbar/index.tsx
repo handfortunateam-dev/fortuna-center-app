@@ -61,7 +61,7 @@ export default function Navbar({
   sidebarCollapsed = false,
   logo,
   logoDark,
-  brandName = "FORTUNA CENTER",
+  brandName = "FORTUNA GLOBAL LEARNING CENTER",
   menuItems = publicMenuItems,
   showThemeToggle = true,
   showAuth = true,
