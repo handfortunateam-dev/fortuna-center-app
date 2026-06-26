@@ -31,7 +31,7 @@ export default function HeroSection() {
             </div>
 
             <h1 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
-              Fortuna Center <span className="text-primary">Kupang</span>
+              Fortuna Global Learning Center <span className="text-primary">Kupang</span>
             </h1>
 
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
