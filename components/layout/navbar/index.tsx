@@ -441,7 +441,7 @@ export default function Navbar({
                 }}
               >
                 <DropdownSection title="Navigation" showDivider>
-                  {renderMobileMenuItems(menuItems)}
+                  <>{renderMobileMenuItems(menuItems)}</>
                 </DropdownSection>
 
                 {isSignedIn && systemMenuItems.length > 0 ? (
