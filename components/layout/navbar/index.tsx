@@ -2,7 +2,7 @@
 
 import React, { useEffect, useTransition } from "react";
 import Image from "next/image";
-import { Button, Skeleton } from "@heroui/react";
+import { Button, DropdownSection, Skeleton } from "@heroui/react";
 import { UserButton, useUser, SignedIn } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import NextLink from "next/link";
