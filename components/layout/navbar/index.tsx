@@ -2,7 +2,7 @@
 
 import React, { useEffect, useTransition } from "react";
 import Image from "next/image";
-import { Button, Skeleton } from "@heroui/react";
+import { Button, DropdownSection, Skeleton } from "@heroui/react";
 import { UserButton, useUser, SignedIn } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import NextLink from "next/link";
@@ -50,7 +50,7 @@ export default function Navbar({
   sidebarCollapsed = false,
   logo,
   logoDark,
-  brandName = "FORTUNA CENTER",
+  brandName = "FORTUNA GLOBAL LEARNING CENTER",
   menuItems = publicMenuItems,
   showThemeToggle = true,
   showAuth = true,
@@ -609,6 +609,9 @@ export default function Navbar({
                 aria-label="Menu"
                 onPress={() => setIsMobileMenuOpen(true)}
               >
+                <DropdownSection title="Navigation" showDivider>
+                  <>{renderMobileMenuItems(menuItems)}</>
+                </DropdownSection>
                 <Icon icon="solar:hamburger-menu-bold" className="w-6 h-6" />
               </Button>
 
