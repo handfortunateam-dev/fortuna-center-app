@@ -2,10 +2,13 @@ import React from "react";
 import { getAuthUser } from "@/lib/auth/getAuthUser";
 import { UserRole } from "@/enums/common";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import DashboardAdmin from "./admin/DashboardAdmin";
 import DashboardTeacher from "./DashboardTeacher";
-import DashboardStudent from "./DashboardStudent";
-import DashboardEmployee from "./DashboardEmployee";
+import DashboardStudent from "./student/DashboardStudent";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
+import DashboardEmployee from "./employee/DashboardEmployee";
 
 export default async function DashboardGrid() {
   // Fetch user data on the server
@@ -15,15 +18,25 @@ export default async function DashboardGrid() {
 
   // Redirect to login if not authenticated
   if (!user) {
-    redirect("/sign-in");
+    redirect("/auth/login");
   }
+
+  // Read the toggled view preference set by useAccessControl on the client
+  const cookieStore = await cookies();
+  const currentView = cookieStore.get("multiRoleView")?.value;
 
   // Render dashboard based on user role
   switch (user.role) {
+    case UserRole.DEVELOPER:
+      return <DashboardAdmin user={user} />;
     case UserRole.ADMIN:
       return <DashboardAdmin user={user} />;
 
     case UserRole.TEACHER:
+      // If this teacher also has admin-employee duties and has toggled to that view, show the employee dashboard
+      if (user.isAdminEmployeeAlso && currentView === "admin") {
+        return <DashboardEmployee user={user} />;
+      }
       return <DashboardTeacher user={user} />;
 
     case UserRole.STUDENT:
@@ -37,12 +50,17 @@ export default async function DashboardGrid() {
       return (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <h2 className="text-xl font-bold text-default-900 mb-2">
+            <Heading
+              as="h2"
+              size="xl"
+              weight="bold"
+              className="text-default-900 mb-2"
+            >
               Unknown Role
-            </h2>
-            <p className="text-default-500">
+            </Heading>
+            <Text color="default" className="text-default-500">
               Your account role is not recognized. Please contact support.
-            </p>
+            </Text>
           </div>
         </div>
       );

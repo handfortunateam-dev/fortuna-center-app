@@ -1,0 +1,1 @@
+ALTER TABLE "changelogs" ADD COLUMN "deleted_at" timestamp;

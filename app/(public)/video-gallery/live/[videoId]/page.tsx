@@ -4,26 +4,30 @@ import LiveStreamPlayer from "@/features/public/live/LiveStreamPlayer";
 import { Metadata } from "next";
 
 interface LiveStreamPageProps {
-  params: {
+  params: Promise<{
     videoId: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({
   params,
 }: LiveStreamPageProps): Promise<Metadata> {
-  const video = await getVideoDetails(params.videoId);
+  const { videoId } = await params;
+  const video = await getVideoDetails(videoId);
   return {
     title: video
       ? `${video.snippet.title} | Live Stream`
       : "Live Stream | Fortuna Center",
     description:
       video?.snippet.description?.slice(0, 160) || "Watch our live broadcast.",
+    alternates: {
+      canonical: `https://www.fortunacenter.com/video-gallery/live/${videoId}`,
+    },
   };
 }
 
 export default async function LiveStreamPage({ params }: LiveStreamPageProps) {
-  const { videoId } = params;
+  const { videoId } = await params;
   const video = await getVideoDetails(videoId);
 
   return (

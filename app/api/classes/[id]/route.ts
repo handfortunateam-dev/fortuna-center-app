@@ -1,70 +1,14 @@
-/**
- * @swagger
- * /api/classes/{id}:
- *   get:
- *     tags: [Classes]
- *     summary: Get class by id
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Class
- *       404:
- *         description: Not found
- *   patch:
- *     tags: [Classes]
- *     summary: Update class
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ClassUpdate'
- *     responses:
- *       200:
- *         description: Updated
- *       400:
- *         description: Validation error
- *       404:
- *         description: Not found
- *   delete:
- *     tags: [Classes]
- *     summary: Delete class
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Deleted
- *       404:
- *         description: Not found
- */
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { classes } from "@/db/schema";
+import { classes, users } from "@/db/schema";
 
 type UpdateClassPayload = {
   name?: string;
   description?: string | null;
   code?: string;
   isActive?: boolean;
+  level?: string | null;
   createdBy?: string;
 };
 
@@ -73,17 +17,34 @@ const notFoundResponse = () =>
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
-    const [record] = await db.select().from(classes).where(eq(classes.id, id)).limit(1);
-    if (!record) {
+    const [result] = await db
+      .select({
+        id: classes.id,
+        name: classes.name,
+        description: classes.description,
+        code: classes.code,
+        level: classes.level,
+        isActive: classes.isActive,
+        createdBy: classes.createdBy,
+        createdAt: classes.createdAt,
+        updatedAt: classes.updatedAt,
+        createdByName: users.name,
+      })
+      .from(classes)
+      .leftJoin(users, eq(classes.createdBy, users.id))
+      .where(eq(classes.id, id))
+      .limit(1);
+
+    if (!result) {
       return notFoundResponse();
     }
 
-    return NextResponse.json({ success: true, data: record });
+    return NextResponse.json({ success: true, data: result });
   } catch (error) {
     console.error("Error reading class:", error);
     return NextResponse.json(
@@ -99,19 +60,20 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const body = (await request.json()) as UpdateClassPayload;
-    const { name, description, code, isActive, createdBy } = body;
+    const { name, description, code, isActive, level, createdBy } = body;
 
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name;
     if (description !== undefined) updates.description = description;
     if (code !== undefined) updates.code = code;
     if (isActive !== undefined) updates.isActive = isActive;
+    if (level !== undefined) updates.level = level;
     if (createdBy !== undefined) updates.createdBy = createdBy;
     updates.updatedAt = new Date();
 
@@ -152,9 +114,9 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const [deleted] = await db

@@ -3,10 +3,12 @@
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import React from "react";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { SearchProvider } from "./SearchProvider";
 import { NotificationProvider } from "./NotificationProvider";
 import { ThemeProvider } from "./ThemeProvider";
 import { AudioPlayerProvider } from "./AudioPlayerContext";
+import { UIProvider } from "./UIProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,16 +22,20 @@ const queryClient = new QueryClient({
 });
 
 export default function Providers({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <HeroUIProvider>
-        <ToastProvider />
+      <HeroUIProvider navigate={router.push}>
+        <ToastProvider placement="top-right" />
         <QueryClientProvider client={queryClient}>
-          <NotificationProvider>
-            <SearchProvider>
-              <AudioPlayerProvider>{children}</AudioPlayerProvider>
-            </SearchProvider>
-          </NotificationProvider>
+          <UIProvider>
+            <NotificationProvider>
+              <SearchProvider>
+                <AudioPlayerProvider>{children}</AudioPlayerProvider>
+              </SearchProvider>
+            </NotificationProvider>
+          </UIProvider>
         </QueryClientProvider>
       </HeroUIProvider>
     </ThemeProvider>

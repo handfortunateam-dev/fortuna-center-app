@@ -1,218 +1,157 @@
-'use client';
+"use client";
 
-import { Icon } from '@iconify/react';
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
+import { Toast } from "@/components/toast";
+import { SystemSetting } from "@/features/settings/interfaces";
+import { Tab, Tabs } from "@heroui/react";
+import { Icon } from "@iconify/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+
+import { LoadingScreen } from "@/components/loading/LoadingScreen";
+import { AuthTab } from "@/features/settings/components/AuthTab";
+import { MaintenanceTab } from "@/features/settings/components/MaintenanceTab";
+import { useGetIdentity } from "@/hooks/useGetIdentity";
+
+type TabId = "general" | "maintenance" | "advanced" | "auth";
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState({
-    siteName: 'Fortuna Center',
-    siteDescription: 'Minimalist broadcast platform',
-    autoArchive: true,
-    emailNotifications: true,
-    maxConcurrentSessions: 10,
-    defaultQuality: '1080p',
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<TabId>("maintenance");
+
+  // Use Clerk's useUser to get the publicMetadata where role is stored
+  const { user } = useGetIdentity();
+  const isDev = user?.role === "DEVELOPER";
+  const isReadOnly = !isDev;
+
+  const {
+    data: settings = [],
+    isLoading,
+    error,
+  } = useQuery<SystemSetting[]>({
+    queryKey: ["settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings?format=list");
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message);
+      return json.data || [];
+    },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async (payload: { key: string; value: string }) => {
+      const body = {
+        settings: {
+          [payload.key]: payload.value,
+        },
+      };
+
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message);
+      return json;
+    },
+    onSuccess: () => {
+      Toast({
+        title: "Success",
+        description: "Settings updated successfully",
+        color: "success",
+      });
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    },
+    onError: (err: unknown) => {
+      Toast({
+        title: "Error",
+        description: (err as Error).message,
+        color: "danger",
+      });
+    },
+  });
+
+  const handleUpdate = (key: string, value: string) => {
+    updateMutation.mutate({ key, value });
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-default-900">Settings</h1>
-          <p className="text-default-500 mt-1">Configure your broadcast system</p>
-        </div>
-        <button className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-black font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
-          <Icon icon="solar:diskette-bold" />
-          Save Changes
-        </button>
+    <div className="max-w-7xl mx-auto space-y-6 p-4 md:p-0">
+      <LoadingScreen isLoading={isLoading} />
+      <div className="flex flex-col gap-2">
+        <Heading className="text-2xl font-bold">System Settings</Heading>
+        <Text className="text-default-500">
+          Manage global configurations and maintenance mode.
+        </Text>
+        {isReadOnly && (
+          <div className="mt-2 p-3 bg-warning-50 text-warning-800 dark:bg-warning-900/20 dark:text-warning-300 rounded-lg border border-warning-200 dark:border-warning-900/50 flex items-start gap-3">
+            <Icon
+              icon="solar:shield-warning-bold"
+              className="w-5 h-5 shrink-0 mt-0.5"
+            />
+            <div className="flex flex-col">
+              <span className="font-semibold text-sm">
+                Read-only Mode Active
+              </span>
+              <span className="text-xs opacity-90 mt-0.5">
+                Settings configuration and modifications are strictly restricted
+                to Developer accounts only.
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* General Settings */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="glass-panel rounded-2xl p-6 border border-default-200"
+      <Tabs
+        aria-label="Settings Options"
+        selectedKey={activeTab}
+        onSelectionChange={(key) => setActiveTab(key as TabId)}
+        color="primary"
+        variant="underlined"
+        classNames={{
+          tabList:
+            "gap-6 w-full relative rounded-none p-0 border-b border-divider",
+          cursor: "w-full bg-primary",
+          tab: "max-w-fit px-0 h-12",
+          tabContent: "group-data-[selected=true]:text-primary",
+        }}
       >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-blue-500/10">
-            <Icon icon="solar:settings-bold-duotone" className="text-2xl text-blue-400" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-default-900">General Settings</h2>
-            <p className="text-default-500 text-sm">Basic configuration</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-default-500 mb-2 block">Site Name</label>
-            <input
-              type="text"
-              value={settings.siteName}
-              onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
-              className="w-full px-4 py-3 bg-default-50 border border-default-200 rounded-xl text-default-900 placeholder-default-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-default-500 mb-2 block">Site Description</label>
-            <textarea
-              value={settings.siteDescription}
-              onChange={(e) => setSettings({ ...settings, siteDescription: e.target.value })}
-              rows={3}
-              className="w-full px-4 py-3 bg-default-50 border border-default-200 rounded-xl text-default-900 placeholder-default-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
-            />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Broadcast Settings */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass-panel rounded-2xl p-6 border border-default-200"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-purple-500/10">
-            <Icon icon="solar:video-library-bold-duotone" className="text-2xl text-purple-400" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-default-900">Broadcast Settings</h2>
-            <p className="text-default-500 text-sm">Configure broadcast behavior</p>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-default-500 mb-2 block">Max Concurrent Sessions</label>
-            <input
-              type="number"
-              value={settings.maxConcurrentSessions}
-              onChange={(e) => setSettings({ ...settings, maxConcurrentSessions: parseInt(e.target.value) })}
-              className="w-full px-4 py-3 bg-default-50 border border-default-200 rounded-xl text-default-900 placeholder-default-400 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-default-500 mb-2 block">Default Quality</label>
-            <select
-              value={settings.defaultQuality}
-              onChange={(e) => setSettings({ ...settings, defaultQuality: e.target.value })}
-              className="w-full px-4 py-3 bg-default-50 border border-default-200 rounded-xl text-default-900 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-            >
-              <option value="720p">720p</option>
-              <option value="1080p">1080p</option>
-              <option value="1440p">1440p</option>
-              <option value="4K">4K</option>
-            </select>
-          </div>
-
-          <div className="flex items-center justify-between p-4 rounded-xl bg-default-50 border border-default-200">
-            <div>
-              <p className="text-default-900 font-medium">Auto Archive Sessions</p>
-              <p className="text-default-500 text-sm">Automatically archive ended sessions</p>
+        <Tab
+          key="maintenance"
+          title={
+            <div className="flex items-center space-x-2">
+              <Icon icon="solar:shield-warning-bold" width={20} />
+              <span>Maintenance</span>
             </div>
-            <button
-              onClick={() => setSettings({ ...settings, autoArchive: !settings.autoArchive })}
-              className={`relative w-14 h-8 rounded-full transition-all ${
-                settings.autoArchive ? 'bg-primary' : 'bg-default-100'
-              }`}
-            >
-              <div
-                className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all ${
-                  settings.autoArchive ? 'left-7' : 'left-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </motion.div>
+          }
+        >
+          <MaintenanceTab
+            settings={settings}
+            onUpdate={handleUpdate}
+            isUpdating={updateMutation.isPending}
+            isReadOnly={isReadOnly}
+          />
+        </Tab>
 
-      {/* Notifications */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass-panel rounded-2xl p-6 border border-default-200"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-amber-500/10">
-            <Icon icon="solar:bell-bold-duotone" className="text-2xl text-amber-400" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-default-900">Notifications</h2>
-            <p className="text-default-500 text-sm">Manage notification preferences</p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {[
-            { title: 'Email Notifications', desc: 'Receive email updates', key: 'emailNotifications' },
-            { title: 'Session Start Alerts', desc: 'Get notified when sessions start', key: 'sessionAlerts' },
-            { title: 'Viewer Milestones', desc: 'Alerts for viewer count milestones', key: 'milestoneAlerts' },
-            { title: 'System Updates', desc: 'Important system notifications', key: 'systemUpdates' },
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between p-4 rounded-xl bg-default-50 border border-default-200 hover:border-default-300 transition-all"
-            >
-              <div>
-                <p className="text-default-900 font-medium">{item.title}</p>
-                <p className="text-default-500 text-sm">{item.desc}</p>
-              </div>
-              <button
-                className={`relative w-14 h-8 rounded-full transition-all ${
-                  idx === 0 ? 'bg-primary' : 'bg-default-100'
-                }`}
-              >
-                <div
-                  className={`absolute top-1 w-6 h-6 rounded-full bg-white transition-all ${
-                    idx === 0 ? 'left-7' : 'left-1'
-                  }`}
-                />
-              </button>
+        <Tab
+          key="auth"
+          title={
+            <div className="flex items-center space-x-2">
+              <Icon icon="solar:lock-keyhole-bold" width={20} />
+              <span>Authorization</span>
             </div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Danger Zone */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="glass-panel rounded-2xl p-6 border border-red-500/20 bg-red-500/5"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-xl bg-red-500/10">
-            <Icon icon="solar:danger-bold-duotone" className="text-2xl text-red-400" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-default-900">Danger Zone</h2>
-            <p className="text-default-500 text-sm">Irreversible actions</p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <button className="w-full flex items-center justify-between p-4 rounded-xl bg-default-50 hover:bg-red-500/10 border border-default-200 hover:border-red-500/50 transition-all group">
-            <div className="text-left">
-              <p className="text-default-900 font-medium group-hover:text-red-400 transition-colors">Clear All Sessions</p>
-              <p className="text-default-500 text-sm">Delete all broadcast sessions permanently</p>
-            </div>
-            <Icon icon="solar:trash-bin-trash-bold" className="text-xl text-default-400 group-hover:text-red-400 transition-colors" />
-          </button>
-
-          <button className="w-full flex items-center justify-between p-4 rounded-xl bg-default-50 hover:bg-red-500/10 border border-default-200 hover:border-red-500/50 transition-all group">
-            <div className="text-left">
-              <p className="text-default-900 font-medium group-hover:text-red-400 transition-colors">Reset to Default</p>
-              <p className="text-default-500 text-sm">Reset all settings to default values</p>
-            </div>
-            <Icon icon="solar:restart-bold" className="text-xl text-default-400 group-hover:text-red-400 transition-colors" />
-          </button>
-        </div>
-      </motion.div>
+          }
+        >
+          <AuthTab
+            settings={settings}
+            onUpdate={handleUpdate}
+            isUpdating={updateMutation.isPending}
+            isReadOnly={isReadOnly}
+          />
+        </Tab>
+      </Tabs>
     </div>
   );
 }

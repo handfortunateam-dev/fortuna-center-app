@@ -1,6 +1,7 @@
+
 import { NextRequest, NextResponse } from "next/server";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { getAuthUser, isAdmin } from "@/lib/auth/getAuthUser";
+import { clerkClient } from "@clerk/nextjs/server";
+import { isAdmin, getAuthUser } from "@/lib/auth/getAuthUser";
 import { db } from "@/db";
 import { users } from "@/db/schema/users.schema";
 import { UserRole } from "@/enums/common";
@@ -10,15 +11,16 @@ interface CreateUserRequest {
   firstName: string;
   lastName: string;
   password: string;
-  role: "ADMIN" | "TEACHER" | "STUDENT" | "ADMINISTRATIVE_EMPLOYEE";
+  role: "ADMIN" | "VISITOR";
+  isAdminEmployeeAlso?: boolean;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if user is authenticated
-    const { userId } = await auth();
+    // Check if user is authenticated (supports both Clerk and Local)
+    const authenticatedUser = await getAuthUser();
 
-    if (!userId) {
+    if (!authenticatedUser) {
       return NextResponse.json(
         {
           success: false,
@@ -42,6 +44,11 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body: CreateUserRequest = await request.json();
+
+    // Trim & normalize inputs — prevents whitespace from sneaking into DB/Clerk
+    body.email = (body.email ?? "").trim().toLowerCase();
+    if (body.firstName) body.firstName = body.firstName.trim();
+    if (body.lastName) body.lastName = (body.lastName ?? "").trim();
 
     // Validate required fields
     if (!body.email || !body.firstName || !body.password || !body.role) {
@@ -85,13 +92,13 @@ export async function POST(request: NextRequest) {
       email: body.email,
       firstName: body.firstName,
       lastName: body.lastName,
-      password: body.password,
+      password: body.password ? "***" : undefined,
     });
 
     const createUserParams: Parameters<typeof client.users.createUser>[0] = {
       emailAddress: [body.email],
-      firstName: body.firstName,
       password: body.password,
+      firstName: body.firstName,
     };
 
     // Only add lastName if provided
@@ -99,9 +106,15 @@ export async function POST(request: NextRequest) {
       createUserParams.lastName = body.lastName;
     }
 
-    console.log("Clerk createUser params:", createUserParams);
-
     const clerkUser = await client.users.createUser(createUserParams);
+
+    // Hash password for local database storage if provided
+    let hashedPassword = null;
+    if (body.password) {
+      // Import bcrypt dynamically to avoid issues if not used or to ensure it's loaded
+      const bcrypt = await import("bcryptjs");
+      hashedPassword = await bcrypt.hash(body.password, 10);
+    }
 
     // Create user in database with specified role
     const dbUser = await db
@@ -112,6 +125,8 @@ export async function POST(request: NextRequest) {
         email: body.email,
         image: clerkUser.imageUrl,
         role: body.role as UserRole,
+        password: hashedPassword, // Save hashed password
+        isAdminEmployeeAlso: body.isAdminEmployeeAlso || false,
       })
       .returning();
 

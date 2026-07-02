@@ -10,6 +10,8 @@ export interface ClerkUser {
   updatedAt: number;
   lastSignInAt: number | null;
   emailVerified: boolean;
+  role?: string;
+  isAdminEmployeeAlso?: boolean;
 }
 
 export interface ClerkUserDetail extends ClerkUser {
@@ -28,6 +30,11 @@ export interface UsersListParams {
   offset?: number;
   query?: string;
   orderBy?: string;
+  role?: string;
+  source?: string;
+  fields?: string;
+  excludeLinkedStudents?: boolean;
+  excludeLinkedTeachers?: boolean;
 }
 
 export interface UsersListResponse {

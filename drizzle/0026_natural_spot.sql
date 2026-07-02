@@ -1,0 +1,1 @@
+ALTER TABLE "classes" DROP CONSTRAINT "classes_code_unique";

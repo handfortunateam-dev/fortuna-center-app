@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 import {
   BreadcrumbsNav,
   BreadcrumbItemType,
-} from "@/components/ui/Breadcrumbs";
+} from "@/components/breadcrumb";
 
 interface Breadcrumb {
   label: string;

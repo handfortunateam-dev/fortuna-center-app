@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Card, CardBody, Button, Chip, Progress, Divider } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { checkQuotaHealth } from "@/services/youtubeService";
-import { Toast } from "@/components/ui/Toast";
+import { Toast } from "@/components/toast";
 
 export default function YouTubeUsagePage() {
   const [status, setStatus] = useState<

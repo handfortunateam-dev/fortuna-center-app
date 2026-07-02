@@ -21,7 +21,7 @@ import {
   updateStreamer,
 } from "@/services/azurecast/azuracastPrivateService";
 import { useRouter } from "next/navigation";
-import { Toast } from "@/components/ui/Toast";
+import { Toast } from "@/components/toast";
 
 interface StreamerFormProps {
   initialData?: Streamer;

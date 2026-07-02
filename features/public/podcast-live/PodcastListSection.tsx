@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { Card, CardBody, Button, Chip } from "@heroui/react";
-import { ShareButton } from "@/components/ui/ShareButton";
-import type { Podcast } from "@/services/azurecast/interfaces";
+import type { PodcastShowDetail } from "@/features/podcast-cms/interfaces";
+import { ShareButton } from "@/components/share-button/ShareButton";
 
 type PodcastListSectionProps = {
-  podcasts: Podcast[];
+  podcasts: PodcastShowDetail[];
   errorMessage?: string | null;
 };
 
@@ -79,10 +79,7 @@ export function PodcastListSection({
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {podcasts.map((podcast) => {
-              const artwork =
-                (podcast as Podcast & { artwork_url?: string }).artwork_url ||
-                (podcast as Podcast & { art?: string }).art ||
-                null;
+              const artwork = podcast.coverImage;
 
               return (
                 <Card
@@ -111,7 +108,7 @@ export function PodcastListSection({
                           {podcast.title}
                         </h3>
                         {podcast.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 whitespace-pre-line">
                             {podcast.description}
                           </p>
                         )}
@@ -120,7 +117,7 @@ export function PodcastListSection({
                     <div className="flex items-center gap-2">
                       <Button
                         as={Link}
-                        href={`/podcast-list/${podcast.id}`}
+                        href={`/podcast-list/${podcast.slug}`}
                         color="warning"
                         variant="faded"
                         className="text-red-700"
@@ -128,7 +125,7 @@ export function PodcastListSection({
                         Lihat Episode
                       </Button>
                       <ShareButton
-                        url={`/podcast-list/${podcast.id}`}
+                        url={`/podcast-list/${podcast.slug}`}
                         title={podcast.title}
                         text={`Listen to ${podcast.title} on Fortuna Broadcast`}
                         isIconOnly

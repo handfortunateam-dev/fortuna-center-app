@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@heroui/react";
 // import { LogIn, UserPlus, LayoutDashboard } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -12,7 +11,7 @@ interface AuthButtonsClientProps {
 export default function AuthButtonsClient({
   showDashboard,
 }: AuthButtonsClientProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  // const [isHovered, setIsHovered] = useState(false);
   const router = useRouter();
 
   // Show Dashboard button for logged in users (non-VISITOR)
@@ -23,7 +22,9 @@ export default function AuthButtonsClient({
         size="sm"
         className="text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 h-10 font-medium"
         onClick={() => router.push("/dashboard")}
-        startContent={<Icon icon="lucide:layout-dashboard" className="w-4 h-4" />}
+        startContent={
+          <Icon icon="lucide:layout-dashboard" className="w-4 h-4" />
+        }
       >
         Dashboard
       </Button>
@@ -32,11 +33,7 @@ export default function AuthButtonsClient({
 
   // Show Login/Sign Up buttons for non-logged in users
   return (
-    <div
-      className="hidden md:flex items-center gap-2"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className="hidden md:flex items-center gap-2">
       {/* Login Button - Always visible */}
       <Button
         variant="bordered"
@@ -48,7 +45,7 @@ export default function AuthButtonsClient({
       </Button>
 
       {/* Sign Up Button - Slides in from left on hover */}
-      <Button
+      {/* <Button
         variant="bordered"
         className={`text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 h-10 font-medium transition-all duration-300 ${
           isHovered
@@ -59,7 +56,7 @@ export default function AuthButtonsClient({
         startContent={isHovered ? <Icon icon="lucide:user-plus" className="w-4 h-4" /> : null}
       >
         {isHovered && "Sign Up"}
-      </Button>
+      </Button> */}
     </div>
   );
 }

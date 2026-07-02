@@ -7,8 +7,9 @@ import { Tabs, Tab } from "@heroui/react";
 import QuickActions from "./QuickActions";
 import RecentSessions from "./RecentSessions";
 import StatisticGeneral from "./StatisticGeneral";
-import { Heading } from "@/components/ui/Heading";
-import { Text } from "@/components/ui/Text";
+import { Heading } from "@/components/heading";
+import { Text } from "@/components/text";
+import { RecentActivity } from "../components/RecentActivity";
 
 interface DashboardAdminProps {
   user: AuthUser | null;
@@ -22,7 +23,7 @@ export default function DashboardAdmin({ user }: DashboardAdminProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <Heading level={1} className="text-3xl font-bold text-default-900">
+          <Heading as="h1" size="3xl" className="font-bold text-default-900">
             Dashboard
           </Heading>
           <Text className="text-default-500 mt-1">
@@ -40,9 +41,10 @@ export default function DashboardAdmin({ user }: DashboardAdminProps) {
           color="primary"
           variant="underlined"
         >
-          <Tab key="dashboard" title="Dashboard" />
-          <Tab key="sessions" title="Recent Sessions" />
-          {/* Add more tabs as needed for specific data views */}
+          <Tab key="dashboard" title="Overview" />
+          <Tab key="finance" title="Finance" />
+          <Tab key="personnel" title="Personnel" />
+          <Tab key="sessions" title="Class Sessions" />
         </Tabs>
       </div>
 
@@ -55,20 +57,26 @@ export default function DashboardAdmin({ user }: DashboardAdminProps) {
       >
         {activeTab === "dashboard" && (
           <div className="space-y-6">
-            {/* Stats Overview */}
-            <StatisticGeneral />
+            {/* Stats Overview - Only LMS for main dashboard */}
+            <StatisticGeneral view="lms" />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Quick Actions - Takes up 1 column */}
-              <div className="lg:col-span-1">
-                <QuickActions />
-              </div>
-
-              {/* Recent Sessions List - Takes up 2 columns */}
-              <div className="lg:col-span-2">
-                <RecentSessions limit={5} />
-              </div>
+              <QuickActions />
+              <RecentSessions limit={5} />
+              <RecentActivity />
             </div>
+          </div>
+        )}
+
+        {activeTab === "finance" && (
+          <div className="space-y-6">
+            <StatisticGeneral view="finance" />
+          </div>
+        )}
+
+        {activeTab === "personnel" && (
+          <div className="space-y-6">
+            <StatisticGeneral view="personnel" />
           </div>
         )}
 

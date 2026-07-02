@@ -1,64 +1,17 @@
-/**
- * @swagger
- * /api/classes:
- *   get:
- *     tags: [Classes]
- *     summary: List classes
- *     parameters:
- *       - in: query
- *         name: isActive
- *         schema:
- *           type: string
- *           enum: ["true", "false", "1", "0"]
- *       - in: query
- *         name: createdBy
- *         schema:
- *           type: string
- *           format: uuid
- *       - in: query
- *         name: q
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Classes list
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Class'
- *   post:
- *     tags: [Classes]
- *     summary: Create class
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ClassInput'
- *     responses:
- *       201:
- *         description: Created
- *       400:
- *         description: Validation error
- */
 import { NextRequest, NextResponse } from "next/server";
-import { and, desc, eq, ilike } from "drizzle-orm";
+// import { auth } from "@clerk/nextjs/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
+
+import { and, desc, eq, ilike, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { classes } from "@/db/schema";
+import { classes, users } from "@/db/schema";
 
 type CreateClassPayload = {
   name?: string;
   description?: string | null;
   code?: string;
   isActive?: boolean;
-  createdBy?: string;
+  level?: string | null;
 };
 
 export async function GET(request: NextRequest) {
@@ -67,6 +20,11 @@ export async function GET(request: NextRequest) {
     const isActiveParam = searchParams.get("isActive");
     const createdBy = searchParams.get("createdBy");
     const query = searchParams.get("q");
+    const limit = searchParams.get("limit");
+    const page = searchParams.get("page");
+    const fields = searchParams.get("fields");
+
+    const offset = limit && page ? (Number(page) - 1) * Number(limit) : 0;
 
     const filters = [];
     if (isActiveParam !== null) {
@@ -82,13 +40,42 @@ export async function GET(request: NextRequest) {
     }
 
     const where = filters.length ? and(...filters) : undefined;
-    const data = await db
+
+    // Helper to filter object fields
+    const filterFields = (obj: Record<string, unknown>, fields: string[] | null) => {
+      if (!fields) return obj;
+      const filtered: Record<string, unknown> = {};
+      fields.forEach((f: string) => {
+        if (f in obj) filtered[f] = obj[f];
+      });
+      return filtered;
+    };
+
+    const fieldList = fields ? fields.split(",").map((f: string) => f.trim()) : null;
+
+    const dbData = await db
       .select()
       .from(classes)
       .where(where)
-      .orderBy(desc(classes.createdAt));
+      .orderBy(desc(classes.createdAt))
+      .limit(limit ? Number(limit) : 1000)
+      .offset(offset);
 
-    return NextResponse.json({ success: true, data });
+    // Get total count
+    const totalCountResult = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(classes)
+      .where(where);
+
+    const totalCount = Number(totalCountResult[0]?.total || 0);
+
+    const data = dbData.map((item) => filterFields(item as unknown as Record<string, unknown>, fieldList));
+
+    return NextResponse.json({
+      success: true,
+      data,
+      totalCount,
+    });
   } catch (error) {
     console.error("Error fetching classes:", error);
     return NextResponse.json(
@@ -104,14 +91,22 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as CreateClassPayload;
-    const { name, description = null, code, isActive = true, createdBy } = body;
+    const user = await getAuthUser();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-    if (!name || !code || !createdBy) {
+    const body = (await request.json()) as CreateClassPayload;
+    const { name, description = null, code, isActive = true, level = null } = body;
+
+    if (!name || !code) {
       return NextResponse.json(
         {
           success: false,
-          message: "Missing required fields: name, code, createdBy",
+          message: "Missing required fields: name, code",
         },
         { status: 400 }
       );
@@ -124,7 +119,8 @@ export async function POST(request: NextRequest) {
         description,
         code,
         isActive,
-        createdBy,
+        level,
+        createdBy: user.id,
       })
       .returning();
 

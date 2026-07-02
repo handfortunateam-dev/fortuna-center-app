@@ -30,10 +30,15 @@ function getGreeting(hour: number) {
   return { text: "Good Night", icon: "solar:moon-stars-bold-duotone" };
 }
 
-export default function HeaderDateTimeWidget() {
+interface HeaderDateTimeWidgetProps {
+  compact?: boolean;
+}
+
+export default function HeaderDateTimeWidget({
+  compact,
+}: HeaderDateTimeWidgetProps) {
   const [now, setNow] = useState<Date | null>(null);
 
-  // Realtime tick
   // Realtime tick
   useEffect(() => {
     const updateTime = () => setNow(new Date());
@@ -49,15 +54,17 @@ export default function HeaderDateTimeWidget() {
       now
         ? getGreeting(now.getHours())
         : { text: "Hello", icon: "solar:sun-smile-bold-duotone" },
-    [now]
+    [now],
   );
 
   if (!now) return null; // Avoid hydration mismatch
 
   return (
-    <div className="flex items-center gap-3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-full px-4 py-2 shadow-sm transition-all hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 group">
-      {/* Greeting Bubble */}
-      <div className="hidden lg:flex items-center gap-2 pr-3 border-r border-gray-200 dark:border-gray-700">
+    <div className="flex items-center gap-2 xl:gap-3 bg-white/50 dark:bg-gray-800/50 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-full px-3 py-1.5 shadow-sm transition-all hover:shadow-md hover:border-blue-200 dark:hover:border-blue-800 group">
+      {/* Desktop Greeting Bubble - Show on XL only if NOT compact, or 2XL if compact */}
+      <div
+        className={`hidden ${compact ? "2xl:flex" : "xl:flex"} items-center gap-2 pr-3 border-r border-gray-200 dark:border-gray-700`}
+      >
         <Icon icon={greeting.icon} className="text-xl text-amber-500" />
         <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           {greeting.text}
@@ -65,23 +72,26 @@ export default function HeaderDateTimeWidget() {
       </div>
 
       {/* Date & Time */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Date - Show on MD+ if not compact, or XL+ if compact */}
+        <div
+          className={`hidden ${compact ? "xl:flex" : "md:flex"} items-center gap-2 text-gray-600 dark:text-gray-300`}
+        >
           <Icon
             icon="solar:calendar-bold-duotone"
             className="text-lg text-blue-500"
           />
-          <span className="text-sm font-medium hidden sm:inline">
-            {dateStr}
-          </span>
+          <span className="text-sm font-medium">{dateStr}</span>
         </div>
 
-        <div className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600 hidden sm:block" />
+        <div
+          className={`hidden ${compact ? "xl:block" : "md:block"} w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600`}
+        />
 
         <div className="flex items-center gap-2 text-gray-900 dark:text-white">
           <Icon
             icon="solar:clock-circle-bold-duotone"
-            className="text-lg text-blue-600"
+            className="text-lg text-blue-600 hidden sm:block"
           />
           <span className="text-sm font-bold tabular-nums tracking-wide">
             {timeStr}

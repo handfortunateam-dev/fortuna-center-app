@@ -1,15 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-import { ListGrid } from "@/components/ui/ListGrid";
+import { ListGrid } from "@/components/table";
 import { PodcastEpisode } from "@/services/azurecast/interfaces";
 import { Chip, Link } from "@heroui/react";
 import Image from "next/image";
-import { ACTION_BUTTONS } from "@/components/ui/Button/ActionButtons";
+import { ACTION_BUTTONS } from "@/components/button/ActionButtons";
 import { deletePodcastEpisode } from "@/services/azurecast/azuracastPrivateService";
 import { useRouter } from "next/navigation";
-import { Toast } from "@/components/ui/Toast";
-import { ShareButton } from "@/components/ui/ShareButton";
+import { Toast } from "@/components/toast";
+import { ShareButton } from "@/components/share-button/ShareButton";
 
 interface PodcastEpisodesClientProps {
   episodes: PodcastEpisode[];
@@ -157,7 +157,7 @@ export default function PodcastEpisodesClient({
         align: "center" as const,
       },
     ],
-    []
+    [],
   );
 
   return (
@@ -170,10 +170,6 @@ export default function PodcastEpisodesClient({
       idField="id"
       nameField="title"
       searchPlaceholder="Search episodes..."
-      breadcrumbs={[
-        { label: "Podcasts", href: "/azuracast/podcast" },
-        { label: "Episodes", href: "#" },
-      ]}
       actionButtons={{
         add: {
           label: "ADD EPISODE",

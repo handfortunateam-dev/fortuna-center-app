@@ -1,5 +1,8 @@
 import YouTubeBroadcastList from "@/components/admin/youtube/YouTubeBroadcastList";
 
+export const dynamic = 'force-dynamic';
+
+
 export default function YouTubeBroadcastsPage() {
   return (
     <div className="p-6">

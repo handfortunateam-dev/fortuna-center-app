@@ -1,13 +1,25 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import type { Podcast, PodcastEpisode } from "@/services/azurecast/interfaces";
+
+// Generic player interfaces that work with both AzuraCast and in-house podcasts
+export interface PlayerEpisode {
+  id: string;
+  title: string;
+  art: string | null;
+  audioUrl: string;
+}
+
+export interface PlayerPodcast {
+  id: string;
+  title: string;
+}
 
 interface AudioPlayerContextType {
-  playingEpisode: PodcastEpisode | null;
-  currentPodcast: Podcast | null;
+  playingEpisode: PlayerEpisode | null;
+  currentPodcast: PlayerPodcast | null;
   isPlaying: boolean;
-  playEpisode: (episode: PodcastEpisode, podcast: Podcast) => void;
+  playEpisode: (episode: PlayerEpisode, podcast: PlayerPodcast) => void;
   pauseEpisode: () => void;
   resumeEpisode: () => void;
   togglePlay: () => void;
@@ -20,13 +32,13 @@ const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(
 );
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
-  const [playingEpisode, setPlayingEpisode] = useState<PodcastEpisode | null>(
+  const [playingEpisode, setPlayingEpisode] = useState<PlayerEpisode | null>(
     null
   );
-  const [currentPodcast, setCurrentPodcast] = useState<Podcast | null>(null);
+  const [currentPodcast, setCurrentPodcast] = useState<PlayerPodcast | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const playEpisode = (episode: PodcastEpisode, podcast: Podcast) => {
+  const playEpisode = (episode: PlayerEpisode, podcast: PlayerPodcast) => {
     // If playing the same episode, just ensure it's playing
     if (playingEpisode?.id === episode.id) {
       if (!isPlaying) setIsPlaying(true);

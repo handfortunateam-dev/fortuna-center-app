@@ -1,0 +1,81 @@
+"use client";
+
+export interface ClassItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  code: string;
+  isActive: boolean;
+  level?: string | null;
+  createdBy: string;
+  createdByName?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface ClassFormValues {
+  name: string;
+  description?: string | null;
+  code: string;
+  isActive: boolean;
+  level?: string | null;
+}
+
+export interface TeacherClassItem {
+  id: string;
+  teacherId: string;
+  teacherName?: string | null;
+  classId: string;
+  className?: string | null;
+  classLevel?: string | null;
+  assignedAt: string;
+  assignedBy?: string | null;
+  assignedByName?: string | null;
+}
+
+export interface TeacherClassFormValues {
+  teacherId: string;
+  classId: string;
+}
+
+export interface ClassEnrollmentItem {
+  id: string;
+  studentId: string;
+  studentName?: string | null;
+  classId: string;
+  className?: string | null;
+  enrolledAt: string;
+  status: "active" | "completed" | "dropped";
+  enrolledBy?: string | null;
+  enrolledByName?: string | null;
+}
+
+export interface ClassEnrollmentFormValues {
+  studentId: string;
+  classId: string;
+}
+
+export interface ClassListParams {
+  q?: string;
+  isActive?: boolean;
+  createdBy?: string;
+  limit?: number;
+  fields?: string;
+  page?: number;
+}
+
+export interface TeacherClassFilters {
+  classId?: string;
+  teacherId?: string;
+  fields?: string;
+  limit?: number;
+  page?: number;
+}
+
+export interface ClassEnrollmentFilters {
+  classId?: string;
+  studentId?: string;
+  fields?: string;
+  limit?: number;
+  page?: number;
+}

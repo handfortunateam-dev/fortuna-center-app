@@ -23,21 +23,21 @@ export default function GeometricBackground() {
       />
 
       {/* Square 1 */}
-      <motion.div
+      {/* <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
         className="absolute top-1/4 right-1/4 w-20 h-20 border-2 border-primary/30 rounded-2xl opacity-30"
-      />
+      /> */}
 
       {/* Square 2 */}
-      <motion.div
+      {/* <motion.div
         animate={{ rotate: -360 }}
         transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
         className="absolute bottom-1/3 left-1/5 w-12 h-12 border-2 border-secondary/40 rounded-xl opacity-40"
-      />
+      /> */}
 
       {/* Triangle (SVG) */}
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 0.15, y: 0 }}
         transition={{ duration: 1 }}
@@ -46,7 +46,7 @@ export default function GeometricBackground() {
         <svg viewBox="0 0 100 100" className="w-full h-full fill-current">
           <path d="M50 15 L90 85 L10 85 Z" />
         </svg>
-      </motion.div>
+      </motion.div> */}
 
       {/* Floating Particles */}
       <div className="absolute top-[15%] right-[20%] w-2 h-2 bg-red-400/20 rounded-full animate-pulse" />

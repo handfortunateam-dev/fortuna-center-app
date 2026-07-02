@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { classEnrollments } from "@/db/schema";
+import { classEnrollments, users, classes, students } from "@/db/schema";
 
 const notFoundResponse = () =>
   NextResponse.json({ success: false, message: "Enrollment not found" }, { status: 404 });
@@ -14,28 +14,53 @@ type UpdateEnrollmentPayload = {
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
-    const [record] = await db
-      .select()
+    const [result] = await db
+      .select({
+        id: classEnrollments.id,
+        studentId: classEnrollments.studentId,
+        studentName: sql<string>`concat_ws(' ', ${students.firstName}, ${students.middleName}, ${students.lastName})`,
+        studentEmail: students.email,
+        classId: classEnrollments.classId,
+        className: classes.name,
+        enrolledAt: classEnrollments.enrolledAt,
+        enrolledBy: classEnrollments.enrolledBy,
+      })
       .from(classEnrollments)
+      .leftJoin(students, eq(classEnrollments.studentId, students.id))
+      .leftJoin(classes, eq(classEnrollments.classId, classes.id))
       .where(eq(classEnrollments.id, id))
       .limit(1);
 
-    if (!record) {
+    if (!result) {
       return notFoundResponse();
     }
 
-    return NextResponse.json({ success: true, data: record });
+    // Fetch enrolledBy name from users (admin)
+    let enrolledByName = null;
+    if (result.enrolledBy) {
+      const [enrolledUser] = await db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, result.enrolledBy))
+        .limit(1);
+      enrolledByName = enrolledUser?.name || null;
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { ...result, enrolledByName },
+    });
   } catch (error) {
-    console.error("Error fetching enrollment:", error);
+    console.error("Error fetching class enrollment:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch enrollment",
+        message: "Failed to fetch class enrollment",
         error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
@@ -45,9 +70,9 @@ export async function GET(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const [deleted] = await db
@@ -79,25 +104,22 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const body = (await request.json()) as UpdateEnrollmentPayload;
     const { studentId, classId, enrolledBy } = body;
 
-    if (
-      studentId === undefined &&
-      classId === undefined &&
-      enrolledBy === undefined
-    ) {
+    if (studentId === undefined && classId === undefined && enrolledBy === undefined) {
       return NextResponse.json(
         { success: false, message: "No updates supplied" },
         { status: 400 }
       );
     }
 
+    // Check for duplicate if updating student or class
     if (studentId && classId) {
       const [conflict] = await db
         .select({ id: classEnrollments.id })
@@ -111,10 +133,7 @@ export async function PATCH(
         .limit(1);
       if (conflict && conflict.id !== id) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "Student already enrolled in this class",
-          },
+          { success: false, message: "Student already enrolled in this class" },
           { status: 409 }
         );
       }

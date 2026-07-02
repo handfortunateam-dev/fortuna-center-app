@@ -8,8 +8,16 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+      },
+      {
+        protocol: "https",
+        hostname: "img.clerk.com",
+      }
     ],
-    domains: ["localhost", "127.0.0.1", "::1"],
+    // domains: ["localhost", "127.0.0.1", "::1"],
   },
   reactStrictMode: false,
   typescript: {

@@ -1,18 +1,11 @@
-import { auth } from "@clerk/nextjs/server";
-import { getUserByClerkId } from "@/services/userSyncService";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
 
 export async function GET() {
     try {
-        const { userId } = await auth();
-
-        if (!userId) {
-            return Response.json({ role: null }, { status: 401 });
-        }
-
-        const user = await getUserByClerkId(userId);
+        const user = await getAuthUser();
 
         if (!user) {
-            return Response.json({ role: "VISITOR" }, { status: 200 });
+            return Response.json({ role: null }, { status: 401 });
         }
 
         return Response.json({ role: user.role }, { status: 200 });

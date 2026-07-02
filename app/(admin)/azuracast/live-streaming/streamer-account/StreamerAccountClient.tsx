@@ -23,7 +23,7 @@ import {
 } from "@/services/azurecast/interfaces";
 import { deleteStreamer } from "@/services/azurecast/azuracastPrivateService";
 import { useRouter } from "next/navigation";
-import { Toast } from "@/components/ui/Toast";
+import { Toast } from "@/components/toast";
 import Image from "next/image";
 
 interface StreamerAccountClientProps {

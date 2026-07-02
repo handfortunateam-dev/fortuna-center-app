@@ -1,13 +1,13 @@
-import { pgTable, text, varchar, pgEnum, uuid } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { pgTable, text, varchar, pgEnum, boolean, } from 'drizzle-orm/pg-core';
 import { id, timestamps } from './columns.helper';
-
+import { inArray } from "drizzle-orm";
 // Role enum
 export const userRoleEnum = pgEnum('user_role', [
   'ADMINISTRATIVE_EMPLOYEE',
   'ADMIN',
   'TEACHER',
-  'STUDENT'
+  'STUDENT',
+  'DEVELOPER'
 ]);
 
 // Users table
@@ -16,9 +16,10 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   name: text('name').notNull(),
   role: userRoleEnum('role').notNull(),
-  clerkId: varchar('clerk_id', {length: 255}).notNull().unique(),
+  clerkId: varchar('clerk_id', { length: 255 }).notNull().unique(),
   image: varchar("image", { length: 500 }),
   password: text('password'), // hashed password
+  isAdminEmployeeAlso: boolean('is_admin_employee_also').default(false).notNull(),
   ...timestamps,
 });
 

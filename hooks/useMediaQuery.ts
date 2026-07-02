@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 
 /**
  * Custom hook for matching media queries
@@ -8,9 +8,13 @@ import { useState, useEffect } from "react";
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
 
+  const [, startTransition] = useTransition();
+
   useEffect(() => {
     const media = window.matchMedia(query);
-    setMatches(media.matches);
+    startTransition(() => {
+      setMatches(media.matches);
+    });
 
     // Create event listener
     const listener = (event: MediaQueryListEvent) => {

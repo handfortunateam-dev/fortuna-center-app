@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { SignUp } from "@clerk/nextjs";
+import LocalSignUp from "@/components/auth/LocalSignUp";
+import AuthPageSkeleton from "@/components/auth/AuthPageSkeleton";
+import { usePublicConfig } from "@/hooks/use-public-config";
 
 export default function SignUpCatchAll() {
   const [isDark, setIsDark] = useState(() => {
@@ -12,38 +15,42 @@ export default function SignUpCatchAll() {
   });
 
   useEffect(() => {
-    // Check if dark mode is enabled
-    const htmlElement = document.documentElement;
-    // const isDarkMode = htmlElement.classList.contains("dark");
-    // setIsDark(isDarkMode);
-
-    // Listen for theme changes
+    if (typeof document === "undefined") return;
     const observer = new MutationObserver(() => {
-      const isDarkMode = htmlElement.classList.contains("dark");
-      setIsDark(isDarkMode);
+      setIsDark(document.documentElement.classList.contains("dark"));
     });
-
-    observer.observe(htmlElement, {
+    observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class"],
     });
-
     return () => observer.disconnect();
   }, []);
+
+  const { data: config, isLoading } = usePublicConfig();
+
+  const authProvider = config?.auth_provider || "clerk";
 
   return (
     <div
       className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
-        isDark ? "bg-linear-to-br from-gray-950 via-gray-900 to-gray-950" : ""
+        isDark
+          ? "bg-linear-to-br from-gray-950 via-gray-900 to-gray-950"
+          : "bg-gray-50"
       }`}
     >
       <div className="w-full max-w-md">
-        <SignUp
-          routing="path"
-          path="/auth/signup"
-          signInUrl="/auth/login"
-          afterSignUpUrl="/dashboard"
-        />
+        {isLoading ? (
+          <AuthPageSkeleton />
+        ) : authProvider === "clerk" ? (
+          <SignUp
+            routing="path"
+            path="/auth/signup"
+            signInUrl="/auth/login"
+            afterSignUpUrl="/dashboard"
+          />
+        ) : (
+          <LocalSignUp />
+        )}
       </div>
     </div>
   );

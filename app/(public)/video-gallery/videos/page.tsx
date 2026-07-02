@@ -4,6 +4,9 @@ import YouTubePublicGallery from "@/features/public/home/YouTubePublicGallery";
 export const metadata = {
   title: "All Videos | Fortuna Center",
   description: "Browse our latest video uploads.",
+  alternates: {
+    canonical: "https://www.fortunacenter.com/video-gallery/videos",
+  },
 };
 
 export default function VideosPage() {

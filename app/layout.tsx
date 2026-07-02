@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-//@ts-expect-error import React from "react";
 import "./globals.css";
 import Providers from "@/providers";
 import { ClerkProviderWrapper } from "@/lib/ClerkProviderWrapper";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
+import { LoadingBar } from "@/components/loading/LoadingBar";
+import { Suspense } from "react";
+import SiteDisabled from "@/components/SiteDisabled";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,9 +19,61 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Fortuna Center Kupang",
+  metadataBase: new URL("https://www.fortunacenter.com"),
+  title: {
+    default: "Fortuna Center Kupang",
+    template: "Fortuna Center Kupang - %s",
+  },
   description:
-    "Fortuna English & Human Resources Development (HRD) Training Centre is a distinguished institution in Kupang. We are dedicated to bridging the gap between potential and professional success through comprehensive training programs.",
+    "Fortuna English & Human Resources Development (HRD) Training Centre is a distinguished institution in Kupang, NTT. We offer comprehensive English courses, broadcast training, and professional HRD programs.",
+  keywords: [
+    "english course kupang",
+    "english training center kupang",
+    "fortuna center",
+    "hrd training kupang",
+    "broadcast training kupang",
+    "english course NTT",
+    "professional development kupang",
+    "fortuna english center",
+  ],
+  authors: [{ name: "Fortuna Center Kupang" }],
+  creator: "Fortuna Center Kupang",
+  publisher: "Fortuna Center Kupang",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://www.fortunacenter.com",
+    siteName: "Fortuna Center Kupang",
+    title: "Fortuna Center Kupang",
+    description:
+      "A leading English course and professional HRD training center in Kupang, East Nusa Tenggara.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Fortuna Center Kupang",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Fortuna Center Kupang",
+    description:
+      "A leading English course and professional HRD training center in Kupang, NTT.",
+    images: ["/og-image.png"],
+  },
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -43,11 +97,21 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
-export default function RootLayout({
+import { checkMaintenanceMode } from "@/lib/maintenance";
+const siteEnabled = process.env.NEXT_PUBLIC_SITE_ENABLED !== "false";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+    if (!siteEnabled) {
+    return <SiteDisabled />;
+  }
+
+  // Check maintenance mode on every request blockable by middleware
+  await checkMaintenanceMode();
+
   return (
     <ClerkProviderWrapper>
       <html lang="en" suppressHydrationWarning>
@@ -55,6 +119,9 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <Providers>
+            <Suspense fallback={null}>
+              <LoadingBar />
+            </Suspense>
             {children}
             <GlobalAudioPlayer />
           </Providers>

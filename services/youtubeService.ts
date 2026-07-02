@@ -272,56 +272,64 @@ export const getChannelVideos = unstable_cache(
  * Public: Get past live broadcasts (videos) for a channel
  * Requires GOOGLE_API_KEY in .env
  */
-export async function getPastBroadcasts(channelId: string): Promise<YouTubeVideo[]> {
-    if (!GOOGLE_API_KEY) {
-        console.warn("GOOGLE_API_KEY is not set. Cannot fetch public YouTube data.");
-        return [];
-    }
+export const getPastBroadcasts = unstable_cache(
+    async (channelId: string): Promise<YouTubeVideo[]> => {
+        if (!GOOGLE_API_KEY) {
+            console.warn("GOOGLE_API_KEY is not set. Cannot fetch public YouTube data.");
+            return [];
+        }
 
-    try {
-        const response = await youtube.search.list({
-            key: GOOGLE_API_KEY,
-            part: ["snippet"],
-            channelId: channelId,
-            eventType: "completed",
-            type: ["video"],
-            order: "date",
-            maxResults: 6,
-        });
+        try {
+            const response = await youtube.search.list({
+                key: GOOGLE_API_KEY,
+                part: ["snippet"],
+                channelId: channelId,
+                eventType: "completed",
+                type: ["video"],
+                order: "date",
+                maxResults: 6,
+            });
 
-        return (response.data.items as YouTubeVideo[]) || [];
-    } catch (error) {
-        console.error("Error fetching past broadcasts:", error);
-        return [];
-    }
-}
+            return (response.data.items as YouTubeVideo[]) || [];
+        } catch (error) {
+            console.error("Error fetching past broadcasts:", error);
+            return [];
+        }
+    },
+    ["youtube-past-broadcasts"],
+    { revalidate: CACHE_DURATION_LONG }
+);
 
 /**
  * Public: Get current live broadcasts (videos) for a channel
  * Requires GOOGLE_API_KEY in .env
  */
-export async function getCurrentBroadcasts(channelId: string): Promise<YouTubeVideo[]> {
-    if (!GOOGLE_API_KEY) {
-        return [];
-    }
+export const getCurrentBroadcasts = unstable_cache(
+    async (channelId: string): Promise<YouTubeVideo[]> => {
+        if (!GOOGLE_API_KEY) {
+            return [];
+        }
 
-    try {
-        const response = await youtube.search.list({
-            key: GOOGLE_API_KEY,
-            part: ["snippet"],
-            channelId: channelId,
-            eventType: "live",
-            type: ["video"],
-            order: "date",
-            maxResults: 3,
-        });
+        try {
+            const response = await youtube.search.list({
+                key: GOOGLE_API_KEY,
+                part: ["snippet"],
+                channelId: channelId,
+                eventType: "live",
+                type: ["video"],
+                order: "date",
+                maxResults: 3,
+            });
 
-        return (response.data.items as YouTubeVideo[]) || [];
-    } catch (error) {
-        console.error("Error fetching current broadcasts:", error);
-        return [];
-    }
-}
+            return (response.data.items as YouTubeVideo[]) || [];
+        } catch (error) {
+            console.error("Error fetching current broadcasts:", error);
+            return [];
+        }
+    },
+    ["youtube-current-broadcasts"],
+    { revalidate: CACHE_DURATION_SHORT }
+);
 
 /**
  * Public: Get playlists for a channel

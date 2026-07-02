@@ -1,0 +1,283 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getAuthUser } from "@/lib/auth/getAuthUser";
+import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { db } from "@/db";
+import { students, classEnrollments, classes } from "@/db/schema";
+
+export async function GET(request: NextRequest) {
+    try {
+        const searchParams = request.nextUrl.searchParams;
+        const query = searchParams.get("q") || searchParams.get("query") || "";
+        const limit = Math.max(1, Number(searchParams.get("limit") || 10));
+        const page = Math.max(1, Number(searchParams.get("page") || 1));
+        const offset = searchParams.get("offset")
+            ? Number(searchParams.get("offset"))
+            : (page - 1) * limit;
+
+        const filters = [];
+        if (query) {
+            const dbQuery = `%${query}%`;
+            filters.push(
+                or(
+                    // Identity
+                    ilike(students.studentId, dbQuery),
+                    sql`${students.studentNumber}::text ILIKE ${dbQuery}`,
+                    // Name fields
+                    ilike(students.firstName, dbQuery),
+                    ilike(students.middleName, dbQuery),
+                    ilike(students.lastName, dbQuery),
+                    ilike(students.nickname, dbQuery),
+                    // Full name search
+                    sql`CONCAT_WS(' ', ${students.firstName}, ${students.middleName}, ${students.lastName}) ILIKE ${dbQuery}`,
+
+                    // Contact & location
+                    ilike(students.email, dbQuery),
+                    ilike(students.phone, dbQuery),
+                    ilike(students.address, dbQuery),
+                    ilike(students.placeOfBirth, dbQuery),
+                    // Demographics
+                    ilike(students.education, dbQuery),
+                    ilike(students.occupation, dbQuery),
+                )
+            );
+        }
+
+        // Add dynamic filters from query params (e.g., ?gender=male)
+        searchParams.forEach((value, key) => {
+            if (!["q", "query", "limit", "page", "offset"].includes(key) && value) {
+                if (key === "isEnrolled") {
+                    if (value === "true") {
+                        filters.push(sql`${classEnrollments.id} IS NOT NULL`);
+                    } else if (value === "false") {
+                        filters.push(sql`${classEnrollments.id} IS NULL`);
+                    }
+                    return;
+                }
+                if (key === "year") {
+                    // Special handling for registration year
+                    filters.push(sql`EXTRACT(YEAR FROM ${students.registrationDate}) = ${parseInt(value)}`);
+                    return;
+                }
+                /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                const column = (students as any)[key] as any;
+                if (column) {
+                    if (value === "Unknown/Missing") {
+                        filters.push(or(eq(column, "Unknown/Missing"), sql`${column} IS NULL`, eq(column, "")));
+                    } else {
+                        filters.push(eq(column, value));
+                    }
+                }
+            }
+        });
+
+        const where = filters.length ? and(...filters) : undefined;
+
+        // Run count and data queries in parallel
+        const [countResult, dbData] = await Promise.all([
+            db
+                .select({ total: count() })
+                .from(students)
+                .leftJoin(classEnrollments, and(eq(students.id, classEnrollments.studentId), eq(classEnrollments.status, "active")))
+                .leftJoin(classes, eq(classEnrollments.classId, classes.id))
+                .where(where),
+            db
+                .select({
+                    student: students,
+                    enrollment: {
+                        id: classEnrollments.id,
+                        classId: classes.id,
+                        className: classes.name,
+                        classCode: classes.code,
+                        classLevel: classes.level,
+                    }
+                })
+                .from(students)
+                .leftJoin(classEnrollments, and(eq(students.id, classEnrollments.studentId), eq(classEnrollments.status, "active")))
+                .leftJoin(classes, eq(classEnrollments.classId, classes.id))
+                .where(where)
+                .orderBy(desc(students.createdAt))
+                .limit(limit)
+                .offset(offset),
+        ]);
+
+        const data = dbData.map(item => ({
+            ...item.student,
+            isEnrolled: !!item.enrollment.classId,
+            enrolledClass: item.enrollment.classId ? {
+                id: item.enrollment.classId,
+                name: item.enrollment.className,
+                code: item.enrollment.classCode,
+                level: item.enrollment.classLevel,
+            } : null
+        }));
+
+        const totalCount = countResult[0]?.total ?? 0;
+        const totalPages = Math.ceil(totalCount / limit);
+
+        return NextResponse.json({
+            success: true,
+            data,
+            totalCount,
+            page,
+            limit,
+            totalPages,
+        });
+    } catch (error) {
+        console.error("Error fetching students:", error);
+        return NextResponse.json(
+            {
+                success: false,
+                message: "Failed to fetch students",
+                error: error instanceof Error ? error.message : "Unknown error",
+            },
+            { status: 500 }
+        );
+    }
+}
+
+export async function POST(request: NextRequest) {
+    try {
+        const authenticatedUser = await getAuthUser();
+        if (!authenticatedUser) {
+            return NextResponse.json(
+                { success: false, message: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const body = await request.json();
+        const {
+            studentId,
+            registrationDate,
+            firstName,
+            middleName,
+            lastName,
+            nickname,
+            gender,
+            placeOfBirth,
+            dateOfBirth,
+            email,
+            phone,
+            address,
+            education,
+            occupation,
+            userId,
+        } = body;
+
+        // Required: firstName and phone — email is optional
+        if (!firstName || !phone) {
+            return NextResponse.json(
+                { success: false, message: "Missing required fields: firstName, phone" },
+                { status: 400 }
+            );
+        }
+
+        // Generate or validate studentId
+        let finalStudentId = studentId;
+        const tempId = `TEMP-${crypto.randomUUID()}`;
+        if (!finalStudentId) {
+            finalStudentId = tempId;
+        }
+
+        // Check for duplicate studentId if manually provided
+        if (studentId) {
+            const [existingStudentId] = await db
+                .select()
+                .from(students)
+                .where(eq(students.studentId, studentId))
+                .limit(1);
+
+            if (existingStudentId) {
+                return NextResponse.json(
+                    { success: false, message: "Student ID already exists" },
+                    { status: 409 }
+                );
+            }
+        }
+
+        // Check for duplicate email — only if email is provided
+        if (email) {
+            const [existingEmail] = await db
+                .select()
+                .from(students)
+                .where(eq(students.email, email))
+                .limit(1);
+
+            if (existingEmail) {
+                return NextResponse.json(
+                    { success: false, message: "Student with this email already exists" },
+                    { status: 409 }
+                );
+            }
+        }
+
+        // Check for duplicate userId association if provided
+        if (userId) {
+            const [existingUser] = await db
+                .select()
+                .from(students)
+                .where(eq(students.userId, userId))
+                .limit(1);
+
+            if (existingUser) {
+                return NextResponse.json(
+                    { success: false, message: "User is already associated with another student" },
+                    { status: 409 }
+                );
+            }
+        }
+
+        const [insertedStudent] = await db
+            .insert(students)
+            .values({
+                studentId: finalStudentId,
+                registrationDate: registrationDate || new Date().toISOString().split("T")[0],
+                firstName,
+                middleName: middleName || null,
+                lastName: lastName || "",
+                nickname: nickname ? nickname.toUpperCase() : null,
+                gender: gender || null,
+                placeOfBirth: placeOfBirth ? placeOfBirth.toUpperCase() : null,
+                dateOfBirth: dateOfBirth || null,
+                email: email || null,
+                phone,
+                address: address ? address.toUpperCase() : null,
+                education: education || null,
+                occupation: occupation || null,
+                userId: userId || null,
+            })
+            .returning();
+
+        let newStudent = insertedStudent;
+
+        // Replace temp ID with a proper one based on the auto-increment studentNumber
+        if (!studentId && insertedStudent.studentId === tempId) {
+            const year = new Date().getFullYear();
+            const sequence = String(insertedStudent.studentNumber).padStart(4, "0");
+            const generatedId = `${year}${sequence}`;
+
+            const [updatedStudent] = await db
+                .update(students)
+                .set({ studentId: generatedId })
+                .where(eq(students.id, insertedStudent.id))
+                .returning();
+
+            newStudent = updatedStudent;
+        }
+
+        return NextResponse.json(
+            { success: true, data: newStudent, message: "Student created successfully" },
+            { status: 201 }
+        );
+    } catch (error) {
+        console.error("Error creating student:", error);
+        return NextResponse.json(
+            {
+                success: false,
+                message: "Failed to create student",
+                error: error instanceof Error ? error.message : "Unknown error",
+            },
+            { status: 500 }
+        );
+    }
+}

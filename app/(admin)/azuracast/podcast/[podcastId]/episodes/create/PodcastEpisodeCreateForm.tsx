@@ -17,7 +17,7 @@ import {
   uploadPodcastMedia,
 } from "@/services/azurecast/azuracastPrivateService";
 import { useRouter } from "next/navigation";
-import { Toast } from "@/components/ui/Toast";
+import { Toast } from "@/components/toast";
 import { Icon } from "@iconify/react";
 
 interface PodcastEpisodeCreateFormProps {

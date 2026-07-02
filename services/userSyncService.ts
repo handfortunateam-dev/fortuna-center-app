@@ -39,7 +39,7 @@ export async function syncUserToDatabase(clerkUser: ClerkUserData) {
     .limit(1);
 
   if (existingUser.length > 0) {
-    // Update existing user
+    // Update existing user found by Clerk ID
     const updated = await db
       .update(users)
       .set({
@@ -52,21 +52,44 @@ export async function syncUserToDatabase(clerkUser: ClerkUserData) {
       .returning();
 
     return updated[0];
-  } else {
-    // Create new user
-    const newUser = await db
-      .insert(users)
-      .values({
+  }
+
+  // Check if user exists by email (to link account)
+  const existingUserByEmail = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, primaryEmail))
+    .limit(1);
+
+  if (existingUserByEmail.length > 0) {
+    // Link Clerk ID to existing user found by email
+    const updated = await db
+      .update(users)
+      .set({
         clerkId: clerkUser.id,
         name,
-        email: primaryEmail,
         image: clerkUser.image_url,
-        role: "STUDENT", // Default role (matches enum: ADMIN or VISITOR)
+        updatedAt: new Date(),
       })
+      .where(eq(users.id, existingUserByEmail[0].id))
       .returning();
 
-    return newUser[0];
+    return updated[0];
   }
+
+  // Create new user if not found by Clerk ID or Email
+  const newUser = await db
+    .insert(users)
+    .values({
+      clerkId: clerkUser.id,
+      name,
+      email: primaryEmail,
+      image: clerkUser.image_url,
+      role: "STUDENT", // Default role
+    })
+    .returning();
+
+  return newUser[0];
 }
 
 /**
